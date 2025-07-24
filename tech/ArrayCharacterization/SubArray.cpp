@@ -648,9 +648,7 @@ void SubArray::CalculateLatency(double _rampInput) {
             refreshLatency *= numRow; // TOTAL refresh latency for subarray
 			readLatency = decoderLatency + bitlineDelayR + senseAmp.readLatency
 					+ senseAmpMuxLev1.readLatency + senseAmpMuxLev2.readLatency;
-			/* assume symmetric read/write for DRAM/eDRAM bitline delay */
-			writeLatency = decoderLatency + bitlineDelayW + senseAmp.readLatency
-			+ senseAmpMuxLev1.readLatency + senseAmpMuxLev2.readLatency;
+			writeLatency = decoderLatency + bitlineDelayW;
 		} else if (cell->memCellType == MRAM || cell->memCellType == PCRAM || cell->memCellType == memristor || cell->memCellType == FBRAM || cell->memCellType == FeFET || cell->memCellType == MLCFeFET || cell->memCellType == MLCRRAM) {
 			double bitlineRamp = 0;
 			if (cell->readMode == false) {	/* current-sensing */
@@ -826,14 +824,18 @@ void SubArray::CalculatePower() {
             refreshDynamicEnergy = readDynamicEnergy;
 			double writeVoltage = tech->vpp;	/* should also equal to setVoltage, for DRAM, it is Vdd */
 			writeDynamicEnergy = (capBitline + bitlineMux.capForPreviousPowerCalculation) * writeVoltage * writeVoltage * numColumn;
-			leakage = readDynamicEnergy / cell->retentionTime * numRow; // TODO: Use DRAM_REFRESH_PERIOD later
+			leakage += CalculateGateLeakage(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * tech->featureSize, 0,
+					inputParameter->temperature, *tech) * tech->vdd;
+			leakage *= numColumn;
 		} else if (cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
 			/* Codes below calculate the DRAM bitline power */
 			readDynamicEnergy = (capCellAccessR + capBitline + bitlineMux.capForPreviousPowerCalculation) * senseVoltage * techR->vdd * numColumn;
             refreshDynamicEnergy = readDynamicEnergy;
 			double writeVoltage = techW->vpp;	/* should also equal to setVoltage, for DRAM, it is Vdd */
 			writeDynamicEnergy = (capBitline + bitlineMux.capForPreviousPowerCalculation) * writeVoltage * writeVoltage * numColumn;
-			leakage = readDynamicEnergy / cell->retentionTime * numRow; // TODO: Use DRAM_REFRESH_PERIOD later
+			leakage = CalculateGateLeakage(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * tech->featureSize, 0,
+					inputParameter->temperature, *tech) * tech->vdd;
+			leakage *= numColumn;
 		} else if (cell->memCellType == MRAM || cell->memCellType == PCRAM || cell->memCellType == memristor || cell->memCellType == FBRAM || cell->memCellType == FeFET || cell->memCellType == MLCFeFET || cell->memCellType == MLCRRAM) {
 			if (cell->readMode == false) {	/* current-sensing */
 				/* Use ICCAD 2009 model */
@@ -1091,7 +1093,6 @@ SubArray & SubArray::operator=(const SubArray &rhs) {
 	senseAmpMuxLev2 = rhs.senseAmpMuxLev2;
 	precharger = rhs.precharger;
 	senseAmp = rhs.senseAmp;
-	//Qing
 	subarrayBuffer = rhs.subarrayBuffer;
 
 	return *this;

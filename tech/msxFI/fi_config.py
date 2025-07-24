@@ -19,7 +19,7 @@ mem_dict = {
 
 # Configuration parameters
 temperature = 300  # Temperature in Kelvin (300K-400K)
-feature_size = 16  # Feature size in nm
+feature_size = 22  # Feature size in nm
 SS = 70  # Subthreshold Swing in mV/dec
 
 # optional print statements during msxFI execution

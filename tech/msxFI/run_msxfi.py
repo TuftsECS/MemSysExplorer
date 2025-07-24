@@ -1,7 +1,13 @@
+import sys
+import os
+
+# Add the parent directory of this script's location to the system path
+# to allow for absolute imports of 'msxFI' components.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import numpy as np
 import argparse
 import torch
-import os
 import random
 
 def parse_args():
@@ -34,9 +40,9 @@ def parse_args():
     # DNN evaluation
     parser.add_argument('--eval_dnn', action='store_true', default=False,
                         help="Enable DNN fault injection for the selected mode.")
-    parser.add_argument('--model', type=str, default='msxFI/example_nn/lenet/checkpoints/lenet.pth',
+    parser.add_argument('--model', type=str, default='example_nn/lenet/checkpoints/lenet.pth',
                         help="Path to the pre-trained DNN model (.pth file) for all DNN modes.")
-    parser.add_argument('--model_def', type=str, default='msxFI/example_nn/lenet/model.py',
+    parser.add_argument('--model_def', type=str, default='example_nn/lenet/model.py',
                         help="Path to the Python file containing the model class definition (required for DNN modes).")
 
     return parser.parse_args()
@@ -118,8 +124,8 @@ def main():
     
     if 'dram' in args.mode:
         if args.refresh_t is None:
-            raise ValueError("refresh_time is required for DRAM models")
-        base_params['refresh_time'] = args.refresh_t * 1e-6
+            raise ValueError("refresh_t is required for DRAM models")
+        base_params['refresh_t'] = args.refresh_t * 1e-6
         base_params['vth_sigma'] = args.vth_sigma / 1000.0  # convert mV to V
         if args.vdd is not None:
             base_params['custom_vdd'] = args.vdd

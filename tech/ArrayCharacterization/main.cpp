@@ -95,12 +95,11 @@ int main(int argc, char *argv[])
 
 	cell = new MemCell();
 	cell->ReadCellFromFile(inputParameter->fileMemCell);
-//	cell->CellScaling(inputParameter->processNode);
 	
-        bool is_FeFET = false;
-        if (cell->memCellType == FeFET || cell->memCellType == MLCFeFET){
-            is_FeFET = true; // flag for FeFET cell type, used to scale gate capacitance as appropriate
-        }
+	bool is_FeFET = false;
+	if (cell->memCellType == FeFET || cell->memCellType == MLCFeFET){
+		is_FeFET = true; // flag for FeFET cell type, used to scale gate capacitance as appropriate
+	}
 	tech = new Technology();
 	tech->Initialize(inputParameter->processNode, inputParameter->deviceRoadmap, is_FeFET);
 
@@ -345,7 +344,6 @@ int main(int argc, char *argv[])
 			}
 			delete tagBank;
 		}
-
 		if (numSolution > 0) {
 			Bank * trialBank;
 			Result tempResult;
@@ -528,10 +526,6 @@ int main(int argc, char *argv[])
 			bestDataResults[i].printAsCacheToCsvFile(bestTagResults[i], inputParameter->cacheAccessMode, outputFile);
 		}
 		cout << "Pruning done" << endl;
-		/* Run pruning here */
-		/* TO-DO */
-
-		/* delete */
 		for (int i = 0; i < (int)full_exploration; i++) {
 			for (int j = 0; j < (int)full_exploration; j++) {
 				for (int k = 0; k < 3; k++)
@@ -642,12 +636,4 @@ void applyConstraint() {
 		cout << "[ERROR] H-tree does not support external sensing scheme in this version" << endl;
 		exit(-1);
 	}
-/*
-	if (inputParameter->globalWireRepeaterType != repeated_none && inputParameter->internalSensing == false) {
-		cout << "[ERROR] Repeated global wire does not support external sensing scheme" << endl;
-		exit(-1);
-	}
-*/
-
-	/* TO-DO: more rules to add here */
 }

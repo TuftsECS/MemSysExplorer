@@ -8,8 +8,10 @@ DEFAULT_ACCESS_CMOS_WIDTH_1T = 1.0
 DEFAULT_ACCESS_CMOS_WIDTH_3T = 1.0
 DEFAULT_CELL_CAP_1T = 18e-15
 DEFAULT_CELL_CAP_3T = 5e-15
-TECHNOLOGY_CPP_FILEPATH = "../../Technology.cpp"
-CELL_FILES_DIRECTORY = "../../sample_cells/"
+DEFAULT_RETENTION_TIME_1T_US = 100.0
+DEFAULT_RETENTION_TIME_3T_US = 100.0
+TECHNOLOGY_CPP_FILEPATH = "../../ArrayCharacterization/Technology.cpp"
+CELL_FILES_DIRECTORY = "../../ArrayCharacterization/sample_cells/"
 OUTPUT_DIRECTORY = "../mem_data/"
 
 CELL_PARAMETER_CONFIG = {
@@ -21,6 +23,11 @@ CELL_PARAMETER_CONFIG = {
     'DRAMCellCapacitance': {
         'pattern': r'-DRAMCellCapacitance \(F\)\s*:\s*([\d.eE+-]+)',
         'internal_key': 'cell_capacitance',
+        'type': float
+    },
+    'RetentionTime': {
+        'pattern': r'-RetentionTime \(us\)\s*:\s*([\d.eE+-]+)',
+        'internal_key': 'retention_time',
         'type': float
     }
 }
@@ -164,8 +171,8 @@ def parse_cell_files(cell_directory_path, technology_nodes):
     final_parameters = {}
     for tech_node, cell_data in technology_node_mapping.items():
         final_parameters[tech_node] = {
-            parameter_name: cell_data[config['internal_key']] 
-            for parameter_name, config in CELL_PARAMETER_CONFIG.items()
+            config['internal_key']: cell_data.get(config['internal_key'])
+            for _, config in CELL_PARAMETER_CONFIG.items()
         }
     return final_parameters
 
@@ -202,7 +209,7 @@ def calculate_ioff(mean_ioff, access_cmos_width, feature_size_nm, tech_params_di
             
     return mean_ioff * actual_width
 
-def process_dram_type(dram_type_str, tech_data, technology_nodes, cell_files_dir_path, default_access_width, default_cell_capacitance, output_filename):
+def process_dram_type(dram_type_str, tech_data, technology_nodes, cell_files_dir_path, default_access_width, default_cell_capacitance, default_retention_time, output_filename):
     """
     Process DRAM type data and save to pickle file.
     
@@ -213,6 +220,7 @@ def process_dram_type(dram_type_str, tech_data, technology_nodes, cell_files_dir
         cell_files_dir_path: Path to cell files directory
         default_access_width: Default AccessCMOSWidth
         default_cell_capacitance: Default cell capacitance
+        default_retention_time: Default retention time in microseconds
         output_filename: Output pickle filename
     """
     final_data_payload = {}
@@ -221,8 +229,18 @@ def process_dram_type(dram_type_str, tech_data, technology_nodes, cell_files_dir
 
     for feature_size_nm, tech_node_data in tech_data.items():
         cell_parameters = parsed_cell_parameters.get(feature_size_nm)
-        current_access_width = cell_parameters['AccessCMOSWidth'] if cell_parameters else default_access_width
-        current_cell_capacitance = cell_parameters['DRAMCellCapacitance'] if cell_parameters else default_cell_capacitance
+        
+        current_access_width = default_access_width
+        if cell_parameters and cell_parameters.get('access_width') is not None:
+            current_access_width = cell_parameters['access_width']
+
+        current_cell_capacitance = default_cell_capacitance
+        if cell_parameters and cell_parameters.get('cell_capacitance') is not None:
+            current_cell_capacitance = cell_parameters['cell_capacitance']
+
+        current_retention_time = default_retention_time
+        if cell_parameters and cell_parameters.get('retention_time') is not None:
+            current_retention_time = cell_parameters['retention_time']
         
         mean_ioff_list = tech_node_data['ioff_values']
         vdd_value = tech_node_data['vdd']
@@ -239,7 +257,8 @@ def process_dram_type(dram_type_str, tech_data, technology_nodes, cell_files_dir
         final_data_payload[feature_size_nm] = {
             'CellCap': current_cell_capacitance,
             'Ioff': ioff_at_temperatures,
-            'vdd': vdd_value
+            'vdd': vdd_value,
+            'RetentionTime': current_retention_time
         }
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -285,6 +304,7 @@ def main():
         cell_files_dir_path=os.path.join(cell_dir_abs_path, "sample_edram1ts/"),
         default_access_width=DEFAULT_ACCESS_CMOS_WIDTH_1T,
         default_cell_capacitance=DEFAULT_CELL_CAP_1T,
+        default_retention_time=DEFAULT_RETENTION_TIME_1T_US,
         output_filename="dram1t_args.p"
     )
 
@@ -295,6 +315,7 @@ def main():
         cell_files_dir_path=os.path.join(cell_dir_abs_path, "sample_edram3ts/"),
         default_access_width=DEFAULT_ACCESS_CMOS_WIDTH_3T,
         default_cell_capacitance=DEFAULT_CELL_CAP_3T,
+        default_retention_time=DEFAULT_RETENTION_TIME_3T_US,
         output_filename="dram3t_args.p"
     )
 

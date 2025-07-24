@@ -34,7 +34,7 @@ def main():
     MODEL_DIR = "msxFI/example_nn/lenet"  # Directory containing model.py
 
     # DRAM specific parameters (only used for DRAM models)
-    REFRESH_TIME = 70  # in microseconds
+    REFRESH_T = 70  # in microseconds
     SIGMA = 0.05
 
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,17 +48,17 @@ def main():
 
     # Generate filename based on memory model type
     if 'dram' in MODE:
-        if REFRESH_TIME is None:
-            print("Error: For DRAM modes, REFRESH_TIME must be set.", file=sys.stderr)
+        if REFRESH_T is None:
+            print("Error: For DRAM modes, refresh_t must be set.", file=sys.stderr)
             sys.exit(1)
-        faulty_model_name = f"{model_basename}_{MODE}_s{SEED}_q{Q_TYPE}_i{INT_BITS}_f{FRAC_BITS}_rf{float(REFRESH_TIME)}{model_ext}"
+        faulty_model_name = f"{model_basename}_{MODE}_s{SEED}_q{Q_TYPE}_i{INT_BITS}_f{FRAC_BITS}_rt{float(REFRESH_T)}{model_ext}"
     else:
         faulty_model_name = f"{model_basename}_{MODE}_s{SEED}_q{Q_TYPE}_i{INT_BITS}_f{FRAC_BITS}{model_ext}"
 
     faulty_model_rel_path = os.path.join(model_dir_path, faulty_model_name)
     faulty_model_path = os.path.join(WORKSPACE_ROOT, faulty_model_rel_path)
 
-    msxfi_script_path = os.path.join(WORKSPACE_ROOT, "run_msxfi.py")
+    msxfi_script_path = os.path.join(WORKSPACE_ROOT, "msxFI", "run_msxfi.py")
 
     print(f"Changing directory to WORKSPACE_ROOT: {WORKSPACE_ROOT}")
 
@@ -83,8 +83,8 @@ def main():
 
     if 'dram' in MODE:
         cmd_list.extend([
-            "--refresh_t", str(REFRESH_TIME),
-            "--sigma", str(SIGMA)
+            "--refresh_t", str(REFRESH_T),
+            "--vth_sigma", str(SIGMA)
         ])
 
     current_env = os.environ.copy()

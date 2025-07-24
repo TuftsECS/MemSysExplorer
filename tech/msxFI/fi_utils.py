@@ -14,13 +14,13 @@ from .data_transforms import *
 from . import fi_config
 import importlib.util
 
-def get_error_map(max_lvls_cell, refresh_time=None, vth_sigma=0.05, custom_vdd=None):
+def get_error_map(max_lvls_cell, refresh_t=None, vth_sigma=0.05, custom_vdd=None):
   """
   Retrieve the correct per-storage-cell error map for the configured NVM settings according to the maximum levels-per-cell used
   OR generate DRAM error map based on physical parameters
 
   :param max_lvls_cell: Across the storage settings for fault injection experiment, provide the maximum number of levels-per-cell required (max 16 for 4BPC for provided fault models)
-  :param refresh_time: Refresh time in seconds for DRAM models
+  :param refresh_t: Refresh time in seconds for DRAM models
   :param vth_sigma: Standard deviation of Vth in Volts for DRAM fault rate calculation
   :param custom_vdd: Custom vdd in volts for DRAM models (optional)
   """
@@ -42,7 +42,7 @@ def get_error_map(max_lvls_cell, refresh_time=None, vth_sigma=0.05, custom_vdd=N
     tech_node_data = dram_params_data[selected_size]
     dist_args = (tech_node_data, fi_config.temperature, selected_size)
     
-    fault_prob = fault_rate_gen(dist_args, refresh_time, vth_sigma, custom_vdd)
+    fault_prob = fault_rate_gen(dist_args, refresh_t, vth_sigma, custom_vdd)
     error_map = np.zeros(1, dtype=object)  # DRAM uses SLC
     error_map[0] = np.zeros((2, 2))
     error_map[0][0, 1] = 0.0  # 0->1 fault probability = 0
@@ -87,13 +87,13 @@ def get_error_map(max_lvls_cell, refresh_time=None, vth_sigma=0.05, custom_vdd=N
   return error_map
 
  
-def fault_rate_gen(dist_args, refresh_time=None, vth_sigma=0.05, custom_vdd=None):
+def fault_rate_gen(dist_args, refresh_t=None, vth_sigma=0.05, custom_vdd=None):
   """
   Randomly generate fault rate per experiment and storage cell config according to fault model
 
   :param dist_args: arguments describing the distribution of level-to-level faults (programmed level means and sdevs) for RRAM, 
                     or tuple of (tech_node_data, temperature, selected_size) for DRAM
-  :param refresh_time: refresh time in seconds for DRAM (required for DRAM models)
+  :param refresh_t: refresh time in seconds for DRAM (required for DRAM models)
   :param vth_sigma: standard deviation of Vth in Volts for DRAM fault rate calculation
   :param custom_vdd: custom vdd in volts for DRAM models (optional)
   """
@@ -112,8 +112,8 @@ def fault_rate_gen(dist_args, refresh_time=None, vth_sigma=0.05, custom_vdd=None
     q = 1.60217663e-19  # Elementary charge in C
 
     # DRAM fault rate calculation
-    if refresh_time is None:
-      raise ValueError("refresh_time is required for DRAM models")
+    if refresh_t is None:
+      raise ValueError("refresh_t is required for DRAM models")
     tech_node_data, temperature, selected_size = dist_args
     cap_F = tech_node_data['CellCap']
     vdd = custom_vdd if custom_vdd is not None else tech_node_data['vdd']
@@ -125,7 +125,7 @@ def fault_rate_gen(dist_args, refresh_time=None, vth_sigma=0.05, custom_vdd=None
     
     mu_Ioff = tech_node_data['Ioff'][selected_temp]
 
-    # Calculate Ioff_sigma from vth_sigma
+    # Calculate Ioff distribution parameters
     Vt = (kB * selected_temp) / q
     # When Vgs ↑ by SS mV → Isub ↑ 10× ⇒ Isub ∝ 10^((Vgs - Vth) / SS)
     # Isub ≈ I0 · exp[(Vgs - Vth) / (n·Vt)] → exponential dominates
@@ -134,11 +134,21 @@ def fault_rate_gen(dist_args, refresh_time=None, vth_sigma=0.05, custom_vdd=None
     n_factor = fi_config.SS * 1e-3 / (Vt * math.log(10))
     # Compute stddev of ln(Ioff) from threshold voltage variation
     sigma_ln_Ioff = vth_sigma / (n_factor * Vt)
-    # Convert to stddev of Ioff (log-normal to linear)
-    sigma_Ioff = mu_Ioff * math.sqrt(math.exp(sigma_ln_Ioff**2) - 1)
+    
+    # For log-normal distribution: if X ~ LogNormal(μ, σ), then ln(X) ~ Normal(μ, σ)
+    # We need μ and σ such that E[X] = mu_Ioff
+    # E[X] = exp(μ + σ²/2) → μ = ln(E[X]) - σ²/2
+    mu_ln_ioff = math.log(mu_Ioff) - (sigma_ln_Ioff**2) / 2
 
-    I_critical = (cap_F * vdd / 2) / refresh_time
-    cdf = 1.0 - NormalDist(mu=mu_Ioff, sigma=sigma_Ioff).cdf(I_critical)
+    # Calculate critical current and fault probability using log-normal CDF
+    I_critical = (cap_F * vdd / 2) / refresh_t
+    
+    # For log-normal distribution, P(X > I_critical) = P(ln(X) > ln(I_critical))
+    # where ln(X) ~ Normal(mu_ln_ioff, sigma_ln_Ioff)
+    ln_I_critical = math.log(I_critical)
+    
+    # P(Ioff > I_critical) using normal CDF in log space
+    cdf = 1.0 - NormalDist(mu=mu_ln_ioff, sigma=sigma_ln_Ioff).cdf(ln_I_critical)
     cdf = max(0, cdf)
     
     print(f"DRAM Params: Ioff={mu_Ioff:.2e}A, I_critical={I_critical:.2e}A, Bit-flip Rate (1->0): {cdf*100:.2f}%")
@@ -219,8 +229,6 @@ def inject_faults(weights, rep_conf=None, error_map=None):
       cell_error_map_index = int(np.log2(rep_conf[cell])) - 1
       cell_errors = error_map[cell_error_map_index]
 
-      total_num_faults = 0
-
       # Loop through all possible levels for cell
       for lvl in range(rep_conf[cell]):
         lvl_cell_addresses = np.where(weights[:, cell].cpu().numpy() == lvl)[0]
@@ -247,11 +255,15 @@ def inject_faults(weights, rep_conf=None, error_map=None):
             
             total_num_faults += num_lvl_faults
     
-    if (torch.sum(weights[:, cell] > max_level) != 0) or (torch.sum(weights[:, cell] < 0) != 0):
-      print("WARNING: Conversion error!")
+    if total_num_faults > 0:
+      print(f"Number of generated faults: {total_num_faults}")
+    else:
+      print(f"Number of generated faults: 0")
 
-    print(f"Number of generated faults: {total_num_faults}")
-    
+    if (torch.sum(weights[:, cell] > max_level) != 0) or (torch.sum(weights[:, cell] < 0) != 0):
+      print("ERROR: fault injection out of bound")
+      sys.exit(0)
+
     return weights
   
 def import_model_class(py_path):

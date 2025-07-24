@@ -630,8 +630,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			vth = 0.667;
 			phyGateLength = 0.044e-6;
 			capIdealGate = 8.93e-16;
-			capFringe = 0.0;
-			capJunction = 0.0;
+			capFringe = 6.51e-17;
 			capOx = 2.03e-2;
 			effectiveElectronMobility = 10.0e-4; // μ in cm^2/Vs
 			effectiveHoleMobility = 0.0;
@@ -639,7 +638,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			effectiveResistanceMultiplier = 5.0;
 			gm_oncurrent = 0.0; // dummy value only used for advanced nodes
 		
-			// NMOS ON-current, Unit: μA/μm approximately scaled with temperature
+			// NMOS ON-current, Unit: μA/μm 
 			currentOnNmos[0] = 155.6;
 			currentOnNmos[10] = 153.0;
 			currentOnNmos[20] = 150.1;
@@ -808,8 +807,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			vth = 0.667;
 			phyGateLength = 0.044e-6;
 			capIdealGate = 8.93e-16;
-			capFringe = 0.0;
-			capJunction = 0.0;
+			capFringe = 6.51e-17;
 			capOx = 2.03e-2;
 			effectiveElectronMobility = 10.0e-4; // μ in cm^2/Vs
 			effectiveHoleMobility = 0.0;
@@ -986,8 +984,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			vpp = vdd + vth;
 			phyGateLength = 0.020e-6;
 			capIdealGate = 1.18e-15;
-			capFringe = 1.0e-16;
-			capJunction = 0.0;
+			capFringe = 4.18e-17;
 			capOx = 5.90e-2;
 			effectiveElectronMobility = 78700e-4;
 			effectiveHoleMobility = 78700e-4;
@@ -1057,7 +1054,6 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			phyGateLength = 2.6e-8;
 			capIdealGate = 3.287e-10;
 			capFringe = 4.532e-10;
-			capJunction = 0;
 			capOx = 3.83e-2;
 			effectiveElectronMobility = 397.26e-4;
 			effectiveHoleMobility = 83.60e-4;
@@ -1118,7 +1114,6 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			phyGateLength = 2.6e-8; 	
 			capIdealGate = 5.245e-10;
 			capFringe = 8.004e-10;
-			capJunction = 0;
 			capOx = 2.65e-2;
 			effectiveElectronMobility = 731.29e-4;
 			effectiveHoleMobility = 111.22e-4;
@@ -1178,8 +1173,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			vpp = vdd + vth;
 			phyGateLength = 0.020e-6;
 			capIdealGate = 1.18e-15;
-			capFringe = 1.0e-16;
-			capJunction = 0.0;
+			capFringe = 4.18e-17;
 			capOx = 5.90e-2;
 			effectiveElectronMobility = 78700e-4;
 			effectiveHoleMobility = 78700e-4;
@@ -1788,7 +1782,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
     }
         // If FeFET, we scale ideal gate capacitance by standard factor across all tech nodes
         if (is_FeFET == true){
-	    cout << "Modify capIdealGate for FeFET:" << endl;
+	    	//cout << "Modify capIdealGate for FeFET:" << endl;
             capIdealGateFeFET = capIdealGate * 1.73;
         }
 

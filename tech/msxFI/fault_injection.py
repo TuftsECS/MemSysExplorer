@@ -9,7 +9,7 @@ from .fi_utils import *
 from . import fi_config
 from .data_transforms import *
 
-def mat_fi(mat, seed=0, int_bits=2, frac_bits=6, rep_conf = np.array([2, 2, 2, 2, 2, 2, 2, 2]), q_type = 'signed', encode = 'dense', refresh_time=None, vth_sigma=0.05, custom_vdd=None):
+def mat_fi(mat, seed=0, int_bits=2, frac_bits=6, rep_conf = np.array([2, 2, 2, 2, 2, 2, 2, 2]), q_type = 'signed', encode = 'dense', refresh_t=None, vth_sigma=0.05, custom_vdd=None):
   """ Single fault injection experiment for an input matrix with provided quantization, datatype, optional envocing per value to MLCs, and optional sparse encoding
   Or, if mem_model contains 'dram', simulates DRAM faults.
 
@@ -20,7 +20,7 @@ def mat_fi(mat, seed=0, int_bits=2, frac_bits=6, rep_conf = np.array([2, 2, 2, 2
   :param rep_conf: array of number of levels per cell used for storage per data value (SLC default would be np.array([2, 2, 2, 2, 2, 2, 2, 2]) for 8-bit datatype, for example). For DRAM, this will be configured to represent each bit in an SLC-like manner.
   :param q_type: datatype specification (e.g., signed or unsigned, or AdaptivFloat)
   :param encode: indicate whether the data should be mapped into NVM using a sparse encoding (e.g., bitmask) or in standard format (dense).
-  :param refresh_time: refresh time in seconds for DRAM models
+  :param refresh_t: refresh time in seconds for DRAM models
   :param vth_sigma: standard deviation of Vth in Volts for DRAM fault rate calculation
   :param custom_vdd: custom vdd in volts for DRAM models (optional)
   """
@@ -29,7 +29,7 @@ def mat_fi(mat, seed=0, int_bits=2, frac_bits=6, rep_conf = np.array([2, 2, 2, 2
   torch.manual_seed(seed)
 
   if 'dram' in fi_config.mem_model:
-    error_map = get_error_map(None, refresh_time=refresh_time, vth_sigma=vth_sigma, custom_vdd=custom_vdd)
+    error_map = get_error_map(None, refresh_t=refresh_t, vth_sigma=vth_sigma, custom_vdd=custom_vdd)
     shape = mat.shape
     flattened_mat = torch.from_numpy(mat).view(-1)
     if fi_config.pt_device == "cuda":
@@ -85,7 +85,7 @@ def mat_fi(mat, seed=0, int_bits=2, frac_bits=6, rep_conf = np.array([2, 2, 2, 2
 
     return mat
 
-def dnn_fi(model=None, model_def_path=None, model_path=None, seed=0, int_bits=2, frac_bits=6, rep_conf = np.array([2, 2, 2, 2, 2, 2, 2, 2]), q_type = 'signed', encode = 'dense', refresh_time=None, vth_sigma=0.05, custom_vdd=None):
+def dnn_fi(model=None, model_def_path=None, model_path=None, seed=0, int_bits=2, frac_bits=6, rep_conf = np.array([2, 2, 2, 2, 2, 2, 2, 2]), q_type = 'signed', encode = 'dense', refresh_t=None, vth_sigma=0.05, custom_vdd=None):
   """ Single fault injection experiment for an input DNN model.
   Supports NVM fault injection (original mode) or DRAM fault injection.
 
@@ -98,7 +98,7 @@ def dnn_fi(model=None, model_def_path=None, model_path=None, seed=0, int_bits=2,
   :param rep_conf: NVM: array of levels per cell. DRAM: bits are SLC.
   :param q_type: datatype specification ('signed', 'unsigned', 'afloat')
   :param encode: NVM: 'dense' or 'bitmask'.
-  :param refresh_time: refresh time in seconds for DRAM models
+  :param refresh_t: refresh time in seconds for DRAM models
   :param vth_sigma: standard deviation of Vth in Volts for DRAM fault rate calculation
   :param custom_vdd: custom vdd in volts for DRAM models (optional)
   """ 
@@ -117,7 +117,7 @@ def dnn_fi(model=None, model_def_path=None, model_path=None, seed=0, int_bits=2,
     print(f"Loaded DNN model from {model_path}. Model type: {type(model).__name__}")
 
   if 'dram' in fi_config.mem_model:
-    error_map = get_error_map(None, refresh_time=refresh_time, vth_sigma=vth_sigma, custom_vdd=custom_vdd)
+    error_map = get_error_map(None, refresh_t=refresh_t, vth_sigma=vth_sigma, custom_vdd=custom_vdd)
     for name, weights in model.named_parameters():
         if weights.requires_grad:
             w = weights.data
