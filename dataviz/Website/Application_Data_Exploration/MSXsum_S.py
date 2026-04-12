@@ -1,5 +1,5 @@
 # to run use bokeh serve --show RLEsum.py
-
+#end to end data
 import pandas as pd
 import numpy as np
 import markdown
@@ -84,8 +84,8 @@ def load_data():
     #all file names are listed here
     #if you would like to use your own files, just replace the name and file names to what you are using
     paths = [
-        '../CSV_Files/sniper_capacity_tech_sweep_results.csv',   # SRAM, MRAM, RRAM, FeFET
-        '../CSV_Files/FeFET_sniper_capacity_sweep_results.csv'  # old FeFET
+        '../CSV_Files/MSX_Data/sniper_capacity_tech_sweep_results.csv',   # SRAM, MRAM, RRAM, FeFET
+        '../CSV_Files/MSX_Data/FeFET_sniper_capacity_sweep_results.csv'  # old FeFET
     ]
     
     dfs = []
