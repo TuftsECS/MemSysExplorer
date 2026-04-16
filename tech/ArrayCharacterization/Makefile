@@ -12,7 +12,7 @@ RM := rm -f
 CXXFLAGS := -g -Wall
 # link options
 LDFLAGS := -g 
-# link librarires
+# link libraries
 LDLIBS :=
 
 # construct list of .cpp and their corresponding .o and .d files
