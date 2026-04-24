@@ -39,10 +39,10 @@
 #include "global.h"
 #include "formula.h"
 #include "macros.h"
+#include "yaml-cpp/yaml.h"
 
 #include <iostream>
 #include <fstream>
-#include <yaml-cpp/yaml.h>
 
 using namespace std;
 

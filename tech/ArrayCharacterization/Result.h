@@ -41,7 +41,7 @@
 #include "BankWithHtree.h"
 #include "BankWithoutHtree.h"
 #include "Wire.h"
-#include <yaml-cpp/yaml.h>
+#include "yaml-cpp/yaml.h"
 
 class Result {
 public:

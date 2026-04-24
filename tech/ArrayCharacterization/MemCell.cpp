@@ -39,8 +39,8 @@
 #include "formula.h"
 #include "global.h"
 #include "macros.h"
+#include "yaml-cpp/yaml.h"
 #include <math.h>
-#include <yaml-cpp/yaml.h>
 
 MemCell::MemCell() {
 	// TODO Auto-generated constructor stub

@@ -38,10 +38,10 @@
 #include "InputParameter.h"
 #include "global.h"
 #include "constant.h"
+#include "yaml-cpp/yaml.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <yaml-cpp/yaml.h>
 
 InputParameter::InputParameter() {
 	// TODO Auto-generated constructor stub
