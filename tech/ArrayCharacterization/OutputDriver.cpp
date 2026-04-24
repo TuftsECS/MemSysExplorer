@@ -62,10 +62,10 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 	areaOptimizationLevel = _areaOptimizationLevel;
 	minDriverCurrent = _minDriverCurrent;
 
-	double minNMOSDriverWidth = minDriverCurrent / tech->currentOnNmos[inputParameter->temperature - 300];
-	minNMOSDriverWidth = MAX(MIN_NMOS_SIZE * tech->featureSize, minNMOSDriverWidth);
+	double minNMOSDriverWidth = minDriverCurrent / gTech->currentOnNmos[gInputParameter->temperature - 300];
+	minNMOSDriverWidth = MAX(MIN_NMOS_SIZE * gTech->featureSize, minNMOSDriverWidth);
 
-	if (minNMOSDriverWidth > inputParameter->maxNmosSize * tech->featureSize) {
+	if (minNMOSDriverWidth > gInputParameter->maxNmosSize * gTech->featureSize) {
 		invalid = true;
 		return;
 	}
@@ -90,15 +90,15 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 		double f = pow(F, 1.0 / (optimalNumStage + 1));	/* Logic effort per stage */
 		double inputCapLast = outputCap / f;
 
-		widthNMOS[optimalNumStage-1] = MAX(MIN_NMOS_SIZE * tech->featureSize,
-				inputCapLast / CalculateGateCap(1/*meter*/, *tech) / (1.0 + tech->pnSizeRatio));
+		widthNMOS[optimalNumStage-1] = MAX(MIN_NMOS_SIZE * gTech->featureSize,
+				inputCapLast / CalculateGateCap(1/*meter*/, *gTech) / (1.0 + gTech->pnSizeRatio));
 
-		if (widthNMOS[optimalNumStage-1] > inputParameter->maxNmosSize * tech->featureSize) {
+		if (widthNMOS[optimalNumStage-1] > gInputParameter->maxNmosSize * gTech->featureSize) {
 			if (WARNING)
 				cout << "[WARNING] Exceed maximum NMOS size!" << endl;
-			widthNMOS[optimalNumStage-1] = inputParameter->maxNmosSize * tech->featureSize;
+			widthNMOS[optimalNumStage-1] = gInputParameter->maxNmosSize * gTech->featureSize;
 			/* re-Calculate the logic effort */
-			double capLastStage = CalculateGateCap((1 + tech->pnSizeRatio) * inputParameter->maxNmosSize * tech->featureSize, *tech);
+			double capLastStage = CalculateGateCap((1 + gTech->pnSizeRatio) * gInputParameter->maxNmosSize * gTech->featureSize, *gTech);
 			F = logicEffort * capLastStage / inputCap;
 			f =	pow(F, 1.0 / (optimalNumStage));
 		}
@@ -107,22 +107,22 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 			/* the last level Inv can not provide minimum current so that the Inv chain can't only decided by Logic Effort */
 			areaOptimizationLevel = latency_area_trade_off;
 		} else {
-			widthPMOS[optimalNumStage-1] = widthNMOS[optimalNumStage-1] * tech->pnSizeRatio;
+			widthPMOS[optimalNumStage-1] = widthNMOS[optimalNumStage-1] * gTech->pnSizeRatio;
 
 			for (int i = optimalNumStage-2; i >= 0; i--) {
 				widthNMOS[i] = widthNMOS[i+1] / f;
-				if (widthNMOS[i] < MIN_NMOS_SIZE * tech->featureSize) {
+				if (widthNMOS[i] < MIN_NMOS_SIZE * gTech->featureSize) {
 					if (WARNING)
 						cout << "[WARNING] Exceed minimum NMOS size!" << endl;
-					widthNMOS[i] = MIN_NMOS_SIZE * tech->featureSize;
+					widthNMOS[i] = MIN_NMOS_SIZE * gTech->featureSize;
 				}
-				widthPMOS[i] = widthNMOS[i] * tech->pnSizeRatio;
+				widthPMOS[i] = widthNMOS[i] * gTech->pnSizeRatio;
 			}
 		}
 	}
 
 	if (areaOptimizationLevel == latency_area_trade_off){
-		double newOutputCap = CalculateGateCap(minNMOSDriverWidth, *tech) * (1.0 + tech->pnSizeRatio);
+		double newOutputCap = CalculateGateCap(minNMOSDriverWidth, *gTech) * (1.0 + gTech->pnSizeRatio);
 		double F = MAX(1, logicEffort * newOutputCap / inputCap);	/* Total logic effort */
 		optimalNumStage = MAX(0, (int)(log(F) / log(OPT_F) + 0.5) - 1);
 
@@ -138,28 +138,28 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 		numStage = optimalNumStage + 1;
 
 		widthNMOS[optimalNumStage] = minNMOSDriverWidth;
-		widthPMOS[optimalNumStage] = widthNMOS[optimalNumStage] * tech->pnSizeRatio;
+		widthPMOS[optimalNumStage] = widthNMOS[optimalNumStage] * gTech->pnSizeRatio;
 
 		double f = pow(F, 1.0 / (optimalNumStage + 1));	/* Logic effort per stage */
 
 		for (int i = optimalNumStage - 1; i >= 0; i--) {
 			widthNMOS[i] = widthNMOS[i+1] / f;
-			if (widthNMOS[i] < MIN_NMOS_SIZE * tech->featureSize) {
+			if (widthNMOS[i] < MIN_NMOS_SIZE * gTech->featureSize) {
 				if (WARNING)
 					cout << "[WARNING] Exceed minimum NMOS size!" << endl;
-				widthNMOS[i] = MIN_NMOS_SIZE * tech->featureSize;
+				widthNMOS[i] = MIN_NMOS_SIZE * gTech->featureSize;
 			}
-			widthPMOS[i] = widthNMOS[i] * tech->pnSizeRatio;
+			widthPMOS[i] = widthNMOS[i] * gTech->pnSizeRatio;
 		}
 	} else if (areaOptimizationLevel == area_first) {
 		optimalNumStage = 1;
 		numStage = 1;
-		widthNMOS[optimalNumStage - 1] = MAX(MIN_NMOS_SIZE * tech->featureSize, minNMOSDriverWidth);
-		if (widthNMOS[optimalNumStage - 1] > AREA_OPT_CONSTRAIN * inputParameter->maxNmosSize * tech->featureSize) {
+		widthNMOS[optimalNumStage - 1] = MAX(MIN_NMOS_SIZE * gTech->featureSize, minNMOSDriverWidth);
+		if (widthNMOS[optimalNumStage - 1] > AREA_OPT_CONSTRAIN * gInputParameter->maxNmosSize * gTech->featureSize) {
 			invalid = true;
 			return;
 		}
-		widthPMOS[optimalNumStage - 1] = widthNMOS[optimalNumStage - 1] * tech->pnSizeRatio;
+		widthPMOS[optimalNumStage - 1] = widthNMOS[optimalNumStage - 1] * gTech->pnSizeRatio;
 	}
 
 	/* Restore the original buffer design style */
@@ -178,7 +178,7 @@ void OutputDriver::CalculateArea() {
 		double totalWidth = 0;
 		double h, w;
 		for (int i = 0; i < numStage; i++) {
-			CalculateGateArea(INV, 1, widthNMOS[i], widthPMOS[i], tech->featureSize*40, *tech, &h, &w);
+			CalculateGateArea(INV, 1, widthNMOS[i], widthPMOS[i], gTech->featureSize*40, *gTech, &h, &w);
 			totalHeight = MAX(totalHeight, h);
 			totalWidth += w;
 		}
@@ -197,7 +197,7 @@ void OutputDriver::CalculateRC() {
 		capInput[0] = 0;
 	} else {
 		for (int i = 0; i < numStage; i++) {
-			CalculateGateCapacitance(INV, 1, widthNMOS[i], widthPMOS[i], tech->featureSize * MAX_TRANSISTOR_HEIGHT, *tech, &(capInput[i]), &(capOutput[i]));
+			CalculateGateCapacitance(INV, 1, widthNMOS[i], widthPMOS[i], gTech->featureSize * MAX_TRANSISTOR_HEIGHT, *gTech, &(capInput[i]), &(capOutput[i]));
 		}
 	}
 }
@@ -217,19 +217,19 @@ void OutputDriver::CalculateLatency(double _rampInput) {
 		double temp;
 		readLatency = 0;
 		for (int i = 0; i < numStage - 1; i++) {
-			resPullDown = CalculateOnResistance(widthNMOS[i], NMOS, inputParameter->temperature, *tech);
+			resPullDown = CalculateOnResistance(widthNMOS[i], NMOS, gInputParameter->temperature, *gTech);
 			capLoad = capOutput[i] + capInput[i+1];
 			tr = resPullDown * capLoad;
-			gm = CalculateTransconductance(widthNMOS[i], NMOS, *tech);
+			gm = CalculateTransconductance(widthNMOS[i], NMOS, *gTech);
 			beta = 1 / (resPullDown * gm);
 			readLatency += horowitz(tr, beta, rampInput, &temp);
 			rampInput = temp;	/* for next stage */
 		}
 		/* Last level inverter */
-		resPullDown = CalculateOnResistance(widthNMOS[numStage-1], NMOS, inputParameter->temperature, *tech);
+		resPullDown = CalculateOnResistance(widthNMOS[numStage-1], NMOS, gInputParameter->temperature, *gTech);
 		capLoad = capOutput[numStage-1] + outputCap;
 		tr = resPullDown * capLoad + outputCap * outputRes / 2;
-		gm = CalculateTransconductance(widthNMOS[numStage-1], NMOS, *tech);
+		gm = CalculateTransconductance(widthNMOS[numStage-1], NMOS, *gTech);
 		beta = 1 / (resPullDown * gm);
 		readLatency += horowitz(tr, beta, rampInput, &rampOutput);
 		rampInput = _rampInput;
@@ -246,18 +246,18 @@ void OutputDriver::CalculatePower() {
 		/* Leakage power */
 		leakage = 0;
 		for (int i = 0; i < numStage; i++) {
-			leakage += CalculateGateLeakage(INV, 1, widthNMOS[i], widthPMOS[i], inputParameter->temperature, *tech)
-					* tech->vdd;
+			leakage += CalculateGateLeakage(INV, 1, widthNMOS[i], widthPMOS[i], gInputParameter->temperature, *gTech)
+					* gTech->vdd;
 		}
 		/* Dynamic energy */
 		readDynamicEnergy = 0;
 		double capLoad;
 		for (int i = 0; i < numStage - 1; i++) {
 			capLoad = capOutput[i] + capInput[i+1];
-			readDynamicEnergy += capLoad * tech->vdd * tech->vdd;
+			readDynamicEnergy += capLoad * gTech->vdd * gTech->vdd;
 		}
 		capLoad = capOutput[numStage-1] + outputCap;	/* outputCap here means the final load capacitance */
-		readDynamicEnergy += capLoad * tech->vdd * tech->vdd;
+		readDynamicEnergy += capLoad * gTech->vdd * gTech->vdd;
 		writeDynamicEnergy = readDynamicEnergy;
 	}
 }

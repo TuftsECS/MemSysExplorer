@@ -435,7 +435,7 @@ void BankWithHtree::Initialize(int _numRowMat, int _numColumnMat, long long _cap
 		int numWayPerRow = numWay / numRowPerSet;	/* At least 1, otherwise it is invalid, and returned already */
 		if (numWayPerRow > 1) {		/* multiple ways per row, needs extra mux level */
 			/* Do mux level recalculation to contain the multiple ways */
-			if (cell->memCellType == DRAM || cell->memCellType == eDRAM || cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
+			if (gCell->memCellType == DRAM || gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
 				/* for DRAM, mux before sense amp has to be 1, only mux output1 and mux output2 can be used */
 				int numWayPerRowInLog = (int)(log2((double)numWayPerRow) + 0.1);
 				int extraMuxOutputLev2 = (int)pow(2, numWayPerRowInLog / 2);
@@ -495,13 +495,13 @@ void BankWithHtree::CalculateArea() {
 		/* Add wire area */
 		int numWireSharingWidth;
 		double effectivePitch;
-		if (globalWire->wireRepeaterType == repeated_none) {
+		if (gGlobalWire->wireRepeaterType == repeated_none) {
 			numWireSharingWidth = 1;
 			effectivePitch = 0;		/* assume that the wire is built on another metal layer, there does not cause silicon area */
-			//effectivePitch = globalWire->wirePitch;
+			//effectivePitch = gGlobalWire->wirePitch;
 		} else {
-			numWireSharingWidth = (int)floor(globalWire->repeaterSpacing / globalWire->repeaterHeight);
-			effectivePitch = globalWire->repeatedWirePitch;
+			numWireSharingWidth = (int)floor(gGlobalWire->repeaterSpacing / gGlobalWire->repeaterHeight);
+			effectivePitch = gGlobalWire->repeatedWirePitch;
 		}
 
 		for (int i = 0; i < levelHorizontal; i++) {
@@ -618,11 +618,11 @@ void BankWithHtree::CalculateLatencyAndPower() {
 		resetDynamicEnergy = mat.resetDynamicEnergy * numActiveMatPerRow * numActiveMatPerColumn;
 		setDynamicEnergy = mat.setDynamicEnergy * numActiveMatPerRow * numActiveMatPerColumn;
 
-		if (inputParameter->designTarget == cache && inputParameter->cacheAccessMode == fast_access_mode)
-			beta = inputParameter->associativity;
+		if (gInputParameter->designTarget == cache && gInputParameter->cacheAccessMode == fast_access_mode)
+			beta = gInputParameter->associativity;
 
 		for (int i = 0; i < levelHorizontal; i++) {
-			globalWire->CalculateLatencyAndPower(lengthHorizontalWire[i], &latency, &energy, &leakageWire);
+			gGlobalWire->CalculateLatencyAndPower(lengthHorizontalWire[i], &latency, &energy, &leakageWire);
 			readLatency += latency * 2;						/* 2 due to in/out */
 			writeLatency += latency;						/* only in */
 			resetLatency += latency;
@@ -643,7 +643,7 @@ void BankWithHtree::CalculateLatencyAndPower() {
 					numHorizontalDataDistributeBitToRoute[i] + numHorizontalDataBroadcastBitToRoute[i]);
 		}
 		for (int i = 0; i < levelVertical; i++) {
-			globalWire->CalculateLatencyAndPower(lengthVerticalWire[i], &latency, &energy, &leakageWire);
+			gGlobalWire->CalculateLatencyAndPower(lengthVerticalWire[i], &latency, &energy, &leakageWire);
 			readLatency += latency * 2;						/* 2 due to in/out */
 			writeLatency += latency;						/* only in */
 			resetLatency += latency;
@@ -662,8 +662,8 @@ void BankWithHtree::CalculateLatencyAndPower() {
 			leakage += leakageWire * numSumVerticalWire[i] * (numVerticalAddressBitToRoute[i] +
 					numVerticalDataDistributeBitToRoute[i] + numVerticalDataBroadcastBitToRoute[i]); 
 		}
-		if (cell->memCellType == eDRAM || cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
-			if (refreshLatency > cell->retentionTime) {
+		if (gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
+			if (refreshLatency > gCell->retentionTime) {
 				invalid = true;
 			}
 		}

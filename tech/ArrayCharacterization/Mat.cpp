@@ -147,13 +147,13 @@ void Mat::Initialize(int _numRowSubarray, int _numColumnSubarray, int _numAddres
 		numAddressRowPredecoderBlock2 = numAddressRowPredecoderBlock1 / 2;
 		numAddressRowPredecoderBlock1 = numAddressRowPredecoderBlock1 - numAddressRowPredecoderBlock2;
 	}
-	double capLoadRowPredecoder = subarray.height * localWire->capWirePerUnit * numRowSubarray / 2
-			+ subarray.width * localWire->capWirePerUnit * numColumnSubarray / 2;	/* Assume the predecoder is at the center */
+	double capLoadRowPredecoder = subarray.height * gLocalWire->capWirePerUnit * numRowSubarray / 2
+			+ subarray.width * gLocalWire->capWirePerUnit * numColumnSubarray / 2;	/* Assume the predecoder is at the center */
 	rowPredecoderBlock1.Initialize(numAddressRowPredecoderBlock1, capLoadRowPredecoder, 0 /* TO-DO */);
 	rowPredecoderBlock2.Initialize(numAddressRowPredecoderBlock2, capLoadRowPredecoder, 0 /* TO-DO */);
 
-	double capLoadMuxPredecoder = MAX(0, subarray.height * localWire->capWirePerUnit * (numRowSubarray - 2) / 2)
-			+ MAX(0, subarray.width * localWire->capWirePerUnit * (numColumnSubarray - 2) / 2);
+	double capLoadMuxPredecoder = MAX(0, subarray.height * gLocalWire->capWirePerUnit * (numRowSubarray - 2) / 2)
+			+ MAX(0, subarray.width * gLocalWire->capWirePerUnit * (numColumnSubarray - 2) / 2);
 	int numAddressBitlineMuxPredecoderBlock1 = (int)(log2(muxSenseAmp) + 0.1);
 	int numAddressBitlineMuxPredecoderBlock2 = 0;
 	if (numAddressBitlineMuxPredecoderBlock1 > 3) {		/* Block 2 is needed */

@@ -67,12 +67,12 @@ void Buffer::CalculateArea() {
 	} else if (invalid) {
 		height = width = area = 1e41;
 	} else {
-		if (tech->featureSize >= 44e-9) {       /* 45nm */
+		if (gTech->featureSize >= 44e-9) {       /* 45nm */
 		    cellheight = 1.52e-6;
 		    cellwidth = 1.54375e-6;
 		    xorheight = 2.166e-6;
 		}
-		else if (tech->featureSize >= 31e-9) {  /* 32nm */
+		else if (gTech->featureSize >= 31e-9) {  /* 32nm */
 		    /* scaled from 45nm */
 			cellheight = 1.081e-6;
 			cellwidth = 1.098e-6;
@@ -108,12 +108,12 @@ void Buffer::CalculateLatency() {
 	if (!initialized) {
 		cout << "[Buffer] Error: Require initialization first!" << endl;
 	} else {
-		if (tech->featureSize >= 44e-9) {       /* 45nm */
+		if (gTech->featureSize >= 44e-9) {       /* 45nm */
 		    readLatency = 0.043e-9;
 		    writeLatency = readLatency;
 		    xorLatency = 0.381e-9;
 		}
-		else if (tech->featureSize >= 31e-9) {  /* 32nm */
+		else if (gTech->featureSize >= 31e-9) {  /* 32nm */
 		    /* copied from 45nm, need to figure out */
 		    readLatency = 0.043e-9;
 		    writeLatency = readLatency;
@@ -137,14 +137,14 @@ void Buffer::CalculatePower() {
 		readDynamicEnergy = writeDynamicEnergy = leakage = 1e41;
 		xorDynamicEnergy = xorLeakage = 1e41;
 	} else {
-		if (tech->featureSize >= 44e-9) {       /* 45nm */
+		if (gTech->featureSize >= 44e-9) {       /* 45nm */
 		    readDynamicEnergy = 0.0002e-18;
 		    writeDynamicEnergy = readDynamicEnergy;
 		    leakage = 19.7536e-9;
 		    xorDynamicEnergy = 0.0034e-18;
 		    xorLeakage = 45.1492e-9;
 		}
-		else if (tech->featureSize >= 31e-9) {  /* 32nm */
+		else if (gTech->featureSize >= 31e-9) {  /* 32nm */
 		    /* copied from 45nm, need to figure out */
 		    readDynamicEnergy = 0.0002e-18;
 		    writeDynamicEnergy = readDynamicEnergy;

@@ -789,7 +789,7 @@ void InputParameter::PrintInputParameter() {
 		else
 			cout << endl;
 	}
-	if (designTarget == RAM_chip && (cell->memCellType == SLCNAND || cell->memCellType == MLCNAND)) {
+	if (designTarget == RAM_chip && (gCell->memCellType == SLCNAND || gCell->memCellType == MLCNAND)) {
 		cout << "Page Size  : " << pageSize / 8 << "Bytes" << endl;
 		cout << "Block Size : " << flashBlockSize / 8 / 1024 << "KB" << endl;
 	}
