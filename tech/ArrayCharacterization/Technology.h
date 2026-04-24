@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef TECHNOLOGY_H_
-#define TECHNOLOGY_H_
+#ifndef MSE_TECHNOLOGY_H
+#define MSE_TECHNOLOGY_H
 
 #include <iostream>
 #include "typedef.h"
@@ -104,4 +104,4 @@ public:
 	double cap_draintotal = 0;
 };
 
-#endif /* TECHNOLOGY_H_ */
+#endif /* MSE_TECHNOLOGY_H */

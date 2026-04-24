@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef PRECHARGER_H_
-#define PRECHARGER_H_
+#ifndef MSE_PRECHARGER_H
+#define MSE_PRECHARGER_H
 
 #include "FunctionUnit.h"
 #include "OutputDriver.h"
@@ -72,4 +72,4 @@ public:
 
 };
 
-#endif /* PRECHARGER_H_ */
+#endif /* MSE_PRECHARGER_H */

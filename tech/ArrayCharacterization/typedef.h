@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef TYPEDEF_H_
-#define TYPEDEF_H_
+#ifndef MSE_TYPEDEF_H
+#define MSE_TYPEDEF_H
 
 enum MemCellType
 {
@@ -157,4 +157,4 @@ enum CacheAccessMode
 	fast_access_mode		/* data and tag access happen in parallel */
 };
 
-#endif /* TYPEDEF_H_ */
+#endif /* MSE_TYPEDEF_H */

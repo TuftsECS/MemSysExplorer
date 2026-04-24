@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MAT_H_
-#define MAT_H_
+#ifndef MSE_MAT_H
+#define MSE_MAT_H
 
 #include "FunctionUnit.h"
 #include "SubArray.h"
@@ -95,4 +95,4 @@ public:
 	Comparator comparator;
 };
 
-#endif /* MAT_H_ */
+#endif /* MSE_MAT_H */

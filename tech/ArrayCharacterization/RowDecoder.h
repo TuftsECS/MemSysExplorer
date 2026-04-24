@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef ROWDECODER_H_
-#define ROWDECODER_H_
+#ifndef MSE_ROWDECODER_H
+#define MSE_ROWDECODER_H
 
 #include "FunctionUnit.h"
 #include "OutputDriver.h"
@@ -74,4 +74,4 @@ public:
 	double rampInput, rampOutput;
 };
 
-#endif /* ROWDECODER_H_ */
+#endif /* MSE_ROWDECODER_H */

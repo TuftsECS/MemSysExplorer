@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef INPUTPARAMETER_H_
-#define INPUTPARAMETER_H_
+#ifndef MSE_INPUTPARAMETER_H
+#define MSE_INPUTPARAMETER_H
 
 #include <iostream>
 #include <string>
@@ -136,4 +136,4 @@ public:
 	int maxIsGlobalWireLowSwing;		/* This one is actually boolean */
 };
 
-#endif /* INPUTPARAMETER_H_ */
+#endif /* MSE_INPUTPARAMETER_H */

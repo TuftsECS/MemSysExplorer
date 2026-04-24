@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MUX_H_
-#define MUX_H_
+#ifndef MSE_MUX_H
+#define MSE_MUX_H
 
 #include "FunctionUnit.h"
 #include "constant.h"
@@ -71,4 +71,4 @@ public:
 	double rampInput, rampOutput;
 };
 
-#endif /* MUX_H_ */
+#endif /* MSE_MUX_H */

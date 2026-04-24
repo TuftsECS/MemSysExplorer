@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MACROS_H_
-#define MACROS_H_
+#ifndef MSE_MACROS_H
+#define MSE_MACROS_H
 
 
 #define INITIAL_BASIC_WIRE { \
@@ -335,4 +335,4 @@
 	<< \
 	((x) < 1e-12 ? "nm^2" : (x) < 1e-6 ? "um^2" : (x) < 1 ? "mm^2" : "m^2")
 
-#endif /* MACROS_H_ */
+#endif /* MSE_MACROS_H */

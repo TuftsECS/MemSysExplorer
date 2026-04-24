@@ -34,8 +34,8 @@
 *******************************************************************************/
 
 
-#ifndef BUFFER_H_
-#define BUFFER_H_
+#ifndef MSE_BUFFER_H
+#define MSE_BUFFER_H
 
 #include "FunctionUnit.h"
 
@@ -63,4 +63,4 @@ public:
 	double xorLeakage;       /* XOR leakage energy */
 };
 
-#endif /* Buffer_H_ */
+#endif /* MSE_Buffer_H */

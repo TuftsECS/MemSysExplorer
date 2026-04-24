@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef FUNCTIONUNIT_H_
-#define FUNCTIONUNIT_H_
+#ifndef MSE_FUNCTIONUNIT_H
+#define MSE_FUNCTIONUNIT_H
 
 #include <iostream>
 
@@ -66,4 +66,4 @@ public:
     double refreshDynamicEnergy;                    /* Unit: J */
 };
 
-#endif /* FUNCTIONUNIT_H_ */
+#endif /* MSE_FUNCTIONUNIT_H */

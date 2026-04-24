@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef WIRE_H_
-#define WIRE_H_
+#ifndef MSE_WIRE_H
+#define MSE_WIRE_H
 
 #include <iostream>
 #include "typedef.h"
@@ -90,4 +90,4 @@ public:
 	SenseAmp * senseAmp;
 };
 
-#endif /* WIRE_H_ */
+#endif /* MSE_WIRE_H */

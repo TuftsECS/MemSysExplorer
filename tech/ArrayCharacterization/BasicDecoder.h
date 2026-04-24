@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef BASICDECODER_H_
-#define BASICDECODER_H_
+#ifndef MSE_BASICDECODER_H
+#define MSE_BASICDECODER_H
 
 #include "FunctionUnit.h"
 #include "OutputDriver.h"
@@ -69,4 +69,4 @@ public:
 
 };
 
-#endif /* BASICDECODER_H_ */
+#endif /* MSE_BASICDECODER_H */

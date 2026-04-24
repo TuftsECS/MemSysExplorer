@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef SENSEAMP_H_
-#define SENSEAMP_H_
+#ifndef MSE_SENSEAMP_H
+#define MSE_SENSEAMP_H
 
 #include "FunctionUnit.h"
 
@@ -67,4 +67,4 @@ public:
         int numF;              /* If MLC CTT, what is num input fingers to calculate SA area/latency */
 };
 
-#endif /* SENSEAMP_H_ */
+#endif /* MSE_SENSEAMP_H */

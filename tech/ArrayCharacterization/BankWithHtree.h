@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef BANKWITHHTREE_H_
-#define BANKWITHHTREE_H_
+#ifndef MSE_BANKWITHHTREE_H
+#define MSE_BANKWITHHTREE_H
 
 #include "Bank.h"
 
@@ -77,4 +77,4 @@ public:
 	double * lengthVerticalWire;	/* The length of vertical wires on level x, Unit: m */
 };
 
-#endif /* BANKWITHHTREE_H_ */
+#endif /* MSE_BANKWITHHTREE_H */

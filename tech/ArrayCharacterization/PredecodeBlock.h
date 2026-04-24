@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef PREDECODEBLOCK_H_
-#define PREDECODEBLOCK_H_
+#ifndef MSE_PREDECODEBLOCK_H
+#define MSE_PREDECODEBLOCK_H
 
 #include "FunctionUnit.h"
 #include "RowDecoder.h"
@@ -81,4 +81,4 @@ public:
 	/* TO-DO: Predecoder so far does not take OptPriority input because the output driver is already quite fixed in this module */
 };
 
-#endif /* PREDECODEBLOCK_H_ */
+#endif /* MSE_PREDECODEBLOCK_H */

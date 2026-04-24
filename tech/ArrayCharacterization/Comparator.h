@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef COMPARATOR_H_
-#define COMPARATOR_H_
+#ifndef MSE_COMPARATOR_H
+#define MSE_COMPARATOR_H
 
 #include "FunctionUnit.h"
 #include "constant.h"
@@ -69,4 +69,4 @@ public:
 	double rampInput, rampOutput;
 };
 
-#endif /* COMPARATOR_H_ */
+#endif /* MSE_COMPARATOR_H */

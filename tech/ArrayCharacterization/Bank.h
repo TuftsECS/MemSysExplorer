@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef BANK_H_
-#define BANK_H_
+#ifndef MSE_BANK_H
+#define MSE_BANK_H
 
 #include "FunctionUnit.h"
 #include "Mat.h"
@@ -85,4 +85,4 @@ public:
 	Mat mat;
 };
 
-#endif /* BANK_H_ */
+#endif /* MSE_BANK_H */

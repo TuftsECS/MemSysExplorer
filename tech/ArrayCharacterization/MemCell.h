@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MEMCELL_H_
-#define MEMCELL_H_
+#ifndef MSE_MEMCELL_H
+#define MSE_MEMCELL_H
 
 #include <iostream>
 #include <stdio.h>
@@ -131,4 +131,4 @@ public:
 	double maxStorageNodeDrop;
 };
 
-#endif /* MEMCELL_H_ */
+#endif /* MSE_MEMCELL_H */

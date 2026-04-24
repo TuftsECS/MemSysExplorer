@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef SUBARRAY_H_
-#define SUBARRAY_H_
+#ifndef MSE_SUBARRAY_H
+#define MSE_SUBARRAY_H
 
 #include "FunctionUnit.h"
 #include "RowDecoder.h"
@@ -119,4 +119,4 @@ public:
 	Buffer        subarrayBuffer;
 };
 
-#endif /* SUBARRAY_H_ */
+#endif /* MSE_SUBARRAY_H */

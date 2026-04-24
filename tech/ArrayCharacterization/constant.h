@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef CONSTANT_H_
-#define CONSTANT_H_
+#ifndef MSE_CONSTANT_H
+#define MSE_CONSTANT_H
 
 #define WARNING	0
 
@@ -109,4 +109,4 @@
 
 #define TOTAL_ADDRESS_BIT	48
 
-#endif /* CONSTANT_H_ */
+#endif /* MSE_CONSTANT_H */

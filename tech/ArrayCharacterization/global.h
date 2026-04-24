@@ -34,8 +34,8 @@
 *                     Website: http://www.cse.psu.edu/~xydong/ )
 *******************************************************************************/
 
-#ifndef GLOBAL_H_
-#define GLOBAL_H_
+#ifndef MSE_GLOBAL_H
+#define MSE_GLOBAL_H
 
 #include "InputParameter.h"
 #include "Technology.h"
