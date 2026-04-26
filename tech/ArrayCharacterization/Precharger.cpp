@@ -160,7 +160,7 @@ void Precharger::PrintProperty() {
 	FunctionUnit::PrintProperty();
 }
 
-Precharger & Precharger::operator=(const Precharger &rhs) {
+Precharger& Precharger::operator=(const Precharger& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

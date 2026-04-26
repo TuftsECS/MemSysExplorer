@@ -470,7 +470,7 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
     }
 }
 
-BankWithoutHtree & BankWithoutHtree::operator=(const BankWithoutHtree &rhs) {
+BankWithoutHtree& BankWithoutHtree::operator=(const BankWithoutHtree& rhs) {
 	Bank::operator=(rhs);
 	numAddressBit = rhs.numAddressBit;
 	numAddressBitRouteToMat = rhs.numAddressBitRouteToMat;

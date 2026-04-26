@@ -351,7 +351,7 @@ void Mat::PrintProperty() {
 }
 
 
-Mat & Mat::operator=(const Mat &rhs) {
+Mat& Mat::operator=(const Mat& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

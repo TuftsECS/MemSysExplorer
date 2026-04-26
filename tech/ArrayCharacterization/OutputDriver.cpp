@@ -268,7 +268,7 @@ void OutputDriver::PrintProperty() {
 	cout << "Number of inverter stage: " << numStage << endl;
 }
 
-OutputDriver & OutputDriver::operator=(const OutputDriver &rhs) {
+OutputDriver& OutputDriver::operator=(const OutputDriver& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

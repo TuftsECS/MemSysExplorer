@@ -54,7 +54,7 @@ double CalculateGateArea(
 		int gateType, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
-		double *height, double *width);
+		double* height, double* width);
 
 /* calculate date capacitance for FeFET cells */
 double CalculateFeFETGateCap(double width, Technology tech);
@@ -64,7 +64,7 @@ void CalculateGateCapacitance(
 		int gateType, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
-		double *capInput, double *capOutput);
+		double* capInput, double* capOutput);
 
 double CalculateDrainCap(
 		double width, int type,
@@ -84,7 +84,7 @@ double CalculateOnResistance(double width, int type, double temperature, Technol
 
 double CalculateTransconductance(double width, int type, Technology tech);
 
-double horowitz(double tr, double beta, double rampInput, double *rampOutput);
+double horowitz(double tr, double beta, double rampInput, double* rampOutput);
 
 double CalculateWireResistance(
 		double resistivity, double wireWidth, double wireThickness,

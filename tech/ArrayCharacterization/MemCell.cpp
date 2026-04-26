@@ -101,7 +101,7 @@ MemCell::~MemCell() {
 	// TODO Auto-generated destructor stub
 }
 
-void MemCell::ReadCellFromFile(const string & inputFile)
+void MemCell::ReadCellFromFile(const string& inputFile)
 {
     try {
         YAML::Node config = YAML::LoadFile(inputFile);
@@ -455,8 +455,8 @@ void MemCell::ApplyPVT() {
 		// Calculate retention time if not given
 		double leakageCurrent = 0;
 		double effWidthAccessCMOS = 0;
-		Technology *chosenTech = NULL;
-		double *currentOffNmosArr = NULL;
+		Technology* chosenTech = NULL;
+		double* currentOffNmosArr = NULL;
 
 		if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
 			chosenTech = gTechW;

@@ -100,7 +100,7 @@ void Result::reset() {
 	bank->area = invalid_value;
 }
 
-void Result::compareAndUpdate(Result &newResult) {
+void Result::compareAndUpdate(Result& newResult) {
 	if (newResult.bank->readLatency <= limitReadLatency && newResult.bank->writeLatency <= limitWriteLatency
 			&& newResult.bank->readDynamicEnergy <= limitReadDynamicEnergy && newResult.bank->writeDynamicEnergy <= limitWriteDynamicEnergy
 			&& newResult.bank->readLatency * newResult.bank->readDynamicEnergy <= limitReadEdp
@@ -581,7 +581,7 @@ void Result::print() {
 }
 
 
-void Result::printAsCache(Result &tagResult, CacheAccessMode cacheAccessMode) {
+void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 	if (bank->memoryType != dataT || tagResult.bank->memoryType != tag) {
 		cout << "This is not a valid cache configuration." << endl;
 		return;
@@ -1058,7 +1058,7 @@ YAML::Node Result::toYamlNode() {
     return result;
 }
 
-YAML::Node Result::toYamlNodeAsCache(Result &tagResult, CacheAccessMode cacheAccessMode) {
+YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
     if (bank->memoryType != dataT || tagResult.bank->memoryType != tag) {
         cout << "This is not a valid cache configuration." << endl;
         return YAML::Node();
@@ -1329,12 +1329,12 @@ YAML::Node Result::toYamlNodeAsCache(Result &tagResult, CacheAccessMode cacheAcc
 
 
 
-void Result::printToYamlFile(ofstream &outputFile) {
+void Result::printToYamlFile(ofstream& outputFile) {
     YAML::Node node = toYamlNode();
     outputFile << node << endl;
 }
 
-void Result::printAsCacheToYamlFile(Result &tagResult, CacheAccessMode cacheAccessMode, ofstream &outputFile) {
+void Result::printAsCacheToYamlFile(Result& tagResult, CacheAccessMode cacheAccessMode, ofstream& outputFile) {
     YAML::Node node = toYamlNodeAsCache(tagResult, cacheAccessMode);
     outputFile << node << endl;
 }

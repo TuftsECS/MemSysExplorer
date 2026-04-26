@@ -52,7 +52,7 @@ public:
 	virtual ~InputParameter();
 
 	/* Functions */
-	void ReadInputParameterFromFile(const std::string & inputFile);
+	void ReadInputParameterFromFile(const std::string& inputFile);
 	void PrintInputParameter();
 
 	/* Properties */

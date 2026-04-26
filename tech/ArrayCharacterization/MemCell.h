@@ -53,7 +53,7 @@ public:
 	virtual ~MemCell();
 
 	/* Functions */
-	void ReadCellFromFile(const std::string & inputFile);
+	void ReadCellFromFile(const std::string& inputFile);
     void ApplyPVT();
 	void CellScaling(int _targetProcessNode);
 	double GetMemristance(double _relativeReadVoltage);  /* Get the LRS resistance of memristor at log-linera region of I-V curve */

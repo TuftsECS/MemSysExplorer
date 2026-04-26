@@ -183,7 +183,7 @@ void Buffer::PrintProperty() {
 	cout << " -  Leakage Power = " << xorLeakage*1e3 << "mW" << endl;
 }
 
-Buffer & Buffer::operator=(const Buffer &rhs) {
+Buffer& Buffer::operator=(const Buffer& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

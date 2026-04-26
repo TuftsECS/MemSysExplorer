@@ -149,7 +149,7 @@ void Mux::PrintProperty() {
 	FunctionUnit::PrintProperty();
 }
 
-Mux & Mux::operator=(const Mux &rhs) {
+Mux& Mux::operator=(const Mux& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

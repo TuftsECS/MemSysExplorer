@@ -127,7 +127,7 @@ InputParameter::~InputParameter() {
 	// TODO Auto-generated destructor stub
 }
 
-void InputParameter::ReadInputParameterFromFile(const std::string & inputFile) {
+void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
     try {
         YAML::Node config = YAML::LoadFile(inputFile);
         

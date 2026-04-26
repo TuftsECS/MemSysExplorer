@@ -53,7 +53,7 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	Comparator & operator=(const Comparator &);
+	Comparator& operator=(const Comparator&);
 
 	/* Properties */
 	bool initialized;	/* Initialization flag */

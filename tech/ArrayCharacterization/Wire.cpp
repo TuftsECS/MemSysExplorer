@@ -525,7 +525,7 @@ void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterTy
 }
 
 
-void Wire::CalculateLatencyAndPower(double _wireLength, double *delay, double *dynamicEnergy, double *leakagePower) {
+void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* dynamicEnergy, double* leakagePower) {
 	if (!initialized) {
 		cout << "[Wire] Error: Require initialization first!" << endl;
 	} else {
@@ -797,7 +797,7 @@ void Wire::PrintProperty() {
 	}
 }
 
-Wire & Wire::operator=(const Wire &rhs) {
+Wire& Wire::operator=(const Wire& rhs) {
 	initialized = rhs.initialized;
 	featureSizeInNano = rhs.featureSizeInNano;
 	featureSize = rhs.featureSize;

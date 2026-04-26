@@ -456,7 +456,7 @@ void PredecodeBlock::PrintProperty() {
 	FunctionUnit::PrintProperty();
 }
 
-PredecodeBlock & PredecodeBlock::operator=(const PredecodeBlock &rhs) {
+PredecodeBlock& PredecodeBlock::operator=(const PredecodeBlock& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

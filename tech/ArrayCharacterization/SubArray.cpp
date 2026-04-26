@@ -1034,7 +1034,7 @@ void SubArray::PrintProperty() {
 	cout << "columnDecoderLatency: " << columnDecoderLatency*1e12 << "ps" << endl;
 }
 
-SubArray & SubArray::operator=(const SubArray &rhs) {
+SubArray& SubArray::operator=(const SubArray& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

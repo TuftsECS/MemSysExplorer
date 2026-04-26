@@ -54,20 +54,20 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	PredecodeBlock & operator=(const PredecodeBlock &);
+	PredecodeBlock& operator=(const PredecodeBlock&);
 
 	/* Properties */
 	bool initialized;	/* Initialization flag */
-	RowDecoder * rowDecoderStage1A;
-	RowDecoder * rowDecoderStage1B;
-	RowDecoder * rowDecoderStage1C;
+	RowDecoder* rowDecoderStage1A;
+	RowDecoder* rowDecoderStage1B;
+	RowDecoder* rowDecoderStage1C;
 	int numNandInputStage1A, numNandInputStage1B, numNandInputStage1C;
 	int numAddressBitStage1A, numAddressBitStage1B, numAddressBitStage1C;
-	RowDecoder * rowDecoderStage2;
-	BasicDecoder * basicDecoderA1;
-	BasicDecoder * basicDecoderA2;
-	BasicDecoder * basicDecoderB;
-	BasicDecoder * basicDecoderC;
+	RowDecoder* rowDecoderStage2;
+	BasicDecoder* basicDecoderA1;
+	BasicDecoder* basicDecoderA2;
+	BasicDecoder* basicDecoderB;
+	BasicDecoder* basicDecoderC;
 	double capLoad;		/* Load capacitance Unit: F */
 	double resLoad;     /* Load resistance Unit: ohm */
 	int numAddressBit;   /* Number of Address Bits assigned to the block */

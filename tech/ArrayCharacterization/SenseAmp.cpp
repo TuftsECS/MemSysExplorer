@@ -308,7 +308,7 @@ void SenseAmp::PrintProperty() {
 	FunctionUnit::PrintProperty();
 }
 
-SenseAmp & SenseAmp::operator=(const SenseAmp &rhs) {
+SenseAmp& SenseAmp::operator=(const SenseAmp& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

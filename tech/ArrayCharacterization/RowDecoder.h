@@ -55,7 +55,7 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	RowDecoder & operator=(const RowDecoder &);
+	RowDecoder& operator=(const RowDecoder&);
 
 	/* Properties */
 	bool initialized;	/* Initialization flag */

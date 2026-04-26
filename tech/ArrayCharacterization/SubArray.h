@@ -60,7 +60,7 @@ public:
 	//void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	SubArray & operator=(const SubArray &);
+	SubArray& operator=(const SubArray&);
 
 	/* Properties */
 	bool initialized;	/* Initialization flag */

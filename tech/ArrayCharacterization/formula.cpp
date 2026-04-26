@@ -69,7 +69,7 @@ double CalculateGateArea(
 		int gateType, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
-		double *height, double *width) {
+		double* height, double* width) {
 	double	ratio = widthPMOS / (widthPMOS + widthNMOS);
 
 	double maxWidthPMOS, maxWidthNMOS;
@@ -154,7 +154,7 @@ void CalculateGateCapacitance(
 		int gateType, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
-		double *capInput, double *capOutput) {
+		double* capInput, double* capOutput) {
 	/* TO-DO: most parts of this function is the same of CalculateGateArea,
 	 * perhaps they will be combined in future
 	 */
@@ -289,8 +289,8 @@ double CalculateGateLeakage(
 		cout<<"Error: Temperature is out of range"<<endl;
 		exit(-1);
 	}
-	double *leakN = tech.currentOffNmos;
-	double *leakP = tech.currentOffPmos;
+	double* leakN = tech.currentOffNmos;
+	double* leakP = tech.currentOffPmos;
 	double leakageN, leakageP;
 	switch (gateType) {
 	case INV:
@@ -366,7 +366,7 @@ double CalculateTransconductance(double width, int type, Technology tech) {
 	return gm;
 }
 
-double horowitz(double tr, double beta, double rampInput, double *rampOutput) {
+double horowitz(double tr, double beta, double rampInput, double* rampOutput) {
 	double alpha;
 	alpha = 1 / rampInput / tr;
 	double vs = 0.5;	/* Normalized switching voltage */

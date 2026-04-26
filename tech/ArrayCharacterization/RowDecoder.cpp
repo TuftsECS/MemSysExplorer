@@ -201,7 +201,7 @@ void RowDecoder::PrintProperty() {
 	FunctionUnit::PrintProperty();
 }
 
-RowDecoder & RowDecoder::operator=(const RowDecoder &rhs) {
+RowDecoder& RowDecoder::operator=(const RowDecoder& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

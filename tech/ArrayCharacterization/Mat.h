@@ -59,7 +59,7 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	Mat & operator=(const Mat &);
+	Mat& operator=(const Mat&);
 
 	/* Properties */
 	bool initialized;	/* Initialization flag */

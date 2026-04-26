@@ -55,7 +55,7 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	OutputDriver & operator=(const OutputDriver &);
+	OutputDriver& operator=(const OutputDriver&);
 
 	/* Properties */
 	bool initialized;	/* Initialization flag */

@@ -60,17 +60,17 @@
 
 using namespace std;
 
-InputParameter *gInputParameter;
-Technology *gTech;
-Technology *gTechW;
-Technology *gTechR;
-MemCell *gCell;
-Wire *gLocalWire;
-Wire *gGlobalWire;
+InputParameter* gInputParameter;
+Technology* gTech;
+Technology* gTechW;
+Technology* gTechR;
+MemCell* gCell;
+Wire* gLocalWire;
+Wire* gGlobalWire;
 
 void applyConstraint();
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	cout << fixed << setprecision(3);
 	string inputFileName;
@@ -295,13 +295,13 @@ int main(int argc, char *argv[])
 
 	/* for cache data array, memory array */
 	Result bestDataResults[(int)full_exploration];	/* full_exploration is always set as the last element in the enum, so if full_exploration is 8, what we want here is a 0-7 array, which is correct */
-	Bank *dataBank;
+	Bank* dataBank;
 	for (int i = 0; i < (int)full_exploration; i++)
 		bestDataResults[i].optimizationTarget = (OptimizationTarget)i;
 
 	/* for cache tag array only */
 	Result bestTagResults[(int)full_exploration];	/* full_exploration is always set as the last element in the enum, so if full_exploration is 8, what we want here is a 0-7 array, which is correct */
-	Bank *tagBank = NULL;
+	Bank* tagBank = NULL;
 	for (int i = 0; i < (int)full_exploration; i++)
 		bestTagResults[i].optimizationTarget = (OptimizationTarget)i;
 
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
 			delete tagBank;
 		}
 		if (numSolution > 0) {
-			Bank * trialBank;
+			Bank* trialBank;
 			Result tempResult;
 			/* refine local wire type */
 			REFINE_LOCAL_WIRE_FORLOOP {
@@ -440,7 +440,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (numSolution > 0) {
-		Bank * trialBank;
+		Bank* trialBank;
 		Result tempResult;
 		/* refine local wire type */
 		REFINE_LOCAL_WIRE_FORLOOP {
@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
 
 	if (gInputParameter->optimizationTarget == full_exploration && gInputParameter->isPruningEnabled) {
 		/* pruning is enabled */
-		Result **** pruningResults;
+		Result**** pruningResults;
 		/* pruningResults[x][y][z] points to the result which is optimized for x, with constraint on y with z overhead */
 		pruningResults = new Result***[(int)full_exploration];	/* full_exploration is always set as the last element in the enum, so if full_exploration is 8, what we want here is a 0-7 array, which is correct */
 		for (int i = 0; i < (int)full_exploration; i++) {

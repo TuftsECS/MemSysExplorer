@@ -58,7 +58,7 @@ public:
 	void CalculateArea();
 	void CalculateRC();
 	void CalculateLatencyAndPower();
-	BankWithoutHtree & operator=(const BankWithoutHtree &);
+	BankWithoutHtree& operator=(const BankWithoutHtree&);
 
 	int numAddressBit;		   /* Number of bank address bits */
 	int numWay;                  /* Number of way in a mat */

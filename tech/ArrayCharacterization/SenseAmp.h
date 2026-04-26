@@ -52,7 +52,7 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	SenseAmp & operator=(const SenseAmp &);
+	SenseAmp& operator=(const SenseAmp&);
 
 	/* Properties */
 	bool initialized;	/* Initialization flag */

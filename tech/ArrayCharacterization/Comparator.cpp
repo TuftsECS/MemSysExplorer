@@ -168,7 +168,7 @@ void Comparator::PrintProperty() {
 	FunctionUnit::PrintProperty();
 }
 
-Comparator & Comparator::operator=(const Comparator &rhs) {
+Comparator& Comparator::operator=(const Comparator& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

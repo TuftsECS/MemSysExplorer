@@ -52,7 +52,7 @@ void Bank::PrintProperty() {
 	FunctionUnit::PrintProperty();
 }
 
-Bank & Bank::operator=(const Bank &rhs) {
+Bank& Bank::operator=(const Bank& rhs) {
 	height = rhs.height;
 	width = rhs.width;
 	area = rhs.area;

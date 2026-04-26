@@ -53,13 +53,13 @@ public:
 	void PrintProperty();
 	void Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterType _wireRepeaterType,
 			int _temperature, bool _isLowSwing);
-	void CalculateLatencyAndPower(double _wireLength, double *delay, double *dynamicEnergy, double *leakagePower);
+	void CalculateLatencyAndPower(double _wireLength, double* delay, double* dynamicEnergy, double* leakagePower);
 	void findOptimalRepeater();
 	void findPenalizedRepeater(double _penalty);
 	double getRepeatedWireUnitDelay();				/* Return delay per unit, Unit: s/m */
 	double getRepeatedWireUnitDynamicEnergy();		/* Return dynamic energy per unit, Unit: J/m */
 	double getRepeatedWireUnitLeakage();			/* Return leakage power per unit, Unit: W/m */
-	Wire & operator=(const Wire &);
+	Wire& operator=(const Wire&);
 
 	/* Properties */
 	bool initialized;	/* Initialization flag */
@@ -87,7 +87,7 @@ public:
 	double resWirePerUnit;			/* Unit: ohm/m */
 	double capWirePerUnit;			/* Unit: F/m */
 
-	SenseAmp * senseAmp;
+	SenseAmp* senseAmp;
 };
 
 #endif /* MSE_WIRE_H */

@@ -50,19 +50,19 @@ public:
 
 	/* Functions */
 	void print();
-	void printAsCache(Result &tagBank, CacheAccessMode cacheAccessMode);
+	void printAsCache(Result& tagBank, CacheAccessMode cacheAccessMode);
 	void reset();
-	void printToYamlFile(ofstream &outputFile);
-	void printAsCacheToYamlFile(Result &tagBank, CacheAccessMode cacheAccessMode, ofstream &outputFile);
+	void printToYamlFile(ofstream& outputFile);
+	void printAsCacheToYamlFile(Result& tagBank, CacheAccessMode cacheAccessMode, ofstream& outputFile);
 	YAML::Node toYamlNode();
-	YAML::Node toYamlNodeAsCache(Result &tagBank, CacheAccessMode cacheAccessMode);
-	void compareAndUpdate(Result &newResult);
+	YAML::Node toYamlNodeAsCache(Result& tagBank, CacheAccessMode cacheAccessMode);
+	void compareAndUpdate(Result& newResult);
 
 	OptimizationTarget optimizationTarget;	/* Exploration should not be assigned here */
 
-	Bank * bank;
-	Wire * localWire;		/* TO-DO: this one has the same name as one of the global variables */
-	Wire * globalWire;
+	Bank* bank;
+	Wire* localWire;		/* TO-DO: this one has the same name as one of the global variables */
+	Wire* globalWire;
 
 	double limitReadLatency;			/* The maximum allowable read latency, Unit: s */
 	double limitWriteLatency;			/* The maximum allowable write latency, Unit: s */
