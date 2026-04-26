@@ -42,14 +42,14 @@
 PredecodeBlock::PredecodeBlock() {
 	// TODO Auto-generated constructor stub
 	initialized = false;
-	rowDecoderStage1A = NULL;
-	rowDecoderStage1B = NULL;
-	rowDecoderStage1C = NULL;
-	rowDecoderStage2 = NULL;
-	basicDecoderA1 = NULL;
-	basicDecoderA2 = NULL;
-	basicDecoderB = NULL;
-	basicDecoderC = NULL;
+	rowDecoderStage1A = nullptr;
+	rowDecoderStage1B = nullptr;
+	rowDecoderStage1C = nullptr;
+	rowDecoderStage2 = nullptr;
+	basicDecoderA1 = nullptr;
+	basicDecoderA2 = nullptr;
+	basicDecoderB = nullptr;
+	basicDecoderC = nullptr;
 }
 
 PredecodeBlock::~PredecodeBlock() {
@@ -105,15 +105,15 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 		}
 		int numBasicDecoder = numDecoder12 + numDecoder24 + numDecoder38;
 		if (numBasicDecoder <= 1){
-			rowDecoderStage1A = NULL;
-			rowDecoderStage1B = NULL;
-			rowDecoderStage1C = NULL;
-			rowDecoderStage2 = NULL;
+			rowDecoderStage1A = nullptr;
+			rowDecoderStage1B = nullptr;
+			rowDecoderStage1C = nullptr;
+			rowDecoderStage2 = nullptr;
 		} else if (numBasicDecoder <= 3) {
 			numNandInputStage1A = numBasicDecoder;
-			rowDecoderStage2 = NULL;
-			rowDecoderStage1B = NULL;
-			rowDecoderStage1C = NULL;
+			rowDecoderStage2 = nullptr;
+			rowDecoderStage1B = nullptr;
+			rowDecoderStage1C = nullptr;
 			rowDecoderStage1A = new RowDecoder;
 			rowDecoderStage1A->Initialize(numOutputAddressBit, capLoad, resLoad, numNandInputStage1A == 3, latency_first, 0);
 			rowDecoderStage1A->CalculateRC();
@@ -131,7 +131,7 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 				numAddressBitStage1B <<= 3 * numNandInputStage1B;
 				capLoadStage1A = numAddressBitStage1B * rowDecoderStage2->capNandInput;
 				capLoadStage1B = numAddressBitStage1A * rowDecoderStage2->capNandInput;
-				rowDecoderStage1C = NULL;
+				rowDecoderStage1C = nullptr;
 				rowDecoderStage1A = new RowDecoder;
 			    rowDecoderStage1A->Initialize(numAddressBitStage1A, capLoadStage1A, 0 /* TO-DO */, numNandInputStage1A == 3, latency_first, 0);
 			    rowDecoderStage1A->CalculateRC();
@@ -176,7 +176,7 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 				rowDecoderStage1C->CalculateRC();
 			}
 		}
-		if (rowDecoderStage1C != NULL) {
+		if (rowDecoderStage1C != nullptr) {
 			if (numNandInputStage1C == 2){
 				capLoadBasicDecoderC = 8 * rowDecoderStage1C->capNandInput;
 			} else {
@@ -185,9 +185,9 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 			basicDecoderC = new BasicDecoder;
 			basicDecoderC->Initialize(3, capLoadBasicDecoderC, 0 /* TO-DO */);
 		} else {
-			basicDecoderC = NULL;
+			basicDecoderC = nullptr;
 		}
-		if (rowDecoderStage1B != NULL) {
+		if (rowDecoderStage1B != nullptr) {
 			if (numNandInputStage1B == 2){
 				capLoadBasicDecoderB = 8 * rowDecoderStage1B->capNandInput;
 			} else {
@@ -196,9 +196,9 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 			basicDecoderB = new BasicDecoder;
 			basicDecoderB->Initialize(3, capLoadBasicDecoderB, 0 /* TO-DO */);
 		} else {
-			basicDecoderB = NULL;
+			basicDecoderB = nullptr;
 		}
-		if (rowDecoderStage1A != NULL) {
+		if (rowDecoderStage1A != nullptr) {
 			int numCapNandA1, numCapNandA2;
 			if (numDecoder24 == 0) {
 				numBasicDecoderA1 = numNandInputStage1A;
@@ -207,7 +207,7 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 				capLoadBasicDecoderA1 = numCapNandA1 * rowDecoderStage1A->capNandInput;
 				basicDecoderA1 = new BasicDecoder;
 				basicDecoderA1->Initialize(3, capLoadBasicDecoderA1, 0 /* TO-DO */);
-				basicDecoderA2 = NULL;
+				basicDecoderA2 = nullptr;
 			} else if (numDecoder24 == 1) {
 				numBasicDecoderA1 = 1;
 				numBasicDecoderA2 = numNandInputStage1A - numBasicDecoderA1;
@@ -225,7 +225,7 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 		    		numBasicDecoderA2 = 0;
 		    		basicDecoderA1 = new BasicDecoder;
 		    		basicDecoderA1->Initialize(2, 4 * rowDecoderStage1A->capNandInput, 0 /* TO-DO */);
-		    		basicDecoderA2 = NULL;
+		    		basicDecoderA2 = nullptr;
 				} else {
 		    		numBasicDecoderA1 = 2;
 		    		numBasicDecoderA2 = 1;
@@ -239,7 +239,7 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 			numBasicDecoderA1 = 1;
 			numBasicDecoderA2 = 0;
 			basicDecoderA1 = new BasicDecoder;
-			basicDecoderA2 = NULL;
+			basicDecoderA2 = nullptr;
 			if (numDecoder12 == 1) {
 				basicDecoderA1->Initialize(1, capLoad, resLoad);
 			} else if (numDecoder24 == 1) {
@@ -259,20 +259,20 @@ void PredecodeBlock::CalculateArea() {
 	} else {
 		double hTemp,wTemp;
 		hTemp = wTemp = 0;
-		if (basicDecoderA1 != NULL) {
+		if (basicDecoderA1 != nullptr) {
 			basicDecoderA1->CalculateArea();
 			wTemp = max(wTemp, basicDecoderA1->width);
 			hTemp += numBasicDecoderA1 * basicDecoderA1->height;
-			if (basicDecoderA2 != NULL) {
+			if (basicDecoderA2 != nullptr) {
 				basicDecoderA2->CalculateArea();
 				wTemp = max(wTemp, basicDecoderA2->width);
 				hTemp += numBasicDecoderA2 * basicDecoderA2->height;
 			}
-			if (basicDecoderB != NULL) {
+			if (basicDecoderB != nullptr) {
 				basicDecoderB->CalculateArea();
 				wTemp = max(wTemp, basicDecoderB->width);
 				hTemp += numNandInputStage1B * basicDecoderB->height;
-				if (basicDecoderC != NULL) {
+				if (basicDecoderC != nullptr) {
 					basicDecoderC->CalculateArea();
 					wTemp = max(wTemp, basicDecoderC->width);
 					hTemp += numNandInputStage1C * basicDecoderC->height;
@@ -282,21 +282,21 @@ void PredecodeBlock::CalculateArea() {
 		width = wTemp;
 		height = hTemp;
 		hTemp = wTemp = 0;
-		if (rowDecoderStage1A != NULL) {
+		if (rowDecoderStage1A != nullptr) {
 			rowDecoderStage1A->CalculateArea();
 			wTemp = max(wTemp, rowDecoderStage1A->width);
 			hTemp += rowDecoderStage1A->height;
-			if (rowDecoderStage1B != NULL) {
+			if (rowDecoderStage1B != nullptr) {
 				rowDecoderStage1B->CalculateArea();
 				wTemp = max(wTemp, rowDecoderStage1B->width);
 				hTemp += rowDecoderStage1B->height;
-				if (rowDecoderStage1C != NULL) {
+				if (rowDecoderStage1C != nullptr) {
 					rowDecoderStage1C->CalculateArea();
 					wTemp = max(wTemp, rowDecoderStage1C->width);
 					hTemp += rowDecoderStage1C->height;
 				}
 			}
-			if (rowDecoderStage2 != NULL) {
+			if (rowDecoderStage2 != nullptr) {
 				rowDecoderStage2->CalculateArea();
 				wTemp += rowDecoderStage2->width;
 				hTemp = max(hTemp, rowDecoderStage2->height);
@@ -312,14 +312,14 @@ void PredecodeBlock::CalculateRC() {
 	if (!initialized) {
 		cout << "[Predecoder Block] Error: Require initialization first!" << endl;
 	} else if (numAddressBit > 0) {
-		if (basicDecoderA1 != NULL) {
+		if (basicDecoderA1 != nullptr) {
 			basicDecoderA1->CalculateRC();
-			if (basicDecoderA2 != NULL) {
+			if (basicDecoderA2 != nullptr) {
 				basicDecoderA2->CalculateRC();
 			}
-			if (basicDecoderB != NULL) {
+			if (basicDecoderB != nullptr) {
 				basicDecoderB->CalculateRC();
-				if (basicDecoderC != NULL) {
+				if (basicDecoderC != nullptr) {
 					basicDecoderC->CalculateRC();
 				}
 			}
@@ -340,15 +340,15 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 		delayA1 = delayA2 = delayB = delayC = 0;
 		rampOutput = 0;
 		readLatency = writeLatency = 0;
-		if (basicDecoderA1 != NULL) {
+		if (basicDecoderA1 != nullptr) {
 			basicDecoderA1->CalculateLatency(rampInput);
 			delayA1 += basicDecoderA1->readLatency;
 			maxRampOutput = basicDecoderA1->rampOutput;
-			if (rowDecoderStage1A != NULL) {
+			if (rowDecoderStage1A != nullptr) {
 				rowDecoderStage1A->CalculateLatency(basicDecoderA1->rampOutput);
 				delayA1 += rowDecoderStage1A->readLatency;
 				maxRampOutput = rowDecoderStage1A->rampOutput;
-				if (rowDecoderStage2 != NULL) {
+				if (rowDecoderStage2 != nullptr) {
 					rowDecoderStage2->CalculateLatency(rowDecoderStage1A->rampOutput);
 					delayA1 += rowDecoderStage2->readLatency;
 					maxRampOutput = rowDecoderStage2->rampOutput;
@@ -358,13 +358,13 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 		rampOutput = max(rampOutput, maxRampOutput);
 		readLatency = max(readLatency, delayA1);
 		maxRampOutput = 0;
-		if (basicDecoderA2 != NULL) {
+		if (basicDecoderA2 != nullptr) {
 			basicDecoderA2->CalculateLatency(rampInput);
 			delayA2 += basicDecoderA1->readLatency;
 			rowDecoderStage1A->CalculateLatency(basicDecoderA2->rampOutput);
 			delayA2 += rowDecoderStage1A->readLatency;
 			maxRampOutput = rowDecoderStage1A->rampOutput;
-			if (rowDecoderStage2 != NULL) {
+			if (rowDecoderStage2 != nullptr) {
 				rowDecoderStage2->CalculateLatency(rowDecoderStage1A->rampOutput);
 				delayA2 += rowDecoderStage2->readLatency;
 				maxRampOutput = rowDecoderStage2->rampOutput;
@@ -373,7 +373,7 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 		rampOutput = max(rampOutput, maxRampOutput);
 		readLatency = max(readLatency, delayA2);
 		maxRampOutput = 0;
-		if (basicDecoderB !=NULL) {
+		if (basicDecoderB !=nullptr) {
 			basicDecoderB->CalculateLatency(rampInput);
 			delayB += basicDecoderB->readLatency;
 			rowDecoderStage1B->CalculateLatency(basicDecoderB->rampOutput);
@@ -385,7 +385,7 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 		rampOutput = max(rampOutput, maxRampOutput);
 		readLatency = max(readLatency, delayB);
 		maxRampOutput = 0;
-		if (basicDecoderC !=NULL) {
+		if (basicDecoderC !=nullptr) {
 			basicDecoderC->CalculateLatency(rampInput);
 			delayC += basicDecoderC->readLatency;
 			rowDecoderStage1C->CalculateLatency(basicDecoderC->rampOutput);
@@ -408,41 +408,41 @@ void PredecodeBlock::CalculatePower() {
 		leakage = readDynamicEnergy = writeDynamicEnergy = 0;
 	} else {
 		leakage = readDynamicEnergy = 0;
-		if (basicDecoderA1 != NULL) {
+		if (basicDecoderA1 != nullptr) {
 			basicDecoderA1->CalculatePower();
 			leakage += basicDecoderA1->leakage;
 			readDynamicEnergy += basicDecoderA1->readDynamicEnergy;
-			if (basicDecoderA2 != NULL) {
+			if (basicDecoderA2 != nullptr) {
 				basicDecoderA2->CalculatePower();
 				leakage += basicDecoderA2->leakage;
 				readDynamicEnergy += basicDecoderA2->readDynamicEnergy;
 			}
-			if (basicDecoderB != NULL) {
+			if (basicDecoderB != nullptr) {
 				basicDecoderB->CalculatePower();
 				leakage += basicDecoderB->leakage;
 				readDynamicEnergy += basicDecoderB->readDynamicEnergy;
-				if (basicDecoderC != NULL) {
+				if (basicDecoderC != nullptr) {
 					basicDecoderC->CalculatePower();
 					leakage += basicDecoderC->leakage;
 					readDynamicEnergy += basicDecoderC->readDynamicEnergy;
 				}
 			}
 		}
-		if (rowDecoderStage1A != NULL) {
+		if (rowDecoderStage1A != nullptr) {
 			rowDecoderStage1A->CalculatePower();
 			leakage += rowDecoderStage1A->leakage;
 			readDynamicEnergy += rowDecoderStage1A->readDynamicEnergy;
-			if (rowDecoderStage1B != NULL) {
+			if (rowDecoderStage1B != nullptr) {
 				rowDecoderStage1B->CalculatePower();
 				leakage += rowDecoderStage1B->leakage;
 				readDynamicEnergy += rowDecoderStage1B->readDynamicEnergy;
-				if (rowDecoderStage1C != NULL) {
+				if (rowDecoderStage1C != nullptr) {
 					rowDecoderStage1C->CalculatePower();
 					leakage += rowDecoderStage1C->leakage;
 					readDynamicEnergy += rowDecoderStage1C->readDynamicEnergy;
 				}
 			}
-			if (rowDecoderStage2 != NULL) {
+			if (rowDecoderStage2 != nullptr) {
 				leakage += rowDecoderStage2->leakage;
 				readDynamicEnergy += rowDecoderStage2->readDynamicEnergy;
 			}

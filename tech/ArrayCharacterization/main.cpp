@@ -301,7 +301,7 @@ int main(int argc, char* argv[])
 
 	/* for cache tag array only */
 	Result bestTagResults[(int)full_exploration];	/* full_exploration is always set as the last element in the enum, so if full_exploration is 8, what we want here is a 0-7 array, which is correct */
-	Bank* tagBank = NULL;
+	Bank* tagBank = nullptr;
 	for (int i = 0; i < (int)full_exploration; i++)
 		bestTagResults[i].optimizationTarget = (OptimizationTarget)i;
 

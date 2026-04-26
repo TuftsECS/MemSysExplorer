@@ -584,7 +584,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 		double resPassTransistor = bitlineMux.resNMOSPassTransistor +
 				senseAmpMuxLev1.resNMOSPassTransistor + senseAmpMuxLev2.resNMOSPassTransistor;
 		double tauChargeLatency = resPassTransistor * (capPassTransistor + capBitline) + resBitline * capBitline / 2;
-		chargeLatency = horowitz(tauChargeLatency, 0, 1e20, NULL);
+		chargeLatency = horowitz(tauChargeLatency, 0, 1e20, nullptr);
 
 		if (gCell->memCellType == SRAM) {
 			/* Codes below calculate the bitline latency */

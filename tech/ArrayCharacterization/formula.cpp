@@ -274,9 +274,9 @@ double CalculateDrainCap(
 		double heightTransistorRegion, Technology tech) {
 	double drainCap = 0;
 	if (type == NMOS)
-		CalculateGateCapacitance(INV, 1, width, 0, heightTransistorRegion, tech, NULL, &drainCap);
+		CalculateGateCapacitance(INV, 1, width, 0, heightTransistorRegion, tech, nullptr, &drainCap);
 	else
-		CalculateGateCapacitance(INV, 1, 0, width, heightTransistorRegion, tech, NULL, &drainCap);
+		CalculateGateCapacitance(INV, 1, 0, width, heightTransistorRegion, tech, nullptr, &drainCap);
 	return drainCap;
 }
 

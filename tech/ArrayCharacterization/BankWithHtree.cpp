@@ -44,20 +44,20 @@ BankWithHtree::BankWithHtree() {
 	// TODO Auto-generated constructor stub
 	initialized = false;
 	invalid = false;
-	numHorizontalAddressBitToRoute = NULL;  /* The number of horizontal bits to route on level x */
-	numHorizontalDataDistributeBitToRoute = NULL;   /* The number of horizontal data-in bits to route on level x */
-	numHorizontalDataBroadcastBitToRoute = NULL;  /* The number of horizontal data-out bits to route on level x */
-	numHorizontalWire = NULL;		/* The number of horizontal wires on level x */
-	numSumHorizontalWire = NULL;	/* The number of total horizontal wires on level x */
-	numActiveHorizontalWire = NULL;	/* The number of active horizontal wires on level x */
-	lengthHorizontalWire = NULL;	/* The length of horizontal wires on level x, Unit: m */
-	numVerticalAddressBitToRoute = NULL;	/* The number of vertical address bits to route on level x */
-	numVerticalDataDistributeBitToRoute = NULL;  /* The number of vertical data-in bits to route on level x */
-	numVerticalDataBroadcastBitToRoute = NULL; /* The number of vertical data-out bits to route on level x */
-	numVerticalWire = NULL;			/* The number of vertical wires on level x */
-	numSumVerticalWire = NULL;		/* The number of total vertical wires on level x */
-    numActiveVerticalWire = NULL;	/* The number of active vertical wires on level x */
-	lengthVerticalWire = NULL;		/* The length of vertical wires on level 2, Unit: m */
+	numHorizontalAddressBitToRoute = nullptr;  /* The number of horizontal bits to route on level x */
+	numHorizontalDataDistributeBitToRoute = nullptr;   /* The number of horizontal data-in bits to route on level x */
+	numHorizontalDataBroadcastBitToRoute = nullptr;  /* The number of horizontal data-out bits to route on level x */
+	numHorizontalWire = nullptr;		/* The number of horizontal wires on level x */
+	numSumHorizontalWire = nullptr;	/* The number of total horizontal wires on level x */
+	numActiveHorizontalWire = nullptr;	/* The number of active horizontal wires on level x */
+	lengthHorizontalWire = nullptr;	/* The length of horizontal wires on level x, Unit: m */
+	numVerticalAddressBitToRoute = nullptr;	/* The number of vertical address bits to route on level x */
+	numVerticalDataDistributeBitToRoute = nullptr;  /* The number of vertical data-in bits to route on level x */
+	numVerticalDataBroadcastBitToRoute = nullptr; /* The number of vertical data-out bits to route on level x */
+	numVerticalWire = nullptr;			/* The number of vertical wires on level x */
+	numSumVerticalWire = nullptr;		/* The number of total vertical wires on level x */
+    numActiveVerticalWire = nullptr;	/* The number of active vertical wires on level x */
+	lengthVerticalWire = nullptr;		/* The length of vertical wires on level 2, Unit: m */
 }
 
 BankWithHtree::~BankWithHtree() {
@@ -130,20 +130,20 @@ void BankWithHtree::Initialize(int _numRowMat, int _numColumnMat, long long _cap
 			delete [] lengthVerticalWire;
 		initialized = false;
 		invalid = false;
-		numHorizontalAddressBitToRoute = NULL;  /* The number of horizontal bits to route on level x */
-		numHorizontalDataDistributeBitToRoute = NULL;   /* The number of horizontal data-in bits to route on level x */
-		numHorizontalDataBroadcastBitToRoute = NULL;  /* The number of horizontal data-out bits to route on level x */
-		numHorizontalWire = NULL;		/* The number of horizontal wires on level x */
-		numSumHorizontalWire = NULL;	/* The number of total horizontal wires on level x */
-		numActiveHorizontalWire = NULL;	/* The number of active horizontal wires on level x */
-		lengthHorizontalWire = NULL;	/* The length of horizontal wires on level x, Unit: m */
-		numVerticalAddressBitToRoute = NULL;	/* The number of vertical address bits to route on level x */
-		numVerticalDataDistributeBitToRoute = NULL;  /* The number of vertical data-in bits to route on level x */
-		numVerticalDataBroadcastBitToRoute = NULL; /* The number of vertical data-out bits to route on level x */
-		numVerticalWire = NULL;			/* The number of vertical wires on level x */
-		numSumVerticalWire = NULL;		/* The number of total vertical wires on level x */
-	    numActiveVerticalWire = NULL;	/* The number of active vertical wires on level x */
-		lengthVerticalWire = NULL;		/* The length of vertical wires on level 2, Unit: m */
+		numHorizontalAddressBitToRoute = nullptr;  /* The number of horizontal bits to route on level x */
+		numHorizontalDataDistributeBitToRoute = nullptr;   /* The number of horizontal data-in bits to route on level x */
+		numHorizontalDataBroadcastBitToRoute = nullptr;  /* The number of horizontal data-out bits to route on level x */
+		numHorizontalWire = nullptr;		/* The number of horizontal wires on level x */
+		numSumHorizontalWire = nullptr;	/* The number of total horizontal wires on level x */
+		numActiveHorizontalWire = nullptr;	/* The number of active horizontal wires on level x */
+		lengthHorizontalWire = nullptr;	/* The length of horizontal wires on level x, Unit: m */
+		numVerticalAddressBitToRoute = nullptr;	/* The number of vertical address bits to route on level x */
+		numVerticalDataDistributeBitToRoute = nullptr;  /* The number of vertical data-in bits to route on level x */
+		numVerticalDataBroadcastBitToRoute = nullptr; /* The number of vertical data-out bits to route on level x */
+		numVerticalWire = nullptr;			/* The number of vertical wires on level x */
+		numSumVerticalWire = nullptr;		/* The number of total vertical wires on level x */
+	    numActiveVerticalWire = nullptr;	/* The number of active vertical wires on level x */
+		lengthVerticalWire = nullptr;		/* The length of vertical wires on level 2, Unit: m */
 	}
 
 	if (!_internalSenseAmp) {

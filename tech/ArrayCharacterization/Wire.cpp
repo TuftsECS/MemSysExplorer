@@ -44,7 +44,7 @@
 Wire::Wire() {
 	// TODO Auto-generated constructor stub
 	initialized = false;
-	senseAmp = NULL;
+	senseAmp = nullptr;
 }
 
 Wire::~Wire() {
@@ -60,7 +60,7 @@ void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterTy
 		initialized = false;
 		if (senseAmp)
 			delete senseAmp;
-		senseAmp = NULL;
+		senseAmp = nullptr;
 	}
 
 	featureSizeInNano = _featureSizeInNano;

@@ -455,8 +455,8 @@ void MemCell::ApplyPVT() {
 		// Calculate retention time if not given
 		double leakageCurrent = 0;
 		double effWidthAccessCMOS = 0;
-		Technology* chosenTech = NULL;
-		double* currentOffNmosArr = NULL;
+		Technology* chosenTech = nullptr;
+		double* currentOffNmosArr = nullptr;
 
 		if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
 			chosenTech = gTechW;
@@ -466,7 +466,7 @@ void MemCell::ApplyPVT() {
 			currentOffNmosArr = gTech->currentOffNmos;
 		}
 
-		if (chosenTech != NULL) {
+		if (chosenTech != nullptr) {
 			if (chosenTech->featureSizeInNano >= 22) {
 				effWidthAccessCMOS = gCell->widthAccessCMOS * chosenTech->featureSizeInNano * 1e-9;
 			} else if (chosenTech->featureSizeInNano >= 3) {
