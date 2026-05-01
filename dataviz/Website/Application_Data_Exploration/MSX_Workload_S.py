@@ -1,4 +1,15 @@
 # to run use bokeh serve --show RLEsum.py
+#add top level CPU vs. GPU filter
+#filter for multicore vs single core for Sniper stuff bc it's multicore
+
+#content summary with bar chart, so like number of examples per profiler, benchmarks etc.
+# for dynamorio: alberta_both/blender/both : alberta_both is the input_file_name, blender is the benchmark, both is the compiler flag
+#so we want to filter and label it by those three things
+#for sniper: bwaves_s/O0 : bwaves_s is the benchmark, O0 is the compiler flag
+#for NCU: 3DConv/flag_0X : 3DConv is the benchmark, 0X is the compiler flag (drop the flag_ part)
+#NVBit is missing the workload field, but we can label by compiler flag
+
+
 
 import pandas as pd
 import numpy as np
@@ -99,27 +110,65 @@ df2 = load_data()
 
 initial_total = len(df2)
 
+def parse_fields(row):
+    profiler = row[tech]
+    name = str(row["Workload"])  # benchmark_name column
+
+    input_file = "none"
+    benchmark = "none"
+    compiler_flag = "none"
+
+    try:
+        if profiler.lower() == "dynamorio":
+            # alberta_both/blender/both
+            parts = name.split("/")
+            if len(parts) == 3:
+                input_file, benchmark, compiler_flag = parts
+
+        elif profiler.lower() == "sniper":
+            # bwaves_s/O0
+            parts = name.split("/")
+            if len(parts) == 2:
+                benchmark, compiler_flag = parts
+
+        elif profiler.lower() == "ncu":
+            # 3DConv/flag_0X
+            parts = name.split("/")
+            if len(parts) == 2:
+                benchmark, flag = parts
+                compiler_flag = flag.replace("flag_", "")
+
+        elif profiler.lower() == "nvbit":
+            # no workload → just use compiler flag if present
+            compiler_flag = name.split("/")[-1]
+
+    except:
+        pass
+
+    return pd.Series([input_file, benchmark, compiler_flag])
+
+df2[['InputFile', 'BenchmarkCategory', 'CompilerFlag']] = df2.apply(parse_fields, axis=1)
+
 #group benchmarks according to nvsim categories
 #assumes that there is a column that contains different benchmarks with names that start with test, fbbfs, spec, etc.
 #change this function to match your benchmarks
-def categorize_benchmark(name):
-    if pd.isna(name):
-        return "uncategorized"
-    name = str(name).lower()
+# def categorize_benchmark(name):
+#     if pd.isna(name):
+#         return "uncategorized"
+#     name = str(name).lower()
+#     if "spec2017" in name:
+#         return "spec"
+#     elif "dynamo" in name:
+#         return "instrumentation"
+#     elif "alberta" in name:
+#         return "workload_suite"
+#     else:
+#         return "uncategorized"
 
-    if "spec2017" in name:
-        return "spec"
-    elif "dynamo" in name:
-        return "instrumentation"
-    elif "alberta" in name:
-        return "workload_suite"
-    else:
-        return "uncategorized"
-
-#apply the function to the benchmark column
-df2['BenchmarkCategory'] = df2[bench].apply(categorize_benchmark)
-#create a list of categories to use in the dropdown widget later on
-benchmark_categories = ["generic", "generic write buff", "dnn", "graph", "spec"]
+# #apply the function to the benchmark column
+# df2['BenchmarkCategory'] = df2[bench].apply(categorize_benchmark)
+# #create a list of categories to use in the dropdown widget later on
+# benchmark_categories = ["generic", "generic write buff", "dnn", "graph", "spec"]
 
 #some nice function to find columns
 def find_matching_column(df, patterns):
@@ -318,6 +367,27 @@ display_mode = Select(
     width=200
 )
 
+input_select = MultiChoice(
+    title="Input File:",
+    value=sorted(df2['InputFile'].dropna().unique().tolist()),
+    options=sorted(df2['InputFile'].dropna().unique().tolist()),
+    width=300
+)
+
+benchmark_category_select = MultiChoice(
+    title="Benchmark Category:",
+    value=sorted(df2['BenchmarkCategory'].dropna().unique().tolist()),
+    options=sorted(df2['BenchmarkCategory'].dropna().unique().tolist()),
+    width=300
+)
+
+compiler_select = MultiChoice(
+    title="Compiler Flag:",
+    value=sorted(df2['CompilerFlag'].dropna().unique().tolist()),
+    options=sorted(df2['CompilerFlag'].dropna().unique().tolist()),
+    width=300
+)
+
 
 renderers = {}
 avg_renderers = {}
@@ -326,8 +396,12 @@ def update_plot():
     selected_profilers = profiler_select.value
     selected_x = xaxis_select.value
     selected_y = yaxis_select.value
-    selected_benchmark = benchmark_select.value
     selected_suite = suite_select.value
+
+    selected_benchmark = benchmark_select.value  # single select
+    selected_input = input_select.value
+    selected_compiler = compiler_select.value
+
     show_individual = display_mode.value == "Individual Points"
     show_average = display_mode.value == "Averages"
 
@@ -336,60 +410,85 @@ def update_plot():
     fig.yaxis.axis_label = selected_y
 
     # clear old renderers
-    for renderer in fig.renderers[:]:
-        fig.renderers.remove(renderer)
-
+    fig.renderers = []
     renderers.clear()
     avg_renderers.clear()
 
     # -------------------------
-    # FILTER DATA
+    # STEP 1: BASE FILTER (ONLY independent filters)
     # -------------------------
-    filtered_df = df2.copy()
+    base_df = df2.copy()
 
-    # profiler filter
     if selected_profilers:
-        filtered_df = filtered_df[filtered_df[tech].isin(selected_profilers)]
+        base_df = base_df[base_df[tech].isin(selected_profilers)]
 
-    # benchmark filter
+    if selected_suite:
+        base_df = base_df[base_df[opti].isin(selected_suite)]
+
+    # -------------------------
+    # STEP 2: UPDATE DEPENDENT DROPDOWNS
+    # -------------------------
+    def update_dependent_dropdowns(df):
+        # Benchmark Category
+        valid_bench = sorted(df["BenchmarkCategory"].dropna().unique().tolist())
+        benchmark_select.options = ["ALL"] + valid_bench
+        if benchmark_select.value not in benchmark_select.options:
+            benchmark_select.value = "ALL"
+
+        # Input File
+        valid_inputs = sorted(df["InputFile"].dropna().unique().tolist())
+        input_select.options = valid_inputs
+        input_select.value = [v for v in input_select.value if v in valid_inputs]
+
+        # Compiler Flag
+        valid_flags = sorted(df["CompilerFlag"].dropna().unique().tolist())
+        compiler_select.options = valid_flags
+        compiler_select.value = [v for v in compiler_select.value if v in valid_flags]
+
+    update_dependent_dropdowns(base_df)
+
+    # -------------------------
+    # STEP 3: APPLY DEPENDENT FILTERS
+    # -------------------------
+    filtered_df = base_df.copy()
+
     if selected_benchmark != "ALL":
         filtered_df = filtered_df[
             filtered_df["BenchmarkCategory"] == selected_benchmark
         ]
 
-    # suite filter
-    if selected_suite:
-        filtered_df = filtered_df[filtered_df[opti].isin(selected_suite)]
+    if selected_input:
+        filtered_df = filtered_df[
+            filtered_df["InputFile"].isin(selected_input)
+        ]
 
+    if selected_compiler:
+        filtered_df = filtered_df[
+            filtered_df["CompilerFlag"].isin(selected_compiler)
+        ]
 
+    # -------------------------
+    # EMPTY CASE
+    # -------------------------
     if filtered_df.empty:
         fig.title.text = "No data for selected filters"
         return
 
-    fig.title.text = f"{selected_y} vs {selected_x} ({selected_benchmark})"
+    fig.title.text = f"{selected_y} vs {selected_x}"
 
     # -------------------------
     # PLOT DATA
     # -------------------------
     x_values, y_values = [], []
-    total_points = 0
 
     for profiler in selected_profilers:
-
         prof_df = filtered_df[filtered_df[tech] == profiler]
-
-        # only drop for plotting
         valid_df = prof_df.dropna(subset=[selected_x, selected_y])
 
         if valid_df.empty:
             continue
 
-
-        total_points += len(valid_df)
-
-        # -------------------------
-        # INDIVIDUAL POINTS
-        # -------------------------
+        # INDIVIDUAL
         if show_individual:
             source = ColumnDataSource(data={
                 'x': valid_df[selected_x],
@@ -404,8 +503,7 @@ def update_plot():
             })
 
             r = fig.scatter(
-                x='x',
-                y='y',
+                x='x', y='y',
                 source=source,
                 size=8,
                 color=color_map[profiler],
@@ -416,9 +514,7 @@ def update_plot():
 
             renderers[profiler] = r
 
-        # -------------------------
-        # AVERAGES
-        # -------------------------
+        # AVERAGE
         if show_average:
             avg_source = ColumnDataSource(data={
                 'x': [valid_df[selected_x].mean()],
@@ -428,8 +524,7 @@ def update_plot():
             })
 
             r = fig.scatter(
-                x='x',
-                y='y',
+                x='x', y='y',
                 source=avg_source,
                 size=15,
                 color=color_map[profiler],
@@ -444,7 +539,7 @@ def update_plot():
         y_values.extend(valid_df[selected_y].tolist())
 
     # -------------------------
-    # AUTO AXIS SCALING
+    # AUTO SCALE
     # -------------------------
     if x_values:
         fig.x_range.start = min(x_values) * 0.9
@@ -453,15 +548,11 @@ def update_plot():
     if y_values:
         fig.y_range.start = min(y_values) * 0.9
         fig.y_range.end = max(y_values) * 1.1
-    
-    # -------------------------
-    # RESET HOVER TOOL
-    # -------------------------
 
-    # remove old hover tools
-    fig.tools = [t for t in fig.tools if not isinstance(t, HoverTool)]
-
-    # create new hover tied ONLY to current renderers
+    # -------------------------
+    # HOVER TOOL
+    # -------------------------
+    fig.select(type=HoverTool).clear()
     hover = HoverTool(
         tooltips=[
             ("Profiler", "@Profiler"),
@@ -472,7 +563,7 @@ def update_plot():
             ("Read Freq", "@{read_freq (accesses/us)}"),
             ("Write Freq", "@{write_freq (accesses/us)}")
         ],
-        renderers=list(renderers.values())  # 🔑 THIS LINE FIXES DUPLICATES
+        renderers=list(renderers.values())
     )
 
     fig.add_tools(hover)
@@ -484,6 +575,9 @@ yaxis_select.on_change('value', lambda attr, old, new: update_plot())
 display_mode.on_change('value', lambda attr, old, new: update_plot())
 benchmark_select.on_change('value', lambda attr, old, new: update_plot())
 suite_select.on_change('value', lambda attr, old, new: update_plot())
+input_select.on_change('value', lambda attr, old, new: update_plot())
+benchmark_category_select.on_change('value', lambda attr, old, new: update_plot())
+compiler_select.on_change('value', lambda attr, old, new: update_plot())
 
 
 #set layout
@@ -493,7 +587,12 @@ layout = column(
         profiler_select,
         benchmark_select,
         display_mode,
-        suite_select
+        suite_select,
+    ),
+    row(
+    input_select,
+    benchmark_category_select,
+    compiler_select
     ),
     row(
         xaxis_select,
