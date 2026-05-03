@@ -1,49 +1,48 @@
-# Non-volatile memory simulator
-# Pre-release version, r131
+# output executable name
+TARGET := msxac
 
-target := msxac
+# directory of source files (.cpp) for compilation
+SRCDIR := src
+# directory of intermediate object files (.o) for linking and dependency files (.d) for compilation
+OBJDIR := build
+# list of directories to be added to compiler header search path
+incdirs := include
 
-# define tool chain
+# C++ tool to use
 CXX := g++
-RM := rm -f
+# C++ version to compile for
+CXXVERSION := c++17
+# list of include path flags to feed to compiler
+INC := $(addprefix -I, $(incdirs))
+# list of warning flags to feed to compiler
+CXXWARN := -Wall -Wpedantic -Wextra -Werror
+# final list of flags to feed to compiler, -MMD and -MP generate dependencies
+CXXFLAGS := -std=$(CXXVERSION) $(CXXWARN) $(INC) -MMD -MP
+# list of flags to feed to linker
+LDFLAGS :=
 
-# define build options
-# compile options
-CXXFLAGS := -g -Wall
-# link options
-LDFLAGS := -g 
-# link libraries
-LDLIBS :=
+# lists of files required by the target to compile (SRCS and DEPS) and link (OBJS)
+SRCS = $(shell find $(SRCDIR) -name "*.cpp")
+OBJS = $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SRCS))
+DEPS = $(OBJS:.o=.d)
 
-# construct list of .cpp and their corresponding .o and .d files
-SRC := $(wildcard *.cpp) $(wildcard yaml-cpp/src/*.cpp)
-INC := -Iyaml-cpp/include
-DBG :=
-OBJ := $(SRC:.cpp=.o)
-DEP := Makefile.dep
+.PHONY: all debug clean
 
-# file disambiguity is achieved via the .PHONY directive
-.PHONY : all clean dbg
+all: $(TARGET)
 
-all : $(target)
+debug: CXXFLAGS += -g -O0
+debug: LDFLAGS += -g
+debug: clean $(TARGET)
 
-dbg: DBG += -ggdb -g
-dbg: $(target)
+$(TARGET): $(OBJS)
+	$(CXX) $(LDFLAGS) $(OBJS) -o $@
 
-$(target) : $(OBJ)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-clean :
-	$(RM) $(target) $(dep_file) $(OBJ)
+clean:
+	rm -f $(TARGET)
+	rm -rf $(OBJDIR)
 
-.cpp.o :
-	$(CXX) $(CXXFLAGS) $(DBG) $(INC) -c $< -o $@
-
-depend $(DEP):
-	@echo Makefile - creating dependencies for: $(SRC)
-	@$(RM) $(DEP)
-	@$(CXX) -E -MM $(INC) $(SRC) >> $(DEP)
-
-ifeq (,$(findstring clean,$(MAKECMDGOALS)))
--include $(DEP)
-endif
+-include $(DEPS)

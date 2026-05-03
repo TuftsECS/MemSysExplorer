@@ -1,0 +1,158 @@
+/*******************************************************************************
+* Copyright (c) 2012-2013, The Microsystems Design Labratory (MDL)
+* Department of Computer Science and Engineering, The Pennsylvania State University
+* Exascale Computing Lab, Hewlett-Packard Company
+* All rights reserved.
+* 
+* This source code is part of NVSim - An area, timing and power model for both 
+* volatile (e.g., SRAM, DRAM) and non-volatile memory (e.g., PCRAM, STT-RAM, ReRAM, 
+* SLC NAND Flash). The source code is free and you can redistribute and/or modify it
+* by providing that the following conditions are met:
+* 
+*  1) Redistributions of source code must retain the above copyright notice,
+*     this list of conditions and the following disclaimer.
+* 
+*  2) Redistributions in binary form must reproduce the above copyright notice,
+*     this list of conditions and the following disclaimer in the documentation
+*     and/or other materials provided with the distribution.
+* 
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+* 
+* Author list: 
+*   Cong Xu	    ( Email: czx102 at psu dot edu 
+*                     Website: http://www.cse.psu.edu/~czx102/ )
+*   Xiangyu Dong    ( Email: xydong at cse dot psu dot edu
+*                     Website: http://www.cse.psu.edu/~xydong/ )
+*******************************************************************************/
+
+
+#include "Comparator.hpp"
+#include "global.hpp"
+#include "formula.hpp"
+
+#include <math.h>
+
+void Comparator::Initialize(int _numTagBits, double _capLoad){
+	if (initialized)
+		std::cout << "[Comparator] Warning: Already initialized!" << std::endl;
+
+	numTagBits = _numTagBits / 4;  /* Assuming there are 4 quarter comparators. input tagbits is already a multiple of 4 */
+	capLoad = _capLoad;
+	widthNMOSInv[0] = 7.5 * gTech.featureSize;
+	widthPMOSInv[0] = 12.5 * gTech.featureSize;
+	widthNMOSInv[1] = 15 * gTech.featureSize;
+	widthPMOSInv[1] = 25 * gTech.featureSize;
+	widthNMOSInv[2] = 30 * gTech.featureSize;
+	widthPMOSInv[2] = 50 * gTech.featureSize;
+	widthNMOSInv[3] = 50 * gTech.featureSize;
+	widthPMOSInv[3] = 100 * gTech.featureSize;
+	widthNMOSComp = 12.5 * gTech.featureSize;
+	widthPMOSComp = 37.5 * gTech.featureSize;
+
+	initialized = true;
+}
+
+void Comparator::CalculateArea() {
+	if (!initialized) {
+		std::cout << "[Comparator] Error: Require initialization first!" << std::endl;
+	} else {
+		double totalHeight = 0;
+		double totalWidth = 0;
+		double h, w;
+		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN; i++) {
+			CalculateGateArea(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gTech.featureSize*40, gTech, &h, &w);
+			totalHeight = MAX(totalHeight, h);
+			totalWidth += w;
+		}
+		CalculateGateArea(NAND, 2, widthNMOSComp, 0, gTech.featureSize*40, gTech, &h, &w);
+		totalHeight += h;
+		totalWidth = MAX(totalWidth, numTagBits * w);
+		height = totalHeight * 1; // 4 quarter comparators can have different placement, here assumes 1*4
+		width = totalWidth * 4;
+		area = height * width;
+	}
+}
+
+void Comparator::CalculateRC() {
+	if (!initialized) {
+		std::cout << "[Comparator] Error: Require initialization first!" << std::endl;
+	} else {
+		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN; i++) {
+                    CalculateGateCapacitance(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech, &(capInput[i]), &(capOutput[i]));
+		}
+		double capComp, capTemp;
+		CalculateGateCapacitance(NAND, 2, widthNMOSComp, 0, gTech.featureSize*40, gTech, &capTemp, &capComp);
+		capBottom = capOutput[COMPARATOR_INV_CHAIN_LEN-1] + numTagBits * capComp;
+		capTop = numTagBits * capComp + CalculateDrainCap(widthPMOSComp, PMOS, gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech) + capLoad;
+		resBottom = CalculateOnResistance(widthNMOSInv[COMPARATOR_INV_CHAIN_LEN-1], NMOS, gInputParameter.temperature, gTech);
+		resTop = 2 * CalculateOnResistance(widthNMOSComp, NMOS, gInputParameter.temperature, gTech);
+	}
+}
+
+void Comparator::CalculateLatency(double _rampInput) {
+	if (!initialized) {
+		std::cout << "[Comparator] Error: Require initialization first!" << std::endl;
+	} else {
+		rampInput = _rampInput;
+		double resPullDown;
+		double capNode;
+		double tr;	/* time constant */
+		double gm;	/* transconductance */
+		double beta;	/* for horowitz calculation */
+		double temp;
+		readLatency = 0;
+		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN - 1; i++) {
+			resPullDown = CalculateOnResistance(widthNMOSInv[i], NMOS, gInputParameter.temperature, gTech);
+			capNode = capOutput[i] + capInput[i+1];
+			tr = resPullDown * capNode;
+			gm = CalculateTransconductance(widthNMOSInv[i], NMOS, gTech);
+			beta = 1 / (resPullDown * gm);
+			readLatency += horowitz(tr, beta, rampInput, &temp);
+			rampInput = temp;	/* for next stage */
+		}
+		tr = resBottom * capBottom + (resBottom + resTop) * capTop;
+		readLatency += horowitz(tr, 0, rampInput, &rampOutput);
+		rampInput = _rampInput;
+		writeLatency = readLatency;
+	}
+}
+
+void Comparator::CalculatePower() {
+	if (!initialized) {
+		std::cout << "[Comparator] Error: Require initialization first!" << std::endl;
+	} else {
+		/* Leakage power */
+		leakage = 0;
+		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN; i++) {
+			leakage += CalculateGateLeakage(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gInputParameter.temperature, gTech)
+					* gTech.vdd;
+		}
+		leakage += numTagBits * CalculateGateLeakage(NAND, 2, widthNMOSComp, 0, gInputParameter.temperature, gTech)
+				* gTech.vdd;
+		leakage *= 4;
+		/* Dynamic energy */
+		readDynamicEnergy = 0;
+		double capNode;
+		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN - 1; i++) {
+			capNode = capOutput[i] + capInput[i+1];
+			readDynamicEnergy += capNode * gTech.vdd * gTech.vdd;
+		}
+		readDynamicEnergy += (capBottom + capTop) * gTech.vdd * gTech.vdd;
+		readDynamicEnergy *= 4;
+		writeDynamicEnergy = readDynamicEnergy;
+	}
+}
+
+void Comparator::PrintProperty() {
+	std::cout << "Comparator Properties:" << std::endl;
+	FunctionUnit::PrintProperty();
+}
