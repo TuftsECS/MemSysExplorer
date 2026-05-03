@@ -49,11 +49,11 @@ using namespace std;
 Result::Result() {
 	// TODO Auto-generated constructor stub
 	if (gInputParameter->routingMode == h_tree)
-		bank = new BankWithHtree();
+        bank = std::make_unique<BankWithHtree>();
 	else
-		bank = new BankWithoutHtree();
-	localWire = new Wire();
-	globalWire = new Wire();
+        bank = std::make_unique<BankWithoutHtree>();
+	localWire = std::make_unique<Wire>();
+	globalWire = std::make_unique<Wire>();
 
 	/* initialize the worst case */
 	bank->readLatency = invalid_value;
@@ -64,16 +64,6 @@ Result::Result() {
 	bank->height = invalid_value;
 	bank->width = invalid_value;
 	bank->area = invalid_value;
-}
-
-Result::~Result() {
-	// TODO Auto-generated destructor stub
-	if (bank)
-		delete bank;
-	if (Result::localWire)
-		delete Result::localWire;
-	if (Result::globalWire)
-		delete Result::globalWire;
 }
 
 void Result::reset() {

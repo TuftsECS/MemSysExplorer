@@ -38,6 +38,7 @@
 #ifndef MSE_WIRE_H
 #define MSE_WIRE_H
 
+#include <memory>
 #include <iostream>
 #include "typedef.h"
 #include "SenseAmp.h"
@@ -46,8 +47,6 @@ using namespace std;
 
 class Wire {
 public:
-	virtual ~Wire();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterType _wireRepeaterType,
@@ -87,7 +86,7 @@ public:
 	double resWirePerUnit;			/* Unit: ohm/m */
 	double capWirePerUnit;			/* Unit: F/m */
 
-	SenseAmp* senseAmp = nullptr;
+	std::unique_ptr<SenseAmp> senseAmp;
 };
 
 #endif /* MSE_WIRE_H */

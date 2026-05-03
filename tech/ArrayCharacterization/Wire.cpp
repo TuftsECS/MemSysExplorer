@@ -41,20 +41,11 @@
 #include "constant.h"
 #include <math.h>
 
-Wire::~Wire() {
-	// TODO Auto-generated destructor stub
-	if (senseAmp)
-		delete senseAmp;
-}
-
 void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterType _wireRepeaterType,
 		int _temperature, bool _isLowSwing) {
 	if (initialized) {
 		/* reload the new input, clear the previous setting */
 		initialized = false;
-		if (senseAmp)
-			delete senseAmp;
-		senseAmp = nullptr;
 	}
 
 	featureSizeInNano = _featureSizeInNano;
@@ -618,7 +609,7 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				*(leakagePower) += 2 * gTech->vdd * CalculateGateLeakage(NAND, 2, 2 * widthNmos, widthPmos, gInputParameter->temperature, *gTech);
 				*(leakagePower) *= 2;
 
-				senseAmp = new SenseAmp;
+				senseAmp = std::make_unique<SenseAmp>();
 				bool mlc = false;
                                 if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
                                     mlc = true;

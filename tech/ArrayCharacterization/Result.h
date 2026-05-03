@@ -43,10 +43,11 @@
 #include "Wire.h"
 #include "yaml-cpp/yaml.h"
 
+#include <memory>
+
 class Result {
 public:
 	Result();
-	virtual ~Result();
 
 	/* Functions */
 	void print();
@@ -60,9 +61,9 @@ public:
 
 	OptimizationTarget optimizationTarget = read_latency_optimized;	/* Exploration should not be assigned here */
 
-	Bank* bank;
-	Wire* localWire;		/* TO-DO: this one has the same name as one of the global variables */
-	Wire* globalWire;
+	std::unique_ptr<Bank> bank;
+	std::unique_ptr<Wire> localWire;		/* TO-DO: this one has the same name as one of the global variables */
+	std::unique_ptr<Wire> globalWire;
 
 	double limitReadLatency = invalid_value;			/* The maximum allowable read latency, Unit: s */
 	double limitWriteLatency = invalid_value;			/* The maximum allowable write latency, Unit: s */
