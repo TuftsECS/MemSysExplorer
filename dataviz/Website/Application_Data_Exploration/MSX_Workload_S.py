@@ -28,18 +28,22 @@ This dashboard compares how different profilers observe system and memory behavi
 
 The following visualizations show the characteristics of different memory cell types. The code assumes that these columns exist for filtering:
 
-- **Technology**
-- **Benchmark**
+- **Profiler**
 - **Benchmark Suite**
+- **Display Mode** (individual points vs averages)
+- **Input File** (optional)
+- **Benchmark Category** 
+- **Compiler Flag** (optional)
 
-and the following colums exist for plotting:
+and the following columns exist for plotting:
 
-- **Execution Time (microseconds)**
-- **Peak Memory (KB)**
+- **Execution Time (microseconds)** (only available for Dynamorio)
+- **Peak Memory (KB)** (only available for Dynamorio)
 - **Read Frequency (accesses/us)**
 - **Write Frequency (accesses/us)**
 - **Total Reads (count)**
 - **Total Writes (count)**
+
 
 
 CSV files should live in a `CSV_Files` folder within the root directory.  
@@ -191,8 +195,8 @@ column_patterns = [
 ]
 
 # Initial selections, change if needed
-initial_x = 'execution_time (microseconds)'
-initial_y = 'peak_memory_kb (KB)'
+initial_x = 'workingset_size (count)'
+initial_y = 'write_freq (accesses/us)'
 
 # #convert all columns to numeric
 # for col in df2.columns:
@@ -246,6 +250,24 @@ stats_md = f"""
 ---
 """
 
+def build_summary(df):
+    prof = df["Profiler"].value_counts().reset_index()
+    prof.columns = ["Profiler", "count"]
+
+    bench = df["BenchmarkCategory"].value_counts().reset_index()
+    bench.columns = ["BenchmarkCategory", "count"]
+
+    plat = df["Platform"].value_counts().reset_index()
+    plat.columns = ["Platform", "count"]
+
+    return {
+        "Profiler": prof,
+        "BenchmarkCategory": bench,
+        "Platform": plat,
+    }
+
+summary_data = build_summary(df2)
+
 #combine with existing markdown
 combined_md = md_text + "\n" + stats_md
 
@@ -257,6 +279,75 @@ comment = Div(
     styles={ 
       'font-size': '14px',   
     }
+)
+
+prof_summary = summary_data["Profiler"]
+
+prof_source = ColumnDataSource(prof_summary)
+
+prof_fig = figure(
+    x_range=prof_summary["Profiler"].tolist(),
+    title="Examples per Profiler",
+    height=300,
+    toolbar_location=None
+)
+
+prof_fig.vbar(x="Profiler", top="count", width=0.8, source=prof_source)
+hover = HoverTool(
+    tooltips=[
+        ("Category", "@Profiler"),
+        ("Count", "@count")
+    ]
+)
+prof_fig.add_tools(hover)
+
+bench_summary = summary_data["BenchmarkCategory"]
+
+bench_source = ColumnDataSource(bench_summary)
+
+bench_fig = figure(
+    x_range=bench_summary["BenchmarkCategory"].tolist(),
+    title="Examples per Benchmark Category",
+    height=300,
+    width=1000,
+    toolbar_location=None
+)
+hover = HoverTool(
+    tooltips=[
+        ("Category", "@BenchmarkCategory"),
+        ("Count", "@count")
+    ]
+)
+bench_fig.add_tools(hover)
+
+bench_fig.vbar(x="BenchmarkCategory", top="count", width=0.8, source=bench_source)
+bench_fig.xaxis.major_label_orientation = 0.8
+plat_summary = summary_data["Platform"]
+
+plat_source = ColumnDataSource(plat_summary)
+
+plat_fig = figure(
+    x_range=plat_summary["Platform"].tolist(),
+    title="CPU vs GPU Coverage",
+    height=300,
+    toolbar_location=None
+)
+
+plat_fig.vbar(x="Platform", top="count", width=0.8, source=plat_source)
+hover = HoverTool(
+    tooltips=[
+        ("Category", "@Platform"),
+        ("Count", "@count")
+    ]
+)
+plat_fig.add_tools(hover)
+
+summary_section = column(
+    Div(text="<h2>Dataset Overview</h2>"),
+    Div(text="<p>This section provides a summary of the dataset used in the visualizations, including the distribution of samples across different profilers, benchmark categories, and platforms.</p>"),
+    prof_fig,
+    bench_fig,
+    plat_fig
 )
 
 #create figure
@@ -320,20 +411,19 @@ def calculate_plot_size(num_points):
 # CREATE WIDGETS (SIMPLIFIED)
 # =========================
 
+platform_select = MultiChoice(
+    title="Platform (CPU / GPU):",
+    value=sorted(df2["Platform"].dropna().unique().tolist()),
+    options=sorted(df2["Platform"].dropna().unique().tolist()),
+    width=300
+)
+
 # profiler filter (keep multi-select)
 profiler_select = MultiChoice(
     title="Profiler:",
     value=sorted(df2[tech].unique().tolist()),
     options=sorted(df2[tech].unique().tolist()),
     width=400
-)
-
-# benchmark filter (keep single select)
-benchmark_select = Select(
-    title="Benchmark Category:",
-    value="ALL",
-    options=["ALL"] + sorted(df2["BenchmarkCategory"].unique().tolist()),
-    width=200
 )
 
 #suite filter (keep multi-select)
@@ -398,7 +488,7 @@ def update_plot():
     selected_y = yaxis_select.value
     selected_suite = suite_select.value
 
-    selected_benchmark = benchmark_select.value  # single select
+    selected_benchmark_category = benchmark_category_select.value
     selected_input = input_select.value
     selected_compiler = compiler_select.value
 
@@ -419,6 +509,11 @@ def update_plot():
     # -------------------------
     base_df = df2.copy()
 
+    # 🔥 TOP-LEVEL PLATFORM FILTER
+    selected_platform = platform_select.value
+    if selected_platform:
+        base_df = base_df[base_df["Platform"].isin(selected_platform)]
+
     if selected_profilers:
         base_df = base_df[base_df[tech].isin(selected_profilers)]
 
@@ -431,9 +526,10 @@ def update_plot():
     def update_dependent_dropdowns(df):
         # Benchmark Category
         valid_bench = sorted(df["BenchmarkCategory"].dropna().unique().tolist())
-        benchmark_select.options = ["ALL"] + valid_bench
-        if benchmark_select.value not in benchmark_select.options:
-            benchmark_select.value = "ALL"
+        benchmark_category_select.options = valid_bench
+        benchmark_category_select.value = [
+            v for v in benchmark_category_select.value if v in valid_bench
+        ]
 
         # Input File
         valid_inputs = sorted(df["InputFile"].dropna().unique().tolist())
@@ -452,9 +548,9 @@ def update_plot():
     # -------------------------
     filtered_df = base_df.copy()
 
-    if selected_benchmark != "ALL":
+    if selected_benchmark_category != "ALL":
         filtered_df = filtered_df[
-            filtered_df["BenchmarkCategory"] == selected_benchmark
+            filtered_df["BenchmarkCategory"].isin(selected_benchmark_category)
         ]
 
     if selected_input:
@@ -569,11 +665,11 @@ def update_plot():
     fig.add_tools(hover)
 
 #set up callbacks for each widget
+platform_select.on_change('value', lambda attr, old, new: update_plot())
 profiler_select.on_change('value', lambda attr, old, new: update_plot())
 xaxis_select.on_change('value', lambda attr, old, new: update_plot())
 yaxis_select.on_change('value', lambda attr, old, new: update_plot())
 display_mode.on_change('value', lambda attr, old, new: update_plot())
-benchmark_select.on_change('value', lambda attr, old, new: update_plot())
 suite_select.on_change('value', lambda attr, old, new: update_plot())
 input_select.on_change('value', lambda attr, old, new: update_plot())
 benchmark_category_select.on_change('value', lambda attr, old, new: update_plot())
@@ -583,9 +679,10 @@ compiler_select.on_change('value', lambda attr, old, new: update_plot())
 #set layout
 layout = column(
     comment,
+    summary_section,
     row(
+        platform_select,
         profiler_select,
-        benchmark_select,
         display_mode,
         suite_select,
     ),
