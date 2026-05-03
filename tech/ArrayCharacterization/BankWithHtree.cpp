@@ -39,38 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-BankWithHtree::~BankWithHtree() {
-	// TODO Auto-generated destructor stub
-	if (numHorizontalAddressBitToRoute)
-		delete [] numHorizontalAddressBitToRoute;
-	if (numHorizontalDataDistributeBitToRoute)
-		delete [] numHorizontalDataDistributeBitToRoute;
-	if (numHorizontalDataBroadcastBitToRoute)
-		delete [] numHorizontalDataBroadcastBitToRoute;
-	if (numHorizontalWire)
-		delete [] numHorizontalWire;
-	if (numSumHorizontalWire)
-		delete [] numSumHorizontalWire;
-	if (numActiveHorizontalWire)
-		delete [] numActiveHorizontalWire;
-	if (lengthHorizontalWire)
-		delete [] lengthHorizontalWire;
-	if (numVerticalAddressBitToRoute)
-		delete [] numVerticalAddressBitToRoute;
-	if (numVerticalDataDistributeBitToRoute)
-		delete [] numVerticalDataDistributeBitToRoute;
-	if (numVerticalDataBroadcastBitToRoute)
-		delete [] numVerticalDataBroadcastBitToRoute;
-	if (numVerticalWire)
-		delete [] numVerticalWire;
-	if (numSumVerticalWire)
-		delete [] numSumVerticalWire;
-	if (numActiveVerticalWire)
-		delete [] numActiveVerticalWire;
-	if (lengthVerticalWire)
-		delete [] lengthVerticalWire;
-}
-
 void BankWithHtree::Initialize(int _numRowMat, int _numColumnMat, long long _capacity,
 		long _blockSize, int _associativity, int _numRowPerSet, int _numActiveMatPerRow,
 		int _numActiveMatPerColumn, int _muxSenseAmp, bool _internalSenseAmp, int _muxOutputLev1, int _muxOutputLev2,
@@ -79,50 +47,9 @@ void BankWithHtree::Initialize(int _numRowMat, int _numColumnMat, long long _cap
 		BufferDesignTarget _areaOptimizationLevel, MemoryType _memoryType) {
 	if (initialized) {
 		/* Reset the class for re-initialization */
-		if (numHorizontalAddressBitToRoute)
-			delete [] numHorizontalAddressBitToRoute;
-		if (numHorizontalDataDistributeBitToRoute)
-			delete [] numHorizontalDataDistributeBitToRoute;
-		if (numHorizontalDataBroadcastBitToRoute)
-			delete [] numHorizontalDataBroadcastBitToRoute;
-		if (numHorizontalWire)
-			delete [] numHorizontalWire;
-		if (numSumHorizontalWire)
-			delete [] numSumHorizontalWire;
-		if (numActiveHorizontalWire)
-			delete [] numActiveHorizontalWire;
-		if (lengthHorizontalWire)
-			delete [] lengthHorizontalWire;
-		if (numVerticalAddressBitToRoute)
-			delete [] numVerticalAddressBitToRoute;
-		if (numVerticalDataDistributeBitToRoute)
-			delete [] numVerticalDataDistributeBitToRoute;
-		if (numVerticalDataBroadcastBitToRoute)
-			delete [] numVerticalDataBroadcastBitToRoute;
-		if (numVerticalWire)
-			delete [] numVerticalWire;
-		if (numSumVerticalWire)
-			delete [] numSumVerticalWire;
-		if (numActiveVerticalWire)
-			delete [] numActiveVerticalWire;
-		if (lengthVerticalWire)
-			delete [] lengthVerticalWire;
+		cout << "[Bank] Warning: Already initialized!" << endl;
 		initialized = false;
 		invalid = false;
-		numHorizontalAddressBitToRoute = nullptr;  /* The number of horizontal bits to route on level x */
-		numHorizontalDataDistributeBitToRoute = nullptr;   /* The number of horizontal data-in bits to route on level x */
-		numHorizontalDataBroadcastBitToRoute = nullptr;  /* The number of horizontal data-out bits to route on level x */
-		numHorizontalWire = nullptr;		/* The number of horizontal wires on level x */
-		numSumHorizontalWire = nullptr;	/* The number of total horizontal wires on level x */
-		numActiveHorizontalWire = nullptr;	/* The number of active horizontal wires on level x */
-		lengthHorizontalWire = nullptr;	/* The length of horizontal wires on level x, Unit: m */
-		numVerticalAddressBitToRoute = nullptr;	/* The number of vertical address bits to route on level x */
-		numVerticalDataDistributeBitToRoute = nullptr;  /* The number of vertical data-in bits to route on level x */
-		numVerticalDataBroadcastBitToRoute = nullptr; /* The number of vertical data-out bits to route on level x */
-		numVerticalWire = nullptr;			/* The number of vertical wires on level x */
-		numSumVerticalWire = nullptr;		/* The number of total vertical wires on level x */
-	    numActiveVerticalWire = nullptr;	/* The number of active vertical wires on level x */
-		lengthVerticalWire = nullptr;		/* The length of vertical wires on level 2, Unit: m */
 	}
 
 	if (!_internalSenseAmp) {
@@ -130,8 +57,6 @@ void BankWithHtree::Initialize(int _numRowMat, int _numColumnMat, long long _cap
 		cout << "[Bank] Htree organization does not support external sense amplification scheme" << endl;
 		return;
 	}
-	if (initialized)
-		cout << "[Bank] Warning: Already initialized!" << endl;
 
 	numRowMat = _numRowMat;
 	numColumnMat = _numColumnMat;
@@ -195,24 +120,20 @@ void BankWithHtree::Initialize(int _numRowMat, int _numColumnMat, long long _cap
 
 	levelHorizontal = (int)(log2(numColumnMat)+0.1);
 	levelVertical = (int)(log2(numRowMat)+0.1);
-	if (levelHorizontal > 0) {
-		numHorizontalAddressBitToRoute = new int[levelHorizontal];
-		numHorizontalDataDistributeBitToRoute = new int[levelHorizontal];
-		numHorizontalDataBroadcastBitToRoute = new int[levelHorizontal];
-		numHorizontalWire = new int[levelHorizontal];
-		numSumHorizontalWire = new int[levelHorizontal];
-		numActiveHorizontalWire = new int[levelHorizontal];
-		lengthHorizontalWire = new double[levelHorizontal];
-	}
-	if (levelVertical > 0) {
-		numVerticalAddressBitToRoute = new int[levelVertical];
-		numVerticalDataDistributeBitToRoute = new int[levelVertical];
-		numVerticalDataBroadcastBitToRoute = new int[levelVertical];
-		numVerticalWire = new int[levelVertical];
-		numSumVerticalWire = new int[levelVertical];
-		numActiveVerticalWire = new int[levelVertical];
-		lengthVerticalWire = new double[levelVertical];
-	}
+    numHorizontalAddressBitToRoute = std::vector<int>(levelHorizontal);
+    numHorizontalDataDistributeBitToRoute = std::vector<int>(levelHorizontal);
+    numHorizontalDataBroadcastBitToRoute = std::vector<int>(levelHorizontal);
+    numHorizontalWire = std::vector<int>(levelHorizontal);
+    numSumHorizontalWire = std::vector<int>(levelHorizontal);
+    numActiveHorizontalWire = std::vector<int>(levelHorizontal);
+    lengthHorizontalWire = std::vector<double>(levelHorizontal);
+    numVerticalAddressBitToRoute = std::vector<int>(levelVertical);
+    numVerticalDataDistributeBitToRoute = std::vector<int>(levelVertical);
+    numVerticalDataBroadcastBitToRoute = std::vector<int>(levelVertical);
+    numVerticalWire = std::vector<int>(levelVertical);
+    numSumVerticalWire = std::vector<int>(levelVertical);
+    numActiveVerticalWire = std::vector<int>(levelVertical);
+    lengthVerticalWire = std::vector<double>(levelVertical);
 
 	/* When H > V */
 	int h = levelHorizontal;

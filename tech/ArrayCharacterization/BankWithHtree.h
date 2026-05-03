@@ -38,11 +38,12 @@
 #ifndef MSE_BANKWITHHTREE_H
 #define MSE_BANKWITHHTREE_H
 
+#include <vector>
+
 #include "Bank.h"
 
 class BankWithHtree: public Bank {
 public:
-	virtual ~BankWithHtree();
 	void Initialize(int _numRowMat, int _numColumnMat, long long _capacity,
 			long _blockSize, int _associativity, int _numRowPerSet, int _numActiveMatPerRow,
 			int _numActiveMatPerColumn, int _muxSenseAmp, bool _internalSenseAmp, int _muxOutputLev1, int _muxOutputLev2,
@@ -60,20 +61,20 @@ public:
 
 	int levelHorizontal;			/* The number of horizontal levels */
 	int levelVertical;				/* The number of vertical levels */
-	int* numHorizontalAddressBitToRoute = nullptr;  /* The number of horizontal bits to route on level x */
-	int* numHorizontalDataDistributeBitToRoute = nullptr;	/* The number of horizontal data-in bits to route on level x */
-	int* numHorizontalDataBroadcastBitToRoute = nullptr;		/* The number of horizontal data-out bits to route on level x */
-	int* numHorizontalWire = nullptr;        /* The number of horizontal wire tiers on level x */
-	int* numSumHorizontalWire = nullptr;     /* The number of total horizontal wire groups on level x */
-	int* numActiveHorizontalWire = nullptr;  /* The number of active horizontal wire groups on level x */
-	double* lengthHorizontalWire = nullptr;	/* The length of horizontal wires on level x, Unit: m */
-	int* numVerticalAddressBitToRoute = nullptr;	/* The number of vertical address bits to route on level x */
-	int* numVerticalDataDistributeBitToRoute = nullptr;	/* The number of vertical data-in bits to route on level x */
-	int* numVerticalDataBroadcastBitToRoute = nullptr;	/* The number of vertical data-out bits to route on level x */
-	int* numVerticalWire = nullptr;          /* The number of vertical wire tiers on level x */
-	int* numSumVerticalWire = nullptr;       /* The number of total vertical wire groups on level x */
-    int* numActiveVerticalWire = nullptr;    /* The number of active vertical wire groups on level x */
-	double* lengthVerticalWire = nullptr;	/* The length of vertical wires on level x, Unit: m */
+	std::vector<int> numHorizontalAddressBitToRoute;  /* The number of horizontal bits to route on level x */
+	std::vector<int> numHorizontalDataDistributeBitToRoute;	/* The number of horizontal data-in bits to route on level x */
+	std::vector<int> numHorizontalDataBroadcastBitToRoute;		/* The number of horizontal data-out bits to route on level x */
+	std::vector<int> numHorizontalWire;        /* The number of horizontal wire tiers on level x */
+	std::vector<int> numSumHorizontalWire;     /* The number of total horizontal wire groups on level x */
+	std::vector<int> numActiveHorizontalWire;  /* The number of active horizontal wire groups on level x */
+	std::vector<double> lengthHorizontalWire;	/* The length of horizontal wires on level x, Unit: m */
+	std::vector<int> numVerticalAddressBitToRoute;	/* The number of vertical address bits to route on level x */
+	std::vector<int> numVerticalDataDistributeBitToRoute;	/* The number of vertical data-in bits to route on level x */
+	std::vector<int> numVerticalDataBroadcastBitToRoute;	/* The number of vertical data-out bits to route on level x */
+	std::vector<int> numVerticalWire;          /* The number of vertical wire tiers on level x */
+	std::vector<int> numSumVerticalWire;       /* The number of total vertical wire groups on level x */
+    std::vector<int> numActiveVerticalWire;    /* The number of active vertical wire groups on level x */
+	std::vector<double> lengthVerticalWire;	/* The length of vertical wires on level x, Unit: m */
 };
 
 #endif /* MSE_BANKWITHHTREE_H */
