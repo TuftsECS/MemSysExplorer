@@ -55,8 +55,8 @@ public:
 	SenseAmp& operator=(const SenseAmp&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
-	bool invalid;		/* Indicate that the current configuration is not valid */
+	bool initialized = false;	/* Initialization flag */
+	bool invalid = false;		/* Indicate that the current configuration is not valid */
 	long long numColumn;		/* Number of columns */
 	bool currentSense;	/* Whether the sensing scheme is current-based */
 	double senseVoltage;	/* Minimum sensible voltage */

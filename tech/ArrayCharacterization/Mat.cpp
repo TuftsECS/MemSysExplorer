@@ -41,8 +41,6 @@
 
 Mat::Mat() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	invalid = false;
 }
 
 Mat::~Mat() {

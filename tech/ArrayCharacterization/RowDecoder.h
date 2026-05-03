@@ -58,8 +58,8 @@ public:
 	RowDecoder& operator=(const RowDecoder&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
-	bool invalid;      /*Invalidatio flag */
+	bool initialized = false;	/* Initialization flag */
+	bool invalid = false;      /*Invalidatio flag */
 	OutputDriver outputDriver;
 	int numRow;			/* Number of rows */
 	bool multipleRowPerSet;		/* For cache design, whether a set is partitioned into multiple wordlines */
@@ -69,9 +69,12 @@ public:
 	BufferDesignTarget areaOptimizationLevel; /* 0 for latency, 2 for area */
 	double minDriverCurrent; /* Minimum driving current should be provided */
 
-	double widthNandN, widthNandP;
-	double capNandInput, capNandOutput;
-	double rampInput, rampOutput;
+	double widthNandN;
+    double widthNandP;
+	double capNandInput;
+    double capNandOutput;
+	double rampInput;
+    double rampOutput;
 };
 
 #endif /* MSE_ROWDECODER_H */

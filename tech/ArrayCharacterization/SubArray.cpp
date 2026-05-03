@@ -44,8 +44,6 @@
 
 SubArray::SubArray() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	invalid = false;
 }
 
 SubArray::~SubArray() {

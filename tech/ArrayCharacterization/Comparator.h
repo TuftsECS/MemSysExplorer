@@ -56,17 +56,21 @@ public:
 	Comparator& operator=(const Comparator&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
+	bool initialized = false;	/* Initialization flag */
 	int numTagBits;     /* Number of tag bits */
-	double capLoad;     /* Load Capacitance */
+	double capLoad = 0;     /* Load Capacitance */
 	double widthNMOSInv[COMPARATOR_INV_CHAIN_LEN];
 	double widthPMOSInv[COMPARATOR_INV_CHAIN_LEN];
 	double widthNMOSComp;
 	double widthPMOSComp;
 	double capInput[COMPARATOR_INV_CHAIN_LEN];
 	double capOutput[COMPARATOR_INV_CHAIN_LEN];
-	double capBottom, capTop, resBottom, resTop;
-	double rampInput, rampOutput;
+	double capBottom;
+    double capTop;
+    double resBottom;
+    double resTop;
+	double rampInput;
+    double rampOutput = 1e40;
 };
 
 #endif /* MSE_COMPARATOR_H */

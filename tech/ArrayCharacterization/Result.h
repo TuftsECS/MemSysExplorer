@@ -58,20 +58,20 @@ public:
 	YAML::Node toYamlNodeAsCache(Result& tagBank, CacheAccessMode cacheAccessMode);
 	void compareAndUpdate(Result& newResult);
 
-	OptimizationTarget optimizationTarget;	/* Exploration should not be assigned here */
+	OptimizationTarget optimizationTarget = read_latency_optimized;	/* Exploration should not be assigned here */
 
 	Bank* bank;
 	Wire* localWire;		/* TO-DO: this one has the same name as one of the global variables */
 	Wire* globalWire;
 
-	double limitReadLatency;			/* The maximum allowable read latency, Unit: s */
-	double limitWriteLatency;			/* The maximum allowable write latency, Unit: s */
-	double limitReadDynamicEnergy;		/* The maximum allowable read dynamic energy, Unit: J */
-	double limitWriteDynamicEnergy;		/* The maximum allowable write dynamic energy, Unit: J */
-	double limitReadEdp;				/* The maximum allowable read EDP, Unit: s-J */
-	double limitWriteEdp;				/* The maximum allowable write EDP, Unit: s-J */
-	double limitArea;					/* The maximum allowable area, Unit: m^2 */
-	double limitLeakage;				/* The maximum allowable leakage power, Unit: W */
+	double limitReadLatency = invalid_value;			/* The maximum allowable read latency, Unit: s */
+	double limitWriteLatency = invalid_value;			/* The maximum allowable write latency, Unit: s */
+	double limitReadDynamicEnergy = invalid_value;		/* The maximum allowable read dynamic energy, Unit: J */
+	double limitWriteDynamicEnergy = invalid_value;		/* The maximum allowable write dynamic energy, Unit: J */
+	double limitReadEdp = invalid_value;				/* The maximum allowable read EDP, Unit: s-J */
+	double limitWriteEdp = invalid_value;				/* The maximum allowable write EDP, Unit: s-J */
+	double limitArea = invalid_value;					/* The maximum allowable area, Unit: m^2 */
+	double limitLeakage = invalid_value;				/* The maximum allowable leakage power, Unit: W */
 };
 
 #endif /* MSE_RESULT_H */

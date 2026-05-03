@@ -51,19 +51,25 @@ public:
 	virtual void PrintProperty();
 
 	/* Properties */
-	double height;		/* Unit: m */
-	double width;		/* Unit: m */
-	double area;		/* Unit: m^2 */
-	double readLatency, writeLatency;		/* Unit: s */
-	double readDynamicEnergy, writeDynamicEnergy;	/* Unit: J */
-	double leakage;		/* Unit: W */
+	double height = 0;		/* Unit: m */
+	double width = 0;		/* Unit: m */
+	double area = 0;		/* Unit: m^2 */
+	double readLatency = 0;		/* Unit: s */
+    double writeLatency = 0;		/* Unit: s */
+	double readDynamicEnergy = 0;	/* Unit: J */
+    double writeDynamicEnergy = 0;	/* Unit: J */
+	double leakage = 0;		/* Unit: W */
 
 	/* Optional properties (not valid for all the memory cells */
-	double setLatency, resetLatency;				/* Unit: s */
-    double refreshLatency;                  /* Unit: s */
-	double setDynamicEnergy, resetDynamicEnergy;	/* Unit: J */
-	double cellReadEnergy, cellSetEnergy, cellResetEnergy;			/* Unit: J */
-    double refreshDynamicEnergy;                    /* Unit: J */
+	double setLatency = 0;				/* Unit: s */
+    double resetLatency = 0;				/* Unit: s */
+    double refreshLatency = 0;                  /* Unit: s */
+	double setDynamicEnergy = 0;	/* Unit: J */
+    double resetDynamicEnergy = 0;	/* Unit: J */
+	double cellReadEnergy = 0;	/* Unit: J */
+    double cellSetEnergy = 0;	/* Unit: J */
+    double cellResetEnergy = 0;	/* Unit: J */
+    double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
 #endif /* MSE_FUNCTIONUNIT_H */

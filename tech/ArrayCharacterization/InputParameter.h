@@ -42,6 +42,7 @@
 #include <string>
 #include <stdint.h>
 
+#include "constant.h"
 #include "typedef.h"
 
 using namespace std;
@@ -56,84 +57,84 @@ public:
 	void PrintInputParameter();
 
 	/* Properties */
-	DesignTarget designTarget;		/* Cache, RAM, or CAM */
-	OptimizationTarget optimizationTarget;	/* Either read latency, write latency, read energy, write energy, leakage, or area */
-	int processNode;				/* Process node (nm) */
-	int processNodeW;				/* Process node (nm) */
-	int processNodeR;				/* Process node (nm) */
+	DesignTarget designTarget = cache;		/* Cache, RAM, or CAM */
+	OptimizationTarget optimizationTarget = read_latency_optimized;	/* Either read latency, write latency, read energy, write energy, leakage, or area */
+	int processNode = 90;				/* Process node (nm) */
+	int processNodeW = 90;				/* Process node (nm) */
+	int processNodeR = 90;				/* Process node (nm) */
 	int64_t capacity;				/* Memory/cache capacity, Unit: Byte */
 	long wordWidth;					/* The width of each input/output word, Unit: bit */
-	DeviceRoadmap deviceRoadmap;	/* ITRS roadmap: HP, LSTP, or LOP */
-	DeviceRoadmap deviceRoadmapW;	/* ITRS roadmap: HP, LSTP, or LOP */
-	DeviceRoadmap deviceRoadmapR;	/* ITRS roadmap: HP, LSTP, or LOP */
+	DeviceRoadmap deviceRoadmap = LOP;	/* ITRS roadmap: HP, LSTP, or LOP */
+	DeviceRoadmap deviceRoadmapW = LOP;	/* ITRS roadmap: HP, LSTP, or LOP */
+	DeviceRoadmap deviceRoadmapR = LOP;	/* ITRS roadmap: HP, LSTP, or LOP */
 	string fileMemCell;				/* Input file name of memory cell type */
 	int temperature;				/* The ambient temperature, Unit: K */
-	double maxDriverCurrent;        /* The maximum driving current that the wordline/bitline driver can provide */
-	WriteScheme writeScheme;		/* The write scheme */
-	double readLatencyConstraint;	/* The allowed variation to the best read latency */
-	double writeLatencyConstraint;	/* The allowed variation to the best write latency */
-	double readDynamicEnergyConstraint;		/* The allowed variation to the best read dynamic energy */
-	double writeDynamicEnergyConstraint;	/* The allowed variation to the best write dynamic energy */
-	double leakageConstraint;		/* The allowed variation to the best leakage energy */
-	double areaConstraint;			/* The allowed variation to the best leakage energy */
-	double readEdpConstraint;		/* The allowed variation to the best read EDP */
-	double writeEdpConstraint;		/* The allowed variation to the best write EDP */
-	bool isConstraintApplied;		/* If any design constraint is applied */
-	bool isPruningEnabled;			/* Whether to prune the results during the exploration */
-	bool useCactiAssumption;		/* Use the CACTI assumptions on the array organization */
+	double maxDriverCurrent = 0;        /* The maximum driving current that the wordline/bitline driver can provide */
+	WriteScheme writeScheme = normal_write;		/* The write scheme */
+	double readLatencyConstraint = invalid_value;	/* The allowed variation to the best read latency */
+	double writeLatencyConstraint = invalid_value;	/* The allowed variation to the best write latency */
+	double readDynamicEnergyConstraint = invalid_value;		/* The allowed variation to the best read dynamic energy */
+	double writeDynamicEnergyConstraint = invalid_value;	/* The allowed variation to the best write dynamic energy */
+	double leakageConstraint = invalid_value;		/* The allowed variation to the best leakage energy */
+	double areaConstraint = invalid_value;			/* The allowed variation to the best leakage energy */
+	double readEdpConstraint = invalid_value;		/* The allowed variation to the best read EDP */
+	double writeEdpConstraint = invalid_value;		/* The allowed variation to the best write EDP */
+	bool isConstraintApplied = false;		/* If any design constraint is applied */
+	bool isPruningEnabled = false;			/* Whether to prune the results during the exploration */
+	bool useCactiAssumption = false;		/* Use the CACTI assumptions on the array organization */
 
-	int associativity;				/* Associativity, for cache design only */
-	CacheAccessMode cacheAccessMode;	/* Access mode (for cache only) : normal, sequential, fast */
+	int associativity = 1;				/* Associativity, for cache design only, default value for non-cache design */
+	CacheAccessMode cacheAccessMode = normal_access_mode;	/* Access mode (for cache only) : normal, sequential, fast */
 
-	long pageSize;					/* Unit: bit, For DRAM and NAND flash memory only */
-	long flashBlockSize;				/* Unit: bit, For NAND flash memory only */
+	long pageSize = 0;					/* Unit: bit, For DRAM and NAND flash memory only */
+	long flashBlockSize = 0;				/* Unit: bit, For NAND flash memory only */
 
-	RoutingMode routingMode;
-	bool internalSensing;
+	RoutingMode routingMode = h_tree;
+	bool internalSensing = true;
 
-	double maxNmosSize;				/* Default value is MAX_NMOS_SIZE in constant.h, however, user might change it, Unit: F */
+	double maxNmosSize = MAX_NMOS_SIZE;				/* Default value is MAX_NMOS_SIZE in constant.h, however, user might change it, Unit: F */
 
-	string outputFilePrefix;
-	string outputDirectory;
+	string outputFilePrefix = "output";
+	string outputDirectory = "results/";
 
-	int minNumRowMat;
-	int maxNumRowMat;
-	int minNumColumnMat;
-	int maxNumColumnMat;
-	int minNumActiveMatPerRow;
-	int maxNumActiveMatPerRow;
-	int minNumActiveMatPerColumn;
-	int maxNumActiveMatPerColumn;
-	int minNumRowSubarray;
-	int maxNumRowSubarray;
-	int minNumColumnSubarray;
-	int maxNumColumnSubarray;
-	int minNumActiveSubarrayPerRow;
-	int maxNumActiveSubarrayPerRow;
-	int minNumActiveSubarrayPerColumn;
-	int maxNumActiveSubarrayPerColumn;
-	int minMuxSenseAmp;
-	int maxMuxSenseAmp;
-	int minMuxOutputLev1;
-	int maxMuxOutputLev1;
-	int minMuxOutputLev2;
-	int maxMuxOutputLev2;
-	int minNumRowPerSet;
-	int maxNumRowPerSet;
-	int minAreaOptimizationLevel;	/* This one is actually OptPriority type */
-	int maxAreaOptimizationLevel;	/* This one is actually OptPriority type */
-	int minLocalWireType;			/* This one is actually WireType type */
-	int maxLocalWireType;			/* This one is actually WireType type */
-	int minGlobalWireType;			/* This one is actually WireType type */
-	int maxGlobalWireType;			/* This one is actually WireType type */
-	int minLocalWireRepeaterType;		/* This one is actually WireRepeaterType type */
-	int maxLocalWireRepeaterType;		/* This one is actually WireRepeaterType type */
-	int minGlobalWireRepeaterType;		/* This one is actually WireRepeaterType type */
-	int maxGlobalWireRepeaterType;		/* This one is actually WireRepeaterType type */
-	int minIsLocalWireLowSwing;		/* This one is actually boolean */
-	int maxIsLocalWireLowSwing;		/* This one is actually boolean */
-	int minIsGlobalWireLowSwing;		/* This one is actually boolean */
-	int maxIsGlobalWireLowSwing;		/* This one is actually boolean */
+	int minNumRowMat = 1;
+	int maxNumRowMat = 512;
+	int minNumColumnMat = 1;
+	int maxNumColumnMat = 512;
+	int minNumActiveMatPerRow = 1;
+	int maxNumActiveMatPerRow = maxNumColumnMat;
+	int minNumActiveMatPerColumn = 1;
+	int maxNumActiveMatPerColumn = maxNumRowMat;
+	int minNumRowSubarray = 1;
+	int maxNumRowSubarray = 2;
+	int minNumColumnSubarray = 1;
+	int maxNumColumnSubarray = 2;
+	int minNumActiveSubarrayPerRow = 1;
+	int maxNumActiveSubarrayPerRow = maxNumColumnSubarray;
+	int minNumActiveSubarrayPerColumn = 1;
+	int maxNumActiveSubarrayPerColumn = maxNumRowSubarray;
+	int minMuxSenseAmp = 1;
+	int maxMuxSenseAmp = 256;
+	int minMuxOutputLev1 = 1;
+	int maxMuxOutputLev1 = 256;
+	int minMuxOutputLev2 = 1;
+	int maxMuxOutputLev2 = 256;
+	int minNumRowPerSet = 1;
+	int maxNumRowPerSet = 256;
+	int minAreaOptimizationLevel = latency_first; /* This one is actually OptPriority type */
+	int maxAreaOptimizationLevel = area_first; /* This one is actually OptPriority type */
+	int minLocalWireType = local_aggressive; /* This one is actually WireType type */
+	int maxLocalWireType = local_conservative; /* This one is actually WireType type */
+	int minGlobalWireType = global_aggressive; /* This one is actually WireType type */
+	int maxGlobalWireType = global_conservative; /* This one is actually WireType type */
+	int minLocalWireRepeaterType = repeated_none; /* This one is actually WireRepeaterType type */
+	int maxLocalWireRepeaterType = repeated_50; /* This one is actually WireRepeaterType type */
+	int minGlobalWireRepeaterType = repeated_none; /* This one is actually WireRepeaterType type */
+	int maxGlobalWireRepeaterType = repeated_50; /* This one is actually WireRepeaterType type */
+	int minIsLocalWireLowSwing = false; /* This one is actually boolean */
+	int maxIsLocalWireLowSwing = true; /* This one is actually boolean */
+	int minIsGlobalWireLowSwing = false; /* This one is actually boolean */
+	int maxIsGlobalWireLowSwing = true; /* This one is actually boolean */
 };
 
 #endif /* MSE_INPUTPARAMETER_H */

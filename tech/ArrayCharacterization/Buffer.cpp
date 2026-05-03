@@ -40,8 +40,6 @@
 
 Buffer::Buffer() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	invalid = false;
 }
 
 Buffer::~Buffer() {

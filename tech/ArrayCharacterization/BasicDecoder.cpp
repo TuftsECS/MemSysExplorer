@@ -41,7 +41,6 @@
 
 BasicDecoder::BasicDecoder() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
 }
 
 BasicDecoder::~BasicDecoder() {

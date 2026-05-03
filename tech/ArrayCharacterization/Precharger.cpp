@@ -41,8 +41,6 @@
 
 Precharger::Precharger() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	enableLatency = 0;
 }
 
 Precharger::~Precharger() {

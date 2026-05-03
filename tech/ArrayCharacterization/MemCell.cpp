@@ -44,57 +44,6 @@
 
 MemCell::MemCell() {
 	// TODO Auto-generated constructor stub
-	memCellType         = PCRAM;
-	area                = 0;
-	aspectRatio         = 0;
-	resistanceOn        = 0;
-	resistanceOff       = 0;
-	readMode            = true;
-	readVoltage         = 0;
-	readCurrent         = 0;
-	readPower           = 0;
-        wordlineBoostRatio  = 1.0;
-	resetMode           = true;
-	resetVoltage        = 0;
-	resetCurrent        = 0;
-	minSenseVoltage     = 0.08;
-	resetPulse          = 0;
-	resetEnergy         = 0;
-	setMode             = true;
-	setVoltage          = 0;
-	setCurrent          = 0;
-	setPulse            = 0;
-	accessType          = CMOS_access;
-	processNode         = 0;
-	setEnergy           = 0;
-
-	/* Optional */
-	stitching         = 0;
-	gateOxThicknessFactor = 2;
-	widthSOIDevice = 0;
-	widthAccessCMOS   = 0;
-	widthAccessCMOSR   = 0;
-	voltageDropAccessDevice = 0;
-	leakageCurrentAccessDevice = 0;
-	capDRAMCell		  = 0;
-	widthSRAMCellNMOS = 2.08;	/* Default NMOS width in SRAM cells is 2.08 (from CACTI) */
-	widthSRAMCellPMOS = 1.23;	/* Default PMOS width in SRAM cells is 1.23 (from CACTI) */
-
-	/*For memristors */
-	readFloating = false;
-	resistanceOnAtSetVoltage = 0;
-	resistanceOffAtSetVoltage = 0;
-	resistanceOnAtResetVoltage = 0;
-	resistanceOffAtResetVoltage = 0;
-	resistanceOnAtReadVoltage = 0;
-	resistanceOffAtReadVoltage = 0;
-	resistanceOnAtHalfReadVoltage = 0;
-	resistanceOffAtHalfReadVoltage = 0;
-
-	retentionTime = invalid_value;
-        /*For multi-level cells SA*/
-        nFingers = 8;
-        nLvl = 4;
 }
 
 MemCell::~MemCell() {

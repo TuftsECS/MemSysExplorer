@@ -62,7 +62,7 @@ public:
 	Wire& operator=(const Wire&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
+	bool initialized = false;	/* Initialization flag */
 	int featureSizeInNano; /* Process feature size, Unit: nm */
 	double featureSize;	/* Process feature size, Unit: m */
 	WireType wireType;	/* Type of wire */
@@ -81,13 +81,14 @@ public:
 
 	double repeaterSize;			/* For repeated wire only, non-repeated wire = 0, Unit: minimum driver size*/
 	double repeaterSpacing;			/* For repeated wire only, non-repeated wire = inf, Unit: m */
-	double repeaterHeight, repeaterWidth;	/* Unit: m */
+	double repeaterHeight;	/* Unit: m */
+    double repeaterWidth;	/* Unit: m */
 	double repeatedWirePitch;		/* For repeated wire only, translate the repeaterSize into meter, Unit: m */
 
 	double resWirePerUnit;			/* Unit: ohm/m */
 	double capWirePerUnit;			/* Unit: F/m */
 
-	SenseAmp* senseAmp;
+	SenseAmp* senseAmp = nullptr;
 };
 
 #endif /* MSE_WIRE_H */

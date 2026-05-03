@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "constant.h"
 #include "typedef.h"
 
 using namespace std;
@@ -62,61 +63,61 @@ public:
 	void PrintCell();
 
 	/* Properties */
-	MemCellType memCellType;	/* Memory cell type (like MRAM, PCRAM, etc.) */
-	int processNode;        /* Cell original process technology node, Unit: nm*/
-	double area;			/* Cell area, Unit: F^2 */
-	double aspectRatio;		/* Cell aspect ratio, H/W */
+	MemCellType memCellType = PCRAM;	/* Memory cell type (like MRAM, PCRAM, etc.) */
+	int processNode = 0;        /* Cell original process technology node, Unit: nm*/
+	double area = 0;			/* Cell area, Unit: F^2 */
+	double aspectRatio = 0;		/* Cell aspect ratio, H/W */
 	double widthInFeatureSize;	/* Cell width, Unit: F */
 	double heightInFeatureSize;	/* Cell height, Unit: F */
-	double resistanceOn;	/* Turn-on resistance */
-	double resistanceOff;	/* Turn-off resistance */
+	double resistanceOn = 0;	/* Turn-on resistance */
+	double resistanceOff = 0;	/* Turn-off resistance */
 	double capacitanceOn;   /* Cell capacitance when memristor is on */
 	double capacitanceOff;  /* Cell capacitance when memristor is off */
-	bool   readMode;		/* true = voltage-mode, false = current-mode */
-	double readVoltage;		/* Read voltage */
-	double readCurrent;		/* Read current */
-	double minSenseVoltage; /* Minimum sense voltage */
-        double wordlineBoostRatio; /*TO-DO: function not realized: ratio of boost wordline voltage to vdd */
-	double readPower;       /* Read power per bitline (uW)*/
-	bool   resetMode;		/* true = voltage-mode, false = current-mode */
-	double resetVoltage;	/* Reset voltage */
-	double resetCurrent;	/* Reset current */
-	double resetPulse;		/* Reset pulse duration (ns) */
-	double resetEnergy;     /* Reset energy per cell (pJ) */
-	bool   setMode;			/* true = voltage-mode, false = current-mode */
-	double setVoltage;		/* Set voltage */
-	double setCurrent;		/* Set current */
-	double setPulse;		/* Set pulse duration (ns) */
-	double setEnergy;       /* Set energy per cell (pJ) */
-	CellAccessType accessType;	/* Cell access type: CMOS, BJT, or diode */
+	bool   readMode = true;		/* true = voltage-mode, false = current-mode */
+	double readVoltage = 0;		/* Read voltage */
+	double readCurrent = 0;		/* Read current */
+	double minSenseVoltage = 0.08; /* Minimum sense voltage */
+        double wordlineBoostRatio = 1.0; /*TO-DO: function not realized: ratio of boost wordline voltage to vdd */
+	double readPower = 0;       /* Read power per bitline (uW)*/
+	bool   resetMode = true;		/* true = voltage-mode, false = current-mode */
+	double resetVoltage = 0;	/* Reset voltage */
+	double resetCurrent = 0;	/* Reset current */
+	double resetPulse = 0;		/* Reset pulse duration (ns) */
+	double resetEnergy = 0;     /* Reset energy per cell (pJ) */
+	bool   setMode = true;			/* true = voltage-mode, false = current-mode */
+	double setVoltage = 0;		/* Set voltage */
+	double setCurrent = 0;		/* Set current */
+	double setPulse = 0;		/* Set pulse duration (ns) */
+	double setEnergy = 0;       /* Set energy per cell (pJ) */
+	CellAccessType accessType = CMOS_access;	/* Cell access type: CMOS, BJT, or diode */
 
 	/* Optional properties */
-	int stitching;			/* If non-zero, add stitching overhead for every x cells */
-	double gateOxThicknessFactor; /* The oxide thickness of FBRAM could be larger than the traditional SOI MOS */
-	double widthSOIDevice; /* The gate width of SOI device as FBRAM element, Unit: F*/
-	double widthAccessCMOS;	/* The gate width of CMOS access transistor, Unit: F */
-	double widthAccessCMOSR;	/* The gate width of CMOS access transistor, Unit: F */
-	double voltageDropAccessDevice;  /* The voltage drop on the access device, Unit: V */
-	double leakageCurrentAccessDevice;  /* Reverse current of access device, Unit: uA */
-	double capDRAMCell;		/* The DRAM cell capacitance if the memory cell is DRAM, Unit: F */
-	double widthSRAMCellNMOS;	/* The gate width of NMOS in SRAM cells, Unit: F */
-	double widthSRAMCellPMOS;	/* The gate width of PMOS in SRAM cells, Unit: F */
+	int stitching = 0;			/* If non-zero, add stitching overhead for every x cells */
+	double gateOxThicknessFactor = 2; /* The oxide thickness of FBRAM could be larger than the traditional SOI MOS */
+	double widthSOIDevice = 0; /* The gate width of SOI device as FBRAM element, Unit: F*/
+	double widthAccessCMOS = 0;	/* The gate width of CMOS access transistor, Unit: F */
+	double widthAccessCMOSR = 0;	/* The gate width of CMOS access transistor, Unit: F */
+	double voltageDropAccessDevice = 0;  /* The voltage drop on the access device, Unit: V */
+	double leakageCurrentAccessDevice = 0;  /* Reverse current of access device, Unit: uA */
+	double capDRAMCell = 0;		/* The DRAM cell capacitance if the memory cell is DRAM, Unit: F */
+	double widthSRAMCellNMOS = 2.08;	/* The gate width of NMOS in SRAM cells, Unit: F, default NMOS width in SRAM cells is 2.08 (from CACTI) */
+	double widthSRAMCellPMOS = 1.23;	/* The gate width of PMOS in SRAM cells, Unit: F, default PMOS width in SRAM cells is 1.23 (from CACTI) */
 
 	/* For memristor */
-	bool readFloating;      /* If unselected wordlines/bitlines are floating to reduce total leakage */
-	double resistanceOnAtSetVoltage; /* Low resistance state when set voltage is applied */
-	double resistanceOffAtSetVoltage; /* High resistance state when set voltage is applied */
-	double resistanceOnAtResetVoltage; /* Low resistance state when reset voltage is applied */
-	double resistanceOffAtResetVoltage; /* High resistance state when reset voltage is applied */
-	double resistanceOnAtReadVoltage; /* Low resistance state when read voltage is applied */
-	double resistanceOffAtReadVoltage; /* High resistance state when read voltage is applied */
-	double resistanceOnAtHalfReadVoltage; /* Low resistance state when 1/2 read voltage is applied */
-	double resistanceOffAtHalfReadVoltage; /* High resistance state when 1/2 read voltage is applied */
-	double resistanceOnAtHalfResetVoltage; /* Low resistance state when 1/2 reset voltage is applied */
+	bool readFloating = false;      /* If unselected wordlines/bitlines are floating to reduce total leakage */
+	double resistanceOnAtSetVoltage = 0; /* Low resistance state when set voltage is applied */
+	double resistanceOffAtSetVoltage = 0; /* High resistance state when set voltage is applied */
+	double resistanceOnAtResetVoltage = 0; /* Low resistance state when reset voltage is applied */
+	double resistanceOffAtResetVoltage = 0; /* High resistance state when reset voltage is applied */
+	double resistanceOnAtReadVoltage = 0; /* Low resistance state when read voltage is applied */
+	double resistanceOffAtReadVoltage = 0; /* High resistance state when read voltage is applied */
+	double resistanceOnAtHalfReadVoltage = 0; /* Low resistance state when 1/2 read voltage is applied */
+	double resistanceOffAtHalfReadVoltage = 0; /* High resistance state when 1/2 read voltage is applied */
+	double resistanceOnAtHalfResetVoltage = 0; /* Low resistance state when 1/2 reset voltage is applied */
     
         /*For multi-level cells SA*/
-        int nFingers;
-        double nLvl;
+        int nFingers = 8;
+        double nLvl = 4;
 	/* For NAND flash */
 	double flashEraseVoltage;		/* The erase voltage, Unit: V, highest W/E voltage in ITRS sheet */
 	double flashPassVoltage;		/* The voltage applied on the unselected wordline within the same block during programming, Unit: V */
@@ -126,7 +127,7 @@ public:
 	double gateCouplingRatio;		/* The ratio of control gate to total floating gate capacitance */
 
     /* For eDRAM. */
-    double retentionTime;           /* Cell time to data loss (us) */
+    double retentionTime = invalid_value;           /* Cell time to data loss (us) */
     double temperature;             /* Temperature for which the cell input values are valid. */
 	double maxStorageNodeDrop;
 };

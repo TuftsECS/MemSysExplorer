@@ -41,11 +41,6 @@
 
 Mux::Mux() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	capForPreviousPowerCalculation = 0;
-	capForPreviousDelayCalculation = 0;
-	capNMOSPassTransistor = 0;
-	resNMOSPassTransistor = 0;
 }
 
 Mux::~Mux() {

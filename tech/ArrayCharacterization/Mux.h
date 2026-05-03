@@ -55,7 +55,7 @@ public:
 	Mux& operator=(const Mux&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
+	bool initialized = false;	/* Initialization flag */
 	int numInput;
 	long long numMux;		/* Number of muxs in each row */
 	double capLoad;
@@ -63,12 +63,13 @@ public:
 	double minDriverCurrent;
     double capOutput;
 	double widthNMOSPassTransistor;
-	double resNMOSPassTransistor;
-	double capNMOSPassTransistor;
-	double capForPreviousDelayCalculation;
-	double capForPreviousPowerCalculation;
+	double resNMOSPassTransistor = 0;
+	double capNMOSPassTransistor = 0;
+	double capForPreviousDelayCalculation = 0;
+	double capForPreviousPowerCalculation = 0;
 
-	double rampInput, rampOutput;
+	double rampInput;
+    double rampOutput;
 };
 
 #endif /* MSE_MUX_H */

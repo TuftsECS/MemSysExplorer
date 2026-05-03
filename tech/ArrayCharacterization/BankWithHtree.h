@@ -61,20 +61,20 @@ public:
 
 	int levelHorizontal;			/* The number of horizontal levels */
 	int levelVertical;				/* The number of vertical levels */
-	int* numHorizontalAddressBitToRoute;  /* The number of horizontal bits to route on level x */
-	int* numHorizontalDataDistributeBitToRoute;	/* The number of horizontal data-in bits to route on level x */
-	int* numHorizontalDataBroadcastBitToRoute;		/* The number of horizontal data-out bits to route on level x */
-	int* numHorizontalWire;        /* The number of horizontal wire tiers on level x */
-	int* numSumHorizontalWire;     /* The number of total horizontal wire groups on level x */
-	int* numActiveHorizontalWire;  /* The number of active horizontal wire groups on level x */
-	double* lengthHorizontalWire;	/* The length of horizontal wires on level x, Unit: m */
-	int* numVerticalAddressBitToRoute;	/* The number of vertical address bits to route on level x */
-	int* numVerticalDataDistributeBitToRoute;	/* The number of vertical data-in bits to route on level x */
-	int* numVerticalDataBroadcastBitToRoute;	/* The number of vertical data-out bits to route on level x */
-	int* numVerticalWire;          /* The number of vertical wire tiers on level x */
-	int* numSumVerticalWire;       /* The number of total vertical wire groups on level x */
-    int* numActiveVerticalWire;    /* The number of active vertical wire groups on level x */
-	double* lengthVerticalWire;	/* The length of vertical wires on level x, Unit: m */
+	int* numHorizontalAddressBitToRoute = nullptr;  /* The number of horizontal bits to route on level x */
+	int* numHorizontalDataDistributeBitToRoute = nullptr;	/* The number of horizontal data-in bits to route on level x */
+	int* numHorizontalDataBroadcastBitToRoute = nullptr;		/* The number of horizontal data-out bits to route on level x */
+	int* numHorizontalWire = nullptr;        /* The number of horizontal wire tiers on level x */
+	int* numSumHorizontalWire = nullptr;     /* The number of total horizontal wire groups on level x */
+	int* numActiveHorizontalWire = nullptr;  /* The number of active horizontal wire groups on level x */
+	double* lengthHorizontalWire = nullptr;	/* The length of horizontal wires on level x, Unit: m */
+	int* numVerticalAddressBitToRoute = nullptr;	/* The number of vertical address bits to route on level x */
+	int* numVerticalDataDistributeBitToRoute = nullptr;	/* The number of vertical data-in bits to route on level x */
+	int* numVerticalDataBroadcastBitToRoute = nullptr;	/* The number of vertical data-out bits to route on level x */
+	int* numVerticalWire = nullptr;          /* The number of vertical wire tiers on level x */
+	int* numSumVerticalWire = nullptr;       /* The number of total vertical wire groups on level x */
+    int* numActiveVerticalWire = nullptr;    /* The number of active vertical wire groups on level x */
+	double* lengthVerticalWire = nullptr;	/* The length of vertical wires on level x, Unit: m */
 };
 
 #endif /* MSE_BANKWITHHTREE_H */

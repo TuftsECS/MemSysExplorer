@@ -64,19 +64,6 @@ Result::Result() {
 	bank->height = invalid_value;
 	bank->width = invalid_value;
 	bank->area = invalid_value;
-
-	/* No constraints */
-	limitReadLatency = invalid_value;
-	limitWriteLatency = invalid_value;
-	limitReadDynamicEnergy = invalid_value;
-	limitWriteDynamicEnergy = invalid_value;
-	limitReadEdp = invalid_value;
-	limitWriteEdp = invalid_value;
-	limitArea = invalid_value;
-	limitLeakage = invalid_value;
-
-	/* Default read latency optimization */
-	optimizationTarget = read_latency_optimized;
 }
 
 Result::~Result() {

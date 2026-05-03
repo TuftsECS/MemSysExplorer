@@ -50,8 +50,5 @@ extern MemCell *gCell;
 extern Wire *gLocalWire;		/* The wire type of local interconnects (for example, wire in mat) */
 extern Wire *gGlobalWire;	/* The wire type of global interconnects (for example, the ones that connect mats) */
 
-const double invalid_value = 1e41;
-const double infinite_ramp = 1e41;
-
 #endif
 

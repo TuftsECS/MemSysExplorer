@@ -42,22 +42,6 @@
 
 BankWithHtree::BankWithHtree() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	invalid = false;
-	numHorizontalAddressBitToRoute = nullptr;  /* The number of horizontal bits to route on level x */
-	numHorizontalDataDistributeBitToRoute = nullptr;   /* The number of horizontal data-in bits to route on level x */
-	numHorizontalDataBroadcastBitToRoute = nullptr;  /* The number of horizontal data-out bits to route on level x */
-	numHorizontalWire = nullptr;		/* The number of horizontal wires on level x */
-	numSumHorizontalWire = nullptr;	/* The number of total horizontal wires on level x */
-	numActiveHorizontalWire = nullptr;	/* The number of active horizontal wires on level x */
-	lengthHorizontalWire = nullptr;	/* The length of horizontal wires on level x, Unit: m */
-	numVerticalAddressBitToRoute = nullptr;	/* The number of vertical address bits to route on level x */
-	numVerticalDataDistributeBitToRoute = nullptr;  /* The number of vertical data-in bits to route on level x */
-	numVerticalDataBroadcastBitToRoute = nullptr; /* The number of vertical data-out bits to route on level x */
-	numVerticalWire = nullptr;			/* The number of vertical wires on level x */
-	numSumVerticalWire = nullptr;		/* The number of total vertical wires on level x */
-    numActiveVerticalWire = nullptr;	/* The number of active vertical wires on level x */
-	lengthVerticalWire = nullptr;		/* The length of vertical wires on level 2, Unit: m */
 }
 
 BankWithHtree::~BankWithHtree() {

@@ -41,15 +41,6 @@
 
 PredecodeBlock::PredecodeBlock() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	rowDecoderStage1A = nullptr;
-	rowDecoderStage1B = nullptr;
-	rowDecoderStage1C = nullptr;
-	rowDecoderStage2 = nullptr;
-	basicDecoderA1 = nullptr;
-	basicDecoderA2 = nullptr;
-	basicDecoderB = nullptr;
-	basicDecoderC = nullptr;
 }
 
 PredecodeBlock::~PredecodeBlock() {

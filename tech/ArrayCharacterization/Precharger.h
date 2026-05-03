@@ -56,20 +56,24 @@ public:
 	Precharger& operator=(const Precharger&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
+	bool initialized = false;	/* Initialization flag */
 	OutputDriver outputDriver;
 	double voltagePrecharge;  /* Precharge Voltage */
-	double capBitline, resBitline;
+	double capBitline;
+    double resBitline;
 	double capLoadInv;
 	double capOutputBitlinePrecharger;
-	double capWireLoadPerColumn, resWireLoadPerColumn;
-	double enableLatency;
+	double capWireLoadPerColumn;
+    double resWireLoadPerColumn;
+	double enableLatency = 0;
 	int numColumn;			/* Number of columns */
-	double widthPMOSBitlinePrecharger, widthPMOSBitlineEqual;
-	double widthInvNmos, widthInvPmos;
+	double widthPMOSBitlinePrecharger;
+    double widthPMOSBitlineEqual;
+	double widthInvNmos;
+    double widthInvPmos;
 	double capLoadPerColumn;
-	double rampInput, rampOutput;
-
+	double rampInput;
+    double rampOutput;
 };
 
 #endif /* MSE_PRECHARGER_H */

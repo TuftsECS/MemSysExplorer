@@ -37,7 +37,6 @@
 
 #include "InputParameter.h"
 #include "global.h"
-#include "constant.h"
 #include "yaml-cpp/yaml.h"
 #include <string.h>
 #include <stdlib.h>
@@ -45,82 +44,6 @@
 
 InputParameter::InputParameter() {
 	// TODO Auto-generated constructor stub
-	designTarget = cache;
-	optimizationTarget = read_latency_optimized;
-	processNode = 90;
-	processNodeW = 90;
-	processNodeR = 90;
-	deviceRoadmap = LOP;
-	deviceRoadmapR = LOP;
-	deviceRoadmapW = LOP;
-	maxDriverCurrent = 0;
-
-	maxNmosSize = MAX_NMOS_SIZE;
-
-	minNumRowMat = 1;
-	maxNumRowMat = 512;
-	minNumColumnMat = 1;
-	maxNumColumnMat = 512;
-	minNumActiveMatPerRow = 1;
-	maxNumActiveMatPerRow = maxNumColumnMat;
-	minNumActiveMatPerColumn = 1;
-	maxNumActiveMatPerColumn = maxNumRowMat;
-	minNumRowSubarray = 1;
-	maxNumRowSubarray = 2;
-	minNumColumnSubarray = 1;
-	maxNumColumnSubarray = 2;
-	minNumActiveSubarrayPerRow = 1;
-	maxNumActiveSubarrayPerRow = maxNumColumnSubarray;
-	minNumActiveSubarrayPerColumn = 1;
-	maxNumActiveSubarrayPerColumn = maxNumRowSubarray;
-	minMuxSenseAmp = 1;
-	maxMuxSenseAmp = 256;
-	minMuxOutputLev1 = 1;
-	maxMuxOutputLev1 = 256;
-	minMuxOutputLev2 = 1;
-	maxMuxOutputLev2 = 256;
-	minNumRowPerSet = 1;
-	maxNumRowPerSet = 256;
-	minAreaOptimizationLevel = latency_first;
-	maxAreaOptimizationLevel = area_first;
-	minLocalWireType = local_aggressive;
-	maxLocalWireType = local_conservative;
-	minGlobalWireType = global_aggressive;
-	maxGlobalWireType = global_conservative;
-	minLocalWireRepeaterType = repeated_none;
-	maxLocalWireRepeaterType = repeated_50;		/* The limit is repeated_50 */
-	minGlobalWireRepeaterType = repeated_none;
-	maxGlobalWireRepeaterType = repeated_50;	/* The limit is repeated_50 */
-	minIsLocalWireLowSwing = false;
-	maxIsLocalWireLowSwing = true;
-	minIsGlobalWireLowSwing = false;
-	maxIsGlobalWireLowSwing = true;
-
-	associativity = 1;				/* Default value for non-cache design */
-	routingMode = h_tree;
-	internalSensing = true;
-
-	useCactiAssumption = false;
-
-	writeScheme = normal_write;
-	cacheAccessMode = normal_access_mode;
-
-	readLatencyConstraint = invalid_value;
-	writeLatencyConstraint = invalid_value;
-	readDynamicEnergyConstraint = invalid_value;
-	writeDynamicEnergyConstraint = invalid_value;
-	leakageConstraint = invalid_value;
-	areaConstraint = invalid_value;
-	readEdpConstraint = invalid_value;
-	writeEdpConstraint = invalid_value;
-	isConstraintApplied = false;
-	isPruningEnabled = false;
-
-	pageSize = 0;
-	flashBlockSize = 0;
-
-	outputFilePrefix = "output";	/* Default output file name */
-    outputDirectory = "results/";  /* Default output directory */
 }
 
 InputParameter::~InputParameter() {

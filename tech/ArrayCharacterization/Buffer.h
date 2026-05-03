@@ -54,8 +54,8 @@ public:
 	Buffer& operator=(const Buffer&);
 
 	/* Properties */
-	bool initialized;        /* Initialization flag */
-	bool invalid;            /* Indicate that the current configuration is not valid */
+	bool initialized = false;        /* Initialization flag */
+	bool invalid = false;            /* Indicate that the current configuration is not valid */
 	long long numRow;        /* Number of buffered cachelines */
 	long long numColumn;     /* Number of columns */
 	double xorLatency;       /* Latency of XORing S/A output and Buffer output */

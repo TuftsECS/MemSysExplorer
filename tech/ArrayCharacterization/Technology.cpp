@@ -41,7 +41,6 @@
 
 Technology::Technology() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
 }
 
 Technology::~Technology() {

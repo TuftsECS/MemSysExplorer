@@ -58,8 +58,8 @@ public:
 	OutputDriver& operator=(const OutputDriver&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
-	bool invalid;      /*Invalidatio flag */
+	bool initialized = false;	/* Initialization flag */
+	bool invalid = false;      /*Invalidatio flag */
 	double logicEffort;	/* The logic effort of the gate that needs this driver */
 	double inputCap;	/* Input capacitance, unit: F */
 	double outputCap;	/* Output capacitance, unit: F */
@@ -72,7 +72,8 @@ public:
 	double widthPMOS[MAX_INV_CHAIN_LEN];
 	double capInput[MAX_INV_CHAIN_LEN];
 	double capOutput[MAX_INV_CHAIN_LEN];
-	double rampInput, rampOutput;
+	double rampInput;
+    double rampOutput;
 };
 
 #endif /* MSE_OUTPUTDRIVER_H */

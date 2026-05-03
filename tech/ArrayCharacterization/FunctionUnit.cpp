@@ -38,18 +38,6 @@
 #include "FunctionUnit.h"
 
 FunctionUnit::FunctionUnit() {
-	height = width = 0;
-	area = 0;
-	readLatency = writeLatency = 0;
-	readDynamicEnergy = writeDynamicEnergy = 0;
-	leakage = 0;
-
-	resetLatency = setLatency = 0;
-    refreshLatency = 0;
-	resetDynamicEnergy = setDynamicEnergy = 0;
-    refreshDynamicEnergy = 0;
-	cellReadEnergy = 0;
-	cellSetEnergy = cellResetEnergy = 0;
 }
 
 FunctionUnit::~FunctionUnit() {

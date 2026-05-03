@@ -41,8 +41,6 @@
 
 SenseAmp::SenseAmp() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	invalid = false;
 }
 
 SenseAmp::~SenseAmp() {

@@ -41,8 +41,6 @@
 #include <math.h>
 
 OutputDriver::OutputDriver() : FunctionUnit(){
-	initialized = false;
-	invalid = false;
 }
 
 OutputDriver::~OutputDriver() {

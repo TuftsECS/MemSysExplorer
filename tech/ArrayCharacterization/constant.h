@@ -109,4 +109,7 @@
 
 #define TOTAL_ADDRESS_BIT	48
 
+inline constexpr double invalid_value = 1e41;
+inline constexpr double infinite_ramp = 1e41;
+
 #endif /* MSE_CONSTANT_H */

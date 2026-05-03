@@ -62,8 +62,8 @@ public:
 	Mat& operator=(const Mat&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
-	bool invalid;		/* Indicate that the current configuration is not valid, pass down to all the sub-components */
+	bool initialized = false;	/* Initialization flag */
+	bool invalid = false;		/* Indicate that the current configuration is not valid, pass down to all the sub-components */
 	bool internalSenseAmp;
 	int numRowSubarray;		/* Number of subarray rows in a mat */
 	int numColumnSubarray;	/* Number of subarray columns in a mat */

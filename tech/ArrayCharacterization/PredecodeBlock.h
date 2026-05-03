@@ -57,17 +57,21 @@ public:
 	PredecodeBlock& operator=(const PredecodeBlock&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
-	RowDecoder* rowDecoderStage1A;
-	RowDecoder* rowDecoderStage1B;
-	RowDecoder* rowDecoderStage1C;
-	int numNandInputStage1A, numNandInputStage1B, numNandInputStage1C;
-	int numAddressBitStage1A, numAddressBitStage1B, numAddressBitStage1C;
-	RowDecoder* rowDecoderStage2;
-	BasicDecoder* basicDecoderA1;
-	BasicDecoder* basicDecoderA2;
-	BasicDecoder* basicDecoderB;
-	BasicDecoder* basicDecoderC;
+	bool initialized = false;	/* Initialization flag */
+    RowDecoder* rowDecoderStage1A = nullptr;
+	RowDecoder* rowDecoderStage1B = nullptr;
+	RowDecoder* rowDecoderStage1C = nullptr;
+	int numNandInputStage1A;
+    int numNandInputStage1B;
+    int numNandInputStage1C;
+	int numAddressBitStage1A;
+    int numAddressBitStage1B;
+    int numAddressBitStage1C;
+	RowDecoder* rowDecoderStage2 = nullptr;
+	BasicDecoder* basicDecoderA1 = nullptr;
+	BasicDecoder* basicDecoderA2 = nullptr;
+	BasicDecoder* basicDecoderB = nullptr;
+	BasicDecoder* basicDecoderC = nullptr;
 	double capLoad;		/* Load capacitance Unit: F */
 	double resLoad;     /* Load resistance Unit: ohm */
 	int numAddressBit;   /* Number of Address Bits assigned to the block */
@@ -75,9 +79,14 @@ public:
 	int numDecoder12;          /* Number of 1 to 2 Decoders */
 	int numDecoder24;          /* Number of 2 to 4 Decoders */
 	int numDecoder38;          /* Number of 3 to 8 Decoders */
-	int numBasicDecoderA1, numBasicDecoderA2;
-	double capLoadBasicDecoderA1, capLoadBasicDecoderA2, capLoadBasicDecoderB, capLoadBasicDecoderC;
-	double rampInput, rampOutput;
+	int numBasicDecoderA1;
+    int numBasicDecoderA2;
+	double capLoadBasicDecoderA1;
+    double capLoadBasicDecoderA2;
+    double capLoadBasicDecoderB;
+    double capLoadBasicDecoderC;
+	double rampInput;
+    double rampOutput;
 	/* TO-DO: Predecoder so far does not take OptPriority input because the output driver is already quite fixed in this module */
 };
 

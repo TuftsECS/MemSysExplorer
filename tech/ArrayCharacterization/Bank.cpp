@@ -39,8 +39,6 @@
 
 Bank::Bank() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	invalid = false;
 }
 
 Bank::~Bank() {

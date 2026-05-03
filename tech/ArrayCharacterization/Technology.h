@@ -54,7 +54,7 @@ public:
 	void InterpolateWith(Technology rhs, double _alpha);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
+	bool initialized = false;	/* Initialization flag */
 	int featureSizeInNano; /*Process feature size, Unit: nm */
         bool is_FeFET; /*flag for whether gate cap needs to be scaled */
 	double featureSize;	/* Process feature size, Unit: m */

@@ -41,11 +41,7 @@
 #include <math.h>
 
 Comparator::Comparator() {
-	initialized = false;
-	capLoad = 0;
-	rampOutput = 1e40;
 	// TODO Auto-generated constructor stub
-
 }
 
 Comparator::~Comparator() {

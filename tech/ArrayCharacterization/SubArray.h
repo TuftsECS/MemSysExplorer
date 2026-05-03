@@ -63,8 +63,8 @@ public:
 	SubArray& operator=(const SubArray&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
-	bool invalid;		/* Indicate that the current configuration is not valid, pass down to all the sub-components */
+	bool initialized = false;	/* Initialization flag */
+	bool invalid = false;		/* Indicate that the current configuration is not valid, pass down to all the sub-components */
 	bool internalSenseAmp; /* Indicate whether sense amp is within subarray */
 	long long numRow;			/* Number of rows */
 	long long numColumn;		/* Number of columns */

@@ -61,8 +61,8 @@ public:
 	virtual Bank& operator=(const Bank&);
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
-	bool invalid;		/* Indicate that the current configuration is not valid, pass down to all the sub-components */
+	bool initialized = false;	/* Initialization flag */
+	bool invalid = false;		/* Indicate that the current configuration is not valid, pass down to all the sub-components */
 	bool internalSenseAmp;
 	int numRowMat;		/* Number of mat rows in a bank */
 	int numColumnMat;	/* Number of mat columns in a bank */

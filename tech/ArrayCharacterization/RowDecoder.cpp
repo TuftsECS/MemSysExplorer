@@ -41,8 +41,6 @@
 
 RowDecoder::RowDecoder() : FunctionUnit(){
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	invalid = false;
 }
 
 RowDecoder::~RowDecoder() {

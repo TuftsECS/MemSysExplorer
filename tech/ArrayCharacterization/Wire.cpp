@@ -43,8 +43,6 @@
 
 Wire::Wire() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	senseAmp = nullptr;
 }
 
 Wire::~Wire() {

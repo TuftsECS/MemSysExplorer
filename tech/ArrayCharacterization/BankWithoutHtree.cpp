@@ -42,8 +42,6 @@
 
 BankWithoutHtree::BankWithoutHtree() {
 	// TODO Auto-generated constructor stub
-	initialized = false;
-	invalid = false;
 }
 
 BankWithoutHtree::~BankWithoutHtree() {

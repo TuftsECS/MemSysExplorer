@@ -55,16 +55,19 @@ public:
 	void CalculatePower();
 
 	/* Properties */
-	bool initialized;	/* Initialization flag */
+	bool initialized = false;	/* Initialization flag */
 	OutputDriver outputDriver;
 	double capLoad;		/* Load capacitance, Unit: F */
 	double resLoad;		/* Load resistance, Unit: ohm */
 	int numNandInput;	/* Type of NAND, NAND2 or NAND3 */
 	int numNandGate;    /* Number of NAND Gates */
 
-	double widthNandN, widthNandP;
-	double capNandInput, capNandOutput;
-	double rampInput, rampOutput;
+	double widthNandN;
+    double widthNandP;
+	double capNandInput;
+    double capNandOutput;
+	double rampInput;
+    double rampOutput;
 	/* TO-DO: Basic decoder so far does not take OptPriority input because the output driver is already quite fixed in this module */
 
 };
