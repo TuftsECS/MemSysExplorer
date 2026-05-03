@@ -40,9 +40,6 @@
 #include "formula.h"
 #include <math.h>
 
-OutputDriver::OutputDriver() : FunctionUnit(){
-}
-
 OutputDriver::~OutputDriver() {
 	// TODO Auto-generated destructor stub
 }

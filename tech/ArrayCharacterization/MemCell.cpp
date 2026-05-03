@@ -42,10 +42,6 @@
 #include "yaml-cpp/yaml.h"
 #include <math.h>
 
-MemCell::MemCell() {
-	// TODO Auto-generated constructor stub
-}
-
 MemCell::~MemCell() {
 	// TODO Auto-generated destructor stub
 }

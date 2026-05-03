@@ -39,10 +39,6 @@
 #include "constant.h"
 #include <math.h>
 
-Technology::Technology() {
-	// TODO Auto-generated constructor stub
-}
-
 Technology::~Technology() {
 	// TODO Auto-generated destructor stub
 }

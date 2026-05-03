@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-Precharger::Precharger() {
-	// TODO Auto-generated constructor stub
-}
-
 Precharger::~Precharger() {
 	// TODO Auto-generated destructor stub
 }

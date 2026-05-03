@@ -44,7 +44,6 @@
 
 class Bank: public FunctionUnit {
 public:
-	Bank();
 	virtual ~Bank();
 
 	/* Functions */

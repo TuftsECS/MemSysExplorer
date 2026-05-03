@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-BasicDecoder::BasicDecoder() {
-	// TODO Auto-generated constructor stub
-}
-
 BasicDecoder::~BasicDecoder() {
 	// TODO Auto-generated destructor stub
 }

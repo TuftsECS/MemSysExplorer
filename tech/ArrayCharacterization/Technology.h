@@ -45,7 +45,6 @@ using namespace std;
 
 class Technology {
 public:
-	Technology();
 	virtual ~Technology();
 
 	/* Functions */

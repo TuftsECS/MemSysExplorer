@@ -42,10 +42,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-InputParameter::InputParameter() {
-	// TODO Auto-generated constructor stub
-}
-
 InputParameter::~InputParameter() {
 	// TODO Auto-generated destructor stub
 }

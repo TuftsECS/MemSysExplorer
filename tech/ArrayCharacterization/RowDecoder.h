@@ -44,7 +44,6 @@
 
 class RowDecoder: public FunctionUnit {
 public:
-	RowDecoder();
 	virtual ~RowDecoder();
 
 	/* Functions */

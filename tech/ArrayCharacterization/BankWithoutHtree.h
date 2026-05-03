@@ -45,7 +45,6 @@
 
 class BankWithoutHtree: public Bank {
 public:
-	BankWithoutHtree();
 	virtual ~BankWithoutHtree();
 
 	/* Functions */

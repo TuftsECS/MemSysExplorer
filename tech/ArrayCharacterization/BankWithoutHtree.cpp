@@ -40,14 +40,9 @@
 #include "global.h"
 #include <math.h>
 
-BankWithoutHtree::BankWithoutHtree() {
-	// TODO Auto-generated constructor stub
-}
-
 BankWithoutHtree::~BankWithoutHtree() {
 	// TODO Auto-generated destructor stub
 }
-
 
 void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _capacity,
 		long _blockSize, int _associativity, int _numRowPerSet, int _numActiveMatPerRow,

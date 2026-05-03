@@ -42,7 +42,6 @@
 
 class BankWithHtree: public Bank {
 public:
-	BankWithHtree();
 	virtual ~BankWithHtree();
 	void Initialize(int _numRowMat, int _numColumnMat, long long _capacity,
 			long _blockSize, int _associativity, int _numRowPerSet, int _numActiveMatPerRow,

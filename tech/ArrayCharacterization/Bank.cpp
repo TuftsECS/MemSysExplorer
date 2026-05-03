@@ -37,10 +37,6 @@
 
 #include "Bank.h"
 
-Bank::Bank() {
-	// TODO Auto-generated constructor stub
-}
-
 Bank::~Bank() {
 	// TODO Auto-generated destructor stub
 }

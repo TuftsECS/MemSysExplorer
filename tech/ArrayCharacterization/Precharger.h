@@ -43,7 +43,6 @@
 
 class Precharger: public FunctionUnit {
 public:
-	Precharger();
 	virtual ~Precharger();
 
 	/* Functions */

@@ -49,7 +49,6 @@ using namespace std;
 
 class InputParameter {
 public:
-	InputParameter();
 	virtual ~InputParameter();
 
 	/* Functions */

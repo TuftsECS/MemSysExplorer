@@ -44,7 +44,6 @@ using namespace std;
 
 class FunctionUnit {
 public:
-	FunctionUnit();
 	virtual ~FunctionUnit();
 
 	/* Functions */

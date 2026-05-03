@@ -44,7 +44,6 @@
 
 class OutputDriver: public FunctionUnit {
 public:
-	OutputDriver();
 	virtual ~OutputDriver();
 
 	/* Functions */

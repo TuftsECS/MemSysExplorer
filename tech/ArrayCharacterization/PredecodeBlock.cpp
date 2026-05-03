@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-PredecodeBlock::PredecodeBlock() {
-	// TODO Auto-generated constructor stub
-}
-
 PredecodeBlock::~PredecodeBlock() {
 	// TODO Auto-generated destructor stub
 	if (rowDecoderStage1A)

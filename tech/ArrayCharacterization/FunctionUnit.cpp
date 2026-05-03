@@ -37,9 +37,6 @@
 
 #include "FunctionUnit.h"
 
-FunctionUnit::FunctionUnit() {
-}
-
 FunctionUnit::~FunctionUnit() {
 	// TODO Auto-generated destructor stub
 }

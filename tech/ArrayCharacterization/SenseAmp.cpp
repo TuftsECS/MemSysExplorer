@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-SenseAmp::SenseAmp() {
-	// TODO Auto-generated constructor stub
-}
-
 SenseAmp::~SenseAmp() {
 	// TODO Auto-generated destructor stub
 }

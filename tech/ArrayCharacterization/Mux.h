@@ -43,7 +43,6 @@
 
 class Mux: public FunctionUnit {
 public:
-	Mux();
 	virtual ~Mux();
 	/* Functions */
 	void PrintProperty();

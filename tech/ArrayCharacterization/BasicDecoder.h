@@ -43,7 +43,6 @@
 
 class BasicDecoder: public FunctionUnit {
 public:
-	BasicDecoder();
 	virtual ~BasicDecoder();
 
 	/* Functions */

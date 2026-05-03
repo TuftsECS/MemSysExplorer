@@ -42,7 +42,6 @@
 
 class SenseAmp: public FunctionUnit {
 public:
-	SenseAmp();
 	virtual ~SenseAmp();
 
 	/* Functions */

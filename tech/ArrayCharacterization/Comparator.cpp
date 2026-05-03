@@ -40,10 +40,6 @@
 #include "formula.h"
 #include <math.h>
 
-Comparator::Comparator() {
-	// TODO Auto-generated constructor stub
-}
-
 Comparator::~Comparator() {
 	// TODO Auto-generated destructor stub
 }

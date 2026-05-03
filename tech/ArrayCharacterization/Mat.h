@@ -46,7 +46,6 @@
 
 class Mat: public FunctionUnit {
 public:
-	Mat();
 	virtual ~Mat();
 
 	/* Functions */

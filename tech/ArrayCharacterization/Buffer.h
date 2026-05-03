@@ -41,7 +41,6 @@
 
 class Buffer: public FunctionUnit {
 public:
-	Buffer();
 	virtual ~Buffer();
 
 	/* Functions */

@@ -43,7 +43,6 @@
 
 class Comparator: public FunctionUnit {
 public:
-	Comparator();
 	virtual ~Comparator();
 
 	/* Functions */

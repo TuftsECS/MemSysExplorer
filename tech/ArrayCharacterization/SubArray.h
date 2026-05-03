@@ -48,7 +48,6 @@
 
 class SubArray: public FunctionUnit {
 public:
-	SubArray();
 	virtual ~SubArray();
 
 	/* Functions */

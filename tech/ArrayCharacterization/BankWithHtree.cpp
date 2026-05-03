@@ -39,11 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-
-BankWithHtree::BankWithHtree() {
-	// TODO Auto-generated constructor stub
-}
-
 BankWithHtree::~BankWithHtree() {
 	// TODO Auto-generated destructor stub
 	if (numHorizontalAddressBitToRoute)

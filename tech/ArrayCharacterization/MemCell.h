@@ -50,7 +50,6 @@ using namespace std;
 
 class MemCell {
 public:
-	MemCell();
 	virtual ~MemCell();
 
 	/* Functions */

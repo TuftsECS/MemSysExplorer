@@ -42,10 +42,6 @@
 #include <math.h>
 #include <iomanip>
 
-SubArray::SubArray() {
-	// TODO Auto-generated constructor stub
-}
-
 SubArray::~SubArray() {
 	// TODO Auto-generated destructor stub
 }

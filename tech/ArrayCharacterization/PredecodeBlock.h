@@ -44,7 +44,6 @@
 
 class PredecodeBlock: public FunctionUnit {
 public:
-	PredecodeBlock();
 	virtual ~PredecodeBlock();
 
 	/* Functions */

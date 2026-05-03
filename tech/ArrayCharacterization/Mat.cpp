@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-Mat::Mat() {
-	// TODO Auto-generated constructor stub
-}
-
 Mat::~Mat() {
 	// TODO Auto-generated destructor stub
 }

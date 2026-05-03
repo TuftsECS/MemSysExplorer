@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-RowDecoder::RowDecoder() : FunctionUnit(){
-	// TODO Auto-generated constructor stub
-}
-
 RowDecoder::~RowDecoder() {
 	// TODO Auto-generated destructor stub
 }

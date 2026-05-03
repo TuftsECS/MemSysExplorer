@@ -41,10 +41,6 @@
 #include "constant.h"
 #include <math.h>
 
-Wire::Wire() {
-	// TODO Auto-generated constructor stub
-}
-
 Wire::~Wire() {
 	// TODO Auto-generated destructor stub
 	if (senseAmp)
