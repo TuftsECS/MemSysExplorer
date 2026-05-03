@@ -41,8 +41,6 @@
 
 class Buffer: public FunctionUnit {
 public:
-	virtual ~Buffer();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(long long _numRow, long long _numColumn);

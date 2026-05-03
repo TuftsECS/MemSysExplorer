@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-Mat::~Mat() {
-	// TODO Auto-generated destructor stub
-}
-
 void Mat::Initialize(int _numRowSubarray, int _numColumnSubarray, int _numAddressBit, long _numDataBit,
 		int _numWay, int _numRowPerSet, bool _split, int _numActiveSubarrayPerRow, int _numActiveSubarrayPerColumn,
 		int _muxSenseAmp, bool _internalSenseAmp, int _muxOutputLev1, int _muxOutputLev2,

@@ -43,8 +43,6 @@
 
 class BasicDecoder: public FunctionUnit {
 public:
-	virtual ~BasicDecoder();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(int _numAddressBit, double _capLoad, double _resLoad);

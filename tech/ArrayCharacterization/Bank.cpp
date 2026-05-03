@@ -37,10 +37,6 @@
 
 #include "Bank.h"
 
-Bank::~Bank() {
-	// TODO Auto-generated destructor stub
-}
-
 void Bank::PrintProperty() {
 	cout << "Bank Properties:" << endl;
 	FunctionUnit::PrintProperty();

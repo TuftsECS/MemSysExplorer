@@ -40,10 +40,6 @@
 #include "formula.h"
 #include <math.h>
 
-OutputDriver::~OutputDriver() {
-	// TODO Auto-generated destructor stub
-}
-
 void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _outputCap, double _outputRes,
 		bool _inv, BufferDesignTarget _areaOptimizationLevel, double _minDriverCurrent) {
 	if (initialized)

@@ -37,10 +37,6 @@
 
 #include "FunctionUnit.h"
 
-FunctionUnit::~FunctionUnit() {
-	// TODO Auto-generated destructor stub
-}
-
 void FunctionUnit::PrintProperty() {
 	cout << "Area = " << height*1e6 << "um x " << width*1e6 << "um = " << area*1e6 << "mm^2" << endl;
 	cout << "Timing:" << endl;

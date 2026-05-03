@@ -43,8 +43,6 @@
 
 class Comparator: public FunctionUnit {
 public:
-	virtual ~Comparator();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(int _numTagBits, double _capLoad);

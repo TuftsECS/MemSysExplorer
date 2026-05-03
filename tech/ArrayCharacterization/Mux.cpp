@@ -39,10 +39,6 @@
 #include "global.h"
 #include "formula.h"
 
-Mux::~Mux() {
-	// TODO Auto-generated destructor stub
-}
-
 void Mux::Initialize(int _numInput, long long _numMux, double _capLoad, double _capInputNextStage, double _minDriverCurrent){
 	if (initialized)
 		cout << "[Mux] Warning: Already initialized!" << endl;

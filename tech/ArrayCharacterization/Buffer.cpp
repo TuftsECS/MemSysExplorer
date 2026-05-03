@@ -38,10 +38,6 @@
 #include "formula.h"
 #include "global.h"
 
-Buffer::~Buffer() {
-	// TODO Auto-generated destructor stub
-}
-
 void Buffer::Initialize(long long _numRow, long long _numColumn) {
 	if (initialized)
 		cout << "[Buffer] Warning: Already initialized!" << endl;

@@ -40,10 +40,6 @@
 #include "formula.h"
 #include <math.h>
 
-Comparator::~Comparator() {
-	// TODO Auto-generated destructor stub
-}
-
 void Comparator::Initialize(int _numTagBits, double _capLoad){
 	if (initialized)
 		cout << "[Comparator] Warning: Already initialized!" << endl;

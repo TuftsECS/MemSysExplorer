@@ -45,8 +45,6 @@ using namespace std;
 
 class Technology {
 public:
-	virtual ~Technology();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap, bool _is_FeFET);

@@ -43,8 +43,6 @@
 
 class Precharger: public FunctionUnit {
 public:
-	virtual ~Precharger();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(double _voltagePrecharge, int _numColumn, double _capBitline, double _resBitline);

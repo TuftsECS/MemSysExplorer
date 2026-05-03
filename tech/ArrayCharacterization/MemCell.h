@@ -50,8 +50,6 @@ using namespace std;
 
 class MemCell {
 public:
-	virtual ~MemCell();
-
 	/* Functions */
 	void ReadCellFromFile(const std::string& inputFile);
     void ApplyPVT();

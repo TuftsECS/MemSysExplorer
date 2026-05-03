@@ -42,8 +42,6 @@
 
 class SenseAmp: public FunctionUnit {
 public:
-	virtual ~SenseAmp();
-
 	/* Functions */
 	void PrintProperty();
         void Initialize(long long _numColumn, bool _currentSense, double _senseVoltage /* Unit: V */, double _pitchSenseAmp, bool _mlc, double _numLvl, int _numF);

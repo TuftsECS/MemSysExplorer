@@ -44,7 +44,7 @@ using namespace std;
 
 class FunctionUnit {
 public:
-	virtual ~FunctionUnit();
+	virtual ~FunctionUnit() = default;
 
 	/* Functions */
 	virtual void PrintProperty();

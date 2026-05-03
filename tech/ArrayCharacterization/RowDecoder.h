@@ -44,8 +44,6 @@
 
 class RowDecoder: public FunctionUnit {
 public:
-	virtual ~RowDecoder();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(int _numRow, double _capLoad, double _resLoad,

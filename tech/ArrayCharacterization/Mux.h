@@ -43,7 +43,6 @@
 
 class Mux: public FunctionUnit {
 public:
-	virtual ~Mux();
 	/* Functions */
 	void PrintProperty();
 	void Initialize(int _numInput, long long _numMux, double _capLoad, double _capInputNextStage, double _minDriverCurrent);

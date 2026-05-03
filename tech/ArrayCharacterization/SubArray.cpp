@@ -42,10 +42,6 @@
 #include <math.h>
 #include <iomanip>
 
-SubArray::~SubArray() {
-	// TODO Auto-generated destructor stub
-}
-
 void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipleRowPerSet, bool _split,
 		int _muxSenseAmp, bool _internalSenseAmp, int _muxOutputLev1, int _muxOutputLev2,
 		BufferDesignTarget _areaOptimizationLevel) {

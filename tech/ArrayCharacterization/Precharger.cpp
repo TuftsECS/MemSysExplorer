@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-Precharger::~Precharger() {
-	// TODO Auto-generated destructor stub
-}
-
 void Precharger::Initialize(double _voltagePrecharge, int _numColumn, double _capBitline, double _resBitline){
 	if (initialized)
 		cout << "[Precharger] Warning: Already initialized!" << endl;

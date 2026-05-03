@@ -46,8 +46,6 @@
 
 class Mat: public FunctionUnit {
 public:
-	virtual ~Mat();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(int _numRowSubarray, int _numColumnSubarray, int _numAddressBit, long _numDataBit,

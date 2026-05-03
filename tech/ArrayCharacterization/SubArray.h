@@ -48,8 +48,6 @@
 
 class SubArray: public FunctionUnit {
 public:
-	virtual ~SubArray();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(long long _numRow, long long _numColumn, bool _multipleRowPerSet, bool _split,

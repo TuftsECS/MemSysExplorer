@@ -42,10 +42,6 @@
 #include "yaml-cpp/yaml.h"
 #include <math.h>
 
-MemCell::~MemCell() {
-	// TODO Auto-generated destructor stub
-}
-
 void MemCell::ReadCellFromFile(const string& inputFile)
 {
     try {

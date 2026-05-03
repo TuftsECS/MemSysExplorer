@@ -44,8 +44,6 @@
 
 class Bank: public FunctionUnit {
 public:
-	virtual ~Bank();
-
 	/* Functions */
 	void PrintProperty();
 	virtual void Initialize(int _numRowMat, int _numColumnMat, long long _capacity,

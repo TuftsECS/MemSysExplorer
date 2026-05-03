@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-SenseAmp::~SenseAmp() {
-	// TODO Auto-generated destructor stub
-}
-
 void SenseAmp::Initialize(long long _numColumn, bool _currentSense, double _senseVoltage, double _pitchSenseAmp, bool _mlc, double _numLvl, int _numF) {
 	if (initialized)
 		cout << "[Sense Amp] Warning: Already initialized!" << endl;

@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-RowDecoder::~RowDecoder() {
-	// TODO Auto-generated destructor stub
-}
-
 void RowDecoder::Initialize(int _numRow, double _capLoad, double _resLoad,
 		bool _multipleRowPerSet, BufferDesignTarget _areaOptimizationLevel, double _minDriverCurrent) {
 	if (initialized)

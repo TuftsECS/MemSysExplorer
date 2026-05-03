@@ -39,10 +39,6 @@
 #include "constant.h"
 #include <math.h>
 
-Technology::~Technology() {
-	// TODO Auto-generated destructor stub
-}
-
 void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap, bool _is_FeFET) {
 	if (initialized)
 		cout << "Warning: Already initialized!" << endl;

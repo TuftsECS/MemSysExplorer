@@ -44,8 +44,6 @@
 
 class OutputDriver: public FunctionUnit {
 public:
-	virtual ~OutputDriver();
-
 	/* Functions */
 	void PrintProperty();
 	void Initialize(double _logicEffort, double _inputCap, double _outputCap, double _outputRes,

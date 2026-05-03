@@ -39,10 +39,6 @@
 #include "formula.h"
 #include "global.h"
 
-BasicDecoder::~BasicDecoder() {
-	// TODO Auto-generated destructor stub
-}
-
 void BasicDecoder::Initialize(int _numAddressBit, double _capLoad, double _resLoad){
 	/*if (initialized)
 			cout << "Warning: Already initialized!" << endl;*/
