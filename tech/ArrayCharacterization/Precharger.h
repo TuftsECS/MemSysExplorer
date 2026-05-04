@@ -71,6 +71,10 @@ public:
 	double capLoadPerColumn;
 	double rampInput;
     double rampOutput;
+
+	/* Optional properties (not valid for all the memory cells */
+    double refreshLatency = 0;                  /* Unit: s */
+    double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
 #endif /* MSE_PRECHARGER_H */

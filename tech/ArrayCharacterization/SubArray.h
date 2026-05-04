@@ -114,6 +114,17 @@ public:
 	SenseAmp      senseAmp;
 	//Qing: subarray buffer for differential write
 	Buffer        subarrayBuffer;
+
+	/* Optional properties (not valid for all the memory cells */
+	double setLatency = 0;				/* Unit: s */
+    double resetLatency = 0;				/* Unit: s */
+    double refreshLatency = 0;                  /* Unit: s */
+	double setDynamicEnergy = 0;	/* Unit: J */
+    double resetDynamicEnergy = 0;	/* Unit: J */
+	double cellReadEnergy = 0;	/* Unit: J */
+    double cellSetEnergy = 0;	/* Unit: J */
+    double cellResetEnergy = 0;	/* Unit: J */
+    double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
 #endif /* MSE_SUBARRAY_H */

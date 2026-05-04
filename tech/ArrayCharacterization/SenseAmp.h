@@ -62,6 +62,10 @@ public:
         bool mlc;              /* Is this a Multi-Level Cell? */
         double numLvl;         /* If MLC, how many levels / cell */
         int numF;              /* If MLC CTT, what is num input fingers to calculate SA area/latency */
+
+	/* Optional properties (not valid for all the memory cells */
+    double refreshLatency = 0;                  /* Unit: s */
+    double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
 #endif /* MSE_SENSEAMP_H */

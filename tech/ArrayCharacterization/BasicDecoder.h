@@ -66,7 +66,6 @@ public:
 	double rampInput;
     double rampOutput;
 	/* TO-DO: Basic decoder so far does not take OptPriority input because the output driver is already quite fixed in this module */
-
 };
 
 #endif /* MSE_BASICDECODER_H */

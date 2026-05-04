@@ -451,13 +451,6 @@ PredecodeBlock& PredecodeBlock::operator=(const PredecodeBlock& rhs) {
 	writeLatency = rhs.writeLatency;
 	readDynamicEnergy = rhs.readDynamicEnergy;
 	writeDynamicEnergy = rhs.writeDynamicEnergy;
-	resetLatency = rhs.resetLatency;
-	setLatency = rhs.setLatency;
-	resetDynamicEnergy = rhs.resetDynamicEnergy;
-	setDynamicEnergy = rhs.setDynamicEnergy;
-	cellReadEnergy = rhs.cellReadEnergy;
-	cellSetEnergy = rhs.cellSetEnergy;
-	cellResetEnergy = rhs.cellResetEnergy;
 	leakage = rhs.leakage;
 
 	initialized = rhs.initialized;

@@ -72,6 +72,10 @@ public:
     double capNandOutput;
 	double rampInput;
     double rampOutput;
+
+	/* Optional properties (not valid for all the memory cells */
+	double setDynamicEnergy = 0;	/* Unit: J */
+    double resetDynamicEnergy = 0;	/* Unit: J */
 };
 
 #endif /* MSE_ROWDECODER_H */

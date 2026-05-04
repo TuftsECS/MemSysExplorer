@@ -55,7 +55,7 @@ public:
 	virtual void CalculateArea() = 0;
 	virtual void CalculateRC() = 0;
 	virtual void CalculateLatencyAndPower() = 0;
-	virtual Bank& operator=(const Bank&);
+	Bank& operator=(const Bank&);
 
 	/* Properties */
 	bool initialized = false;	/* Initialization flag */
@@ -80,6 +80,17 @@ public:
 	MemoryType memoryType;
 
 	Mat mat;
+
+	/* Optional properties (not valid for all the memory cells */
+	double setLatency = 0;				/* Unit: s */
+    double resetLatency = 0;				/* Unit: s */
+    double refreshLatency = 0;                  /* Unit: s */
+	double setDynamicEnergy = 0;	/* Unit: J */
+    double resetDynamicEnergy = 0;	/* Unit: J */
+	double cellReadEnergy = 0;	/* Unit: J */
+    double cellSetEnergy = 0;	/* Unit: J */
+    double cellResetEnergy = 0;	/* Unit: J */
+    double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
 #endif /* MSE_BANK_H */

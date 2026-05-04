@@ -58,6 +58,15 @@ public:
 	double xorLatency;       /* Latency of XORing S/A output and Buffer output */
 	double xorDynamicEnergy; /* XOR dynamic energy */
 	double xorLeakage;       /* XOR leakage energy */
+
+	/* Optional properties (not valid for all the memory cells */
+	double setLatency = 0;				/* Unit: s */
+    double resetLatency = 0;				/* Unit: s */
+	double setDynamicEnergy = 0;	/* Unit: J */
+    double resetDynamicEnergy = 0;	/* Unit: J */
+	double cellReadEnergy = 0;	/* Unit: J */
+    double cellSetEnergy = 0;	/* Unit: J */
+    double cellResetEnergy = 0;	/* Unit: J */
 };
 
 #endif /* MSE_Buffer_H */
