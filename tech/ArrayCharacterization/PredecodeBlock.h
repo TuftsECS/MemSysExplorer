@@ -38,13 +38,20 @@
 #ifndef MSE_PREDECODEBLOCK_H
 #define MSE_PREDECODEBLOCK_H
 
+#include <memory>
+
 #include "FunctionUnit.h"
 #include "RowDecoder.h"
 #include "BasicDecoder.h"
 
 class PredecodeBlock: public FunctionUnit {
 public:
-	virtual ~PredecodeBlock();
+    PredecodeBlock() = default;
+    ~PredecodeBlock() = default;
+    PredecodeBlock(const PredecodeBlock&);
+    PredecodeBlock(PredecodeBlock&&) = default;
+	PredecodeBlock& operator=(const PredecodeBlock&);
+	PredecodeBlock& operator=(PredecodeBlock&&) = default;
 
 	/* Functions */
 	void PrintProperty();
@@ -53,24 +60,15 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	PredecodeBlock& operator=(const PredecodeBlock&);
 
 	/* Properties */
 	bool initialized = false;	/* Initialization flag */
-    RowDecoder* rowDecoderStage1A = nullptr;
-	RowDecoder* rowDecoderStage1B = nullptr;
-	RowDecoder* rowDecoderStage1C = nullptr;
 	int numNandInputStage1A;
     int numNandInputStage1B;
     int numNandInputStage1C;
 	int numAddressBitStage1A;
     int numAddressBitStage1B;
     int numAddressBitStage1C;
-	RowDecoder* rowDecoderStage2 = nullptr;
-	BasicDecoder* basicDecoderA1 = nullptr;
-	BasicDecoder* basicDecoderA2 = nullptr;
-	BasicDecoder* basicDecoderB = nullptr;
-	BasicDecoder* basicDecoderC = nullptr;
 	double capLoad;		/* Load capacitance Unit: F */
 	double resLoad;     /* Load resistance Unit: ohm */
 	int numAddressBit;   /* Number of Address Bits assigned to the block */
@@ -86,6 +84,15 @@ public:
     double capLoadBasicDecoderC;
 	double rampInput;
     double rampOutput;
+private:
+    std::unique_ptr<RowDecoder> rowDecoderStage1A;
+	std::unique_ptr<RowDecoder> rowDecoderStage1B;
+	std::unique_ptr<RowDecoder> rowDecoderStage1C;
+	std::unique_ptr<RowDecoder> rowDecoderStage2;
+	std::unique_ptr<BasicDecoder> basicDecoderA1;
+	std::unique_ptr<BasicDecoder> basicDecoderA2;
+	std::unique_ptr<BasicDecoder> basicDecoderB;
+	std::unique_ptr<BasicDecoder> basicDecoderC;
 	/* TO-DO: Predecoder so far does not take OptPriority input because the output driver is already quite fixed in this module */
 };
 
