@@ -190,35 +190,3 @@ void RowDecoder::PrintProperty() {
 	cout << "Row Decoder Properties:" << endl;
 	FunctionUnit::PrintProperty();
 }
-
-RowDecoder& RowDecoder::operator=(const RowDecoder& rhs) {
-	height = rhs.height;
-	width = rhs.width;
-	area = rhs.area;
-	readLatency = rhs.readLatency;
-	writeLatency = rhs.writeLatency;
-	readDynamicEnergy = rhs.readDynamicEnergy;
-	writeDynamicEnergy = rhs.writeDynamicEnergy;
-	resetDynamicEnergy = rhs.resetDynamicEnergy;
-	setDynamicEnergy = rhs.setDynamicEnergy;
-	leakage = rhs.leakage;
-	initialized = rhs.initialized;
-	invalid = rhs.invalid;
-	outputDriver = rhs.outputDriver;
-	numRow = rhs.numRow;
-	multipleRowPerSet = rhs.multipleRowPerSet;
-	numNandInput = rhs.numNandInput;
-	capLoad = rhs.capLoad;
-	resLoad = rhs.resLoad;
-	areaOptimizationLevel = rhs.areaOptimizationLevel;
-	minDriverCurrent = rhs.minDriverCurrent;
-
-	widthNandN = rhs.widthNandN;
-	widthNandP = rhs.widthNandP;
-	capNandInput = rhs.capNandInput;
-	capNandOutput = rhs.capNandOutput;
-	rampInput = rhs.rampInput;
-	rampOutput = rhs.rampOutput;
-
-	return *this;
-}

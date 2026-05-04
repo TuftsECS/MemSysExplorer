@@ -155,33 +155,3 @@ void Comparator::PrintProperty() {
 	cout << "Comparator Properties:" << endl;
 	FunctionUnit::PrintProperty();
 }
-
-Comparator& Comparator::operator=(const Comparator& rhs) {
-	height = rhs.height;
-	width = rhs.width;
-	area = rhs.area;
-	readLatency = rhs.readLatency;
-	writeLatency = rhs.writeLatency;
-	readDynamicEnergy = rhs.readDynamicEnergy;
-	writeDynamicEnergy = rhs.writeDynamicEnergy;
-	leakage = rhs.leakage;
-	initialized = rhs.initialized;
-	numTagBits = rhs.numTagBits;
-	capLoad = rhs.capLoad;
-	widthNMOSComp = rhs.widthNMOSComp;
-	widthPMOSComp = rhs.widthPMOSComp;
-	capBottom = rhs.capBottom;
-	capTop = rhs.capTop;
-	resBottom = rhs.resBottom;
-	resTop = rhs.resTop;
-	for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN; i++) {
-		widthNMOSInv[i] = rhs.widthNMOSInv[i];
-		widthPMOSInv[i] = rhs.widthPMOSInv[i];
-		capInput[i] = rhs.capInput[i];
-		capOutput[i] =rhs.capOutput[i];
-	}
-	rampInput = rhs.rampInput;
-	rampOutput = rhs.rampOutput;
-
-	return *this;
-}

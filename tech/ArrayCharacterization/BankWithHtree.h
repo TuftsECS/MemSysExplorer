@@ -53,7 +53,6 @@ public:
 	void CalculateArea();
 	void CalculateRC();
 	void CalculateLatencyAndPower();
-	BankWithHtree& operator=(const BankWithHtree&);
 
 	int numAddressBit;		/* Number of bank address bits */
 	int numDataDistributeBit;	/* Number of bank data bits (these bits will be distributed along with the address) */

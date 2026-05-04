@@ -49,7 +49,6 @@ public:
 	void CalculateRC();
 	void CalculateLatency();
 	void CalculatePower();
-	SenseAmp& operator=(const SenseAmp&);
 
 	/* Properties */
 	bool initialized = false;	/* Initialization flag */

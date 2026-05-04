@@ -569,10 +569,3 @@ void BankWithHtree::CalculateLatencyAndPower() {
 		}
 	}
 }
-
-BankWithHtree& BankWithHtree::operator=(const BankWithHtree& rhs) {
-	Bank::operator=(rhs);
-	levelHorizontal = rhs.levelHorizontal;
-	levelVertical = rhs.levelVertical;
-	return *this;
-}

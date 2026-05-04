@@ -149,33 +149,3 @@ void Precharger::PrintProperty() {
 	cout << "Precharger Properties:" << endl;
 	FunctionUnit::PrintProperty();
 }
-
-Precharger& Precharger::operator=(const Precharger& rhs) {
-	height = rhs.height;
-	width = rhs.width;
-	area = rhs.area;
-	readLatency = rhs.readLatency;
-	writeLatency = rhs.writeLatency;
-    refreshLatency = rhs.refreshLatency;
-	readDynamicEnergy = rhs.readDynamicEnergy;
-	writeDynamicEnergy = rhs.writeDynamicEnergy;
-    refreshDynamicEnergy = rhs.refreshDynamicEnergy;
-	leakage = rhs.leakage;
-	initialized = rhs.initialized;
-	outputDriver = rhs.outputDriver;
-	capBitline = rhs.capBitline;
-	resBitline = rhs.resBitline;
-	capLoadInv = rhs.capLoadInv;
-	capOutputBitlinePrecharger = rhs.capOutputBitlinePrecharger;
-	capWireLoadPerColumn = rhs.capWireLoadPerColumn;
-	resWireLoadPerColumn = rhs.resWireLoadPerColumn;
-	enableLatency = rhs.enableLatency;
-	numColumn = rhs.numColumn;
-	widthPMOSBitlinePrecharger = rhs.widthPMOSBitlinePrecharger;
-	widthPMOSBitlineEqual = rhs.widthPMOSBitlineEqual;
-	capLoadPerColumn = rhs.capLoadPerColumn;
-	rampInput = rhs.rampInput;
-	rampOutput = rhs.rampOutput;
-
-	return *this;
-}

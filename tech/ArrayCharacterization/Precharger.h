@@ -50,7 +50,6 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	Precharger& operator=(const Precharger&);
 
 	/* Properties */
 	bool initialized = false;	/* Initialization flag */

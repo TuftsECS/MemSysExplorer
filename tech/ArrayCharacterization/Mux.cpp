@@ -135,30 +135,3 @@ void Mux::PrintProperty() {
 	cout << "Mux Properties:" << endl;
 	FunctionUnit::PrintProperty();
 }
-
-Mux& Mux::operator=(const Mux& rhs) {
-	height = rhs.height;
-	width = rhs.width;
-	area = rhs.area;
-	readLatency = rhs.readLatency;
-	writeLatency = rhs.writeLatency;
-	readDynamicEnergy = rhs.readDynamicEnergy;
-	writeDynamicEnergy = rhs.writeDynamicEnergy;
-	leakage = rhs.leakage;
-	initialized = rhs.initialized;
-	numInput = rhs.numInput;
-	numMux = rhs.numMux;
-	capLoad = rhs.capLoad;
-	capInputNextStage = rhs.capInputNextStage;
-	minDriverCurrent = rhs.minDriverCurrent;
-    capOutput = rhs.capOutput;
-	widthNMOSPassTransistor = rhs.widthNMOSPassTransistor;
-	resNMOSPassTransistor = rhs.resNMOSPassTransistor;
-	capNMOSPassTransistor = rhs.capNMOSPassTransistor;
-	capForPreviousDelayCalculation = rhs.capForPreviousDelayCalculation;
-	capForPreviousPowerCalculation = rhs.capForPreviousPowerCalculation;
-	rampInput = rhs.rampInput;
-	rampOutput = rhs.rampOutput;
-
-	return *this;
-}

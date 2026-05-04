@@ -172,30 +172,3 @@ void Buffer::PrintProperty() {
 	cout << " - Dynamic Energy = " << xorDynamicEnergy*1e12 << "pJ" << endl;
 	cout << " -  Leakage Power = " << xorLeakage*1e3 << "mW" << endl;
 }
-
-Buffer& Buffer::operator=(const Buffer& rhs) {
-	height = rhs.height;
-	width = rhs.width;
-	area = rhs.area;
-	readLatency = rhs.readLatency;
-	writeLatency = rhs.writeLatency;
-	readDynamicEnergy = rhs.readDynamicEnergy;
-	writeDynamicEnergy = rhs.writeDynamicEnergy;
-	resetLatency = rhs.resetLatency;
-	setLatency = rhs.setLatency;
-	resetDynamicEnergy = rhs.resetDynamicEnergy;
-	setDynamicEnergy = rhs.setDynamicEnergy;
-	cellReadEnergy = rhs.cellReadEnergy;
-	cellSetEnergy = rhs.cellSetEnergy;
-	cellResetEnergy = rhs.cellResetEnergy;
-	leakage = rhs.leakage;
-	initialized = rhs.initialized;
-	invalid = rhs.invalid;
-	numRow = rhs.numRow;
-	numColumn = rhs.numColumn;
-	xorLatency = rhs.xorLatency;
-	xorDynamicEnergy = rhs.xorDynamicEnergy;
-	xorLeakage = rhs.xorLeakage;
-
-	return *this;
-}

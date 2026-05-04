@@ -56,7 +56,6 @@ public:
 	double getRepeatedWireUnitDelay();				/* Return delay per unit, Unit: s/m */
 	double getRepeatedWireUnitDynamicEnergy();		/* Return dynamic energy per unit, Unit: J/m */
 	double getRepeatedWireUnitLeakage();			/* Return leakage power per unit, Unit: W/m */
-	Wire& operator=(const Wire&);
 
 	/* Properties */
 	bool initialized = false;	/* Initialization flag */

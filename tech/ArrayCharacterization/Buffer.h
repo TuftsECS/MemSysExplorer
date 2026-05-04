@@ -48,7 +48,6 @@ public:
 	void CalculateRC();
 	void CalculateLatency();
 	void CalculatePower();
-	Buffer& operator=(const Buffer&);
 
 	/* Properties */
 	bool initialized = false;        /* Initialization flag */

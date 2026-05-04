@@ -55,7 +55,6 @@ public:
 	virtual void CalculateArea() = 0;
 	virtual void CalculateRC() = 0;
 	virtual void CalculateLatencyAndPower() = 0;
-	Bank& operator=(const Bank&);
 
 	/* Properties */
 	bool initialized = false;	/* Initialization flag */

@@ -297,25 +297,3 @@ void SenseAmp::PrintProperty() {
 	cout << "Sense Amplifier Properties:" << endl;
 	FunctionUnit::PrintProperty();
 }
-
-SenseAmp& SenseAmp::operator=(const SenseAmp& rhs) {
-	height = rhs.height;
-	width = rhs.width;
-	area = rhs.area;
-	readLatency = rhs.readLatency;
-	writeLatency = rhs.writeLatency;
-    refreshLatency = rhs.refreshLatency;
-	readDynamicEnergy = rhs.readDynamicEnergy;
-	writeDynamicEnergy = rhs.writeDynamicEnergy;
-    refreshDynamicEnergy = rhs.refreshDynamicEnergy;
-	leakage = rhs.leakage;
-	initialized = rhs.initialized;
-	invalid = rhs.invalid;
-	numColumn = rhs.numColumn;
-	currentSense = rhs.currentSense;
-	senseVoltage = rhs.senseVoltage;
-	capLoad = rhs.capLoad;
-	pitchSenseAmp = rhs.pitchSenseAmp;
-
-	return *this;
-}

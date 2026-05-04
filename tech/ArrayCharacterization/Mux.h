@@ -50,7 +50,6 @@ public:
 	void CalculateRC();
 	void CalculateLatency(double _rampInput);
 	void CalculatePower();
-	Mux& operator=(const Mux&);
 
 	/* Properties */
 	bool initialized = false;	/* Initialization flag */
