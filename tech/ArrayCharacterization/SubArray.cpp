@@ -589,7 +589,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			bitlineDelay = horowitz(tau, beta, rowDecoder.rampOutput, &bitlineRamp);
 			bitlineMux.CalculateLatency(bitlineRamp);
 			if (internalSenseAmp) {
-				senseAmp.CalculateLatency(bitlineMuxDecoder.rampOutput);
+				senseAmp.CalculateLatency();
 				senseAmpMuxLev1.CalculateLatency(1e20);
 				senseAmpMuxLev2.CalculateLatency(senseAmpMuxLev1.rampOutput);
 			} else {
@@ -607,7 +607,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			double tau = 2.3 * res * cap;
 			double bitlineRamp = 0;
 			bitlineDelay = horowitz(tau, 0, rowDecoder.rampOutput, &bitlineRamp);
-			senseAmp.CalculateLatency(bitlineRamp);
+			senseAmp.CalculateLatency();
 			senseAmpMuxLev1.CalculateLatency(1e20);
 			senseAmpMuxLev2.CalculateLatency(senseAmpMuxLev1.rampOutput);
 
@@ -630,7 +630,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			double bitlineRamp = 0;
 			bitlineDelayW = horowitz(tauW, 0, rowDecoder.rampOutput, &bitlineRamp);			
 			bitlineDelayR = horowitz(tauR, 0, rowDecoder.rampOutput, &bitlineRamp);
-			senseAmp.CalculateLatency(bitlineRamp);
+			senseAmp.CalculateLatency();
 			senseAmpMuxLev1.CalculateLatency(1e20);
 			senseAmpMuxLev2.CalculateLatency(senseAmpMuxLev1.rampOutput);
 
@@ -668,7 +668,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			}
 			bitlineMux.CalculateLatency(bitlineRamp);
 			if (internalSenseAmp) {
-				senseAmp.CalculateLatency(bitlineMuxDecoder.rampOutput);
+				senseAmp.CalculateLatency();
 				senseAmpMuxLev1.CalculateLatency(1e20);
 				senseAmpMuxLev2.CalculateLatency(senseAmpMuxLev1.rampOutput);
 			} else {
@@ -726,7 +726,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			bitlineDelay = MAX(bitlineDelay, tau * 20);
 			bitlineMux.CalculateLatency(bitlineRamp);
 			if (internalSenseAmp) {
-				senseAmp.CalculateLatency(bitlineMuxDecoder.rampOutput);
+				senseAmp.CalculateLatency();
 				senseAmpMuxLev1.CalculateLatency(1e20);
 				senseAmpMuxLev2.CalculateLatency(senseAmpMuxLev1.rampOutput);
 			} else {
@@ -757,7 +757,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			bitlineDelay = MAX(bitlineDelay, tau * 20);
 			bitlineMux.CalculateLatency(bitlineRamp);
 			if (internalSenseAmp) {
-				senseAmp.CalculateLatency(bitlineMuxDecoder.rampOutput);
+				senseAmp.CalculateLatency();
 				senseAmpMuxLev1.CalculateLatency(1e20);
 				senseAmpMuxLev2.CalculateLatency(senseAmpMuxLev1.rampOutput);
 			} else {

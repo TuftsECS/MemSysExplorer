@@ -47,7 +47,7 @@ public:
         void Initialize(long long _numColumn, bool _currentSense, double _senseVoltage /* Unit: V */, double _pitchSenseAmp, bool _mlc, double _numLvl, int _numF);
 	void CalculateArea();
 	void CalculateRC();
-	void CalculateLatency(double _rampInput);
+	void CalculateLatency();
 	void CalculatePower();
 	SenseAmp& operator=(const SenseAmp&);
 

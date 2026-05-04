@@ -350,7 +350,7 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 						latency += resLocalBitline * capGlobalBitline / 2;
 						globalBitlineMux.CalculateLatency(1e20);
 						latency += globalBitlineMux.readLatency;
-						globalSenseAmp.CalculateLatency(1e20);
+						globalSenseAmp.CalculateLatency();
 						writeLatency += latency;
 						latency += globalSenseAmp.readLatency;
 						readLatency += latency;
@@ -417,7 +417,7 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 		}
 		if (!internalSenseAmp) {
 			globalBitlineMux.CalculateLatency(1e40);
-			globalSenseAmp.CalculateLatency(1e40);
+			globalSenseAmp.CalculateLatency();
 			readLatency += globalBitlineMux.readLatency + globalSenseAmp.readLatency;
 			writeLatency += globalBitlineMux.writeLatency + globalSenseAmp.writeLatency;
 			globalBitlineMux.CalculatePower();
