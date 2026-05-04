@@ -38,7 +38,6 @@
 #ifndef MSE_WIRE_H
 #define MSE_WIRE_H
 
-#include <memory>
 #include <iostream>
 #include "typedef.h"
 #include "SenseAmp.h"
@@ -85,8 +84,6 @@ public:
 
 	double resWirePerUnit;			/* Unit: ohm/m */
 	double capWirePerUnit;			/* Unit: F/m */
-
-	std::unique_ptr<SenseAmp> senseAmp;
 };
 
 #endif /* MSE_WIRE_H */

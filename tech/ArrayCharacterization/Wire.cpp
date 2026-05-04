@@ -609,13 +609,13 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				*(leakagePower) += 2 * gTech->vdd * CalculateGateLeakage(NAND, 2, 2 * widthNmos, widthPmos, gInputParameter->temperature, *gTech);
 				*(leakagePower) *= 2;
 
-				senseAmp = std::make_unique<SenseAmp>();
+				SenseAmp senseAmp;
 				bool mlc = false;
-                                if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
-                                    mlc = true;
-                                }
-                                senseAmp->Initialize(1, false, gCell->minSenseVoltage, 1 /* for test */, mlc, gCell->nLvl, gCell->nFingers);
-				senseAmp->CalculateRC();
+                if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
+                    mlc = true;
+                }
+                senseAmp.Initialize(1, false, gCell->minSenseVoltage, 1 /* for test */, mlc, gCell->nLvl, gCell->nFingers);
+				senseAmp.CalculateRC();
 
 				/* nmos *(delay) + wire *(delay) */
 				/*
@@ -625,11 +625,11 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				 *			   * (for a detailed graph ref: On-Chip Wires: Scaling and Efficiency)
 			   */
 				double drainCapDriver = CalculateDrainCap(widthNmosDriver, NMOS, gTech->featureSize*40, *gTech);
-				capLoad = capWire + drainCapDriver * 2 + senseAmp->capLoad;
+				capLoad = capWire + drainCapDriver * 2 + senseAmp.capLoad;
 				resPullDown = CalculateOnResistance(widthNmosDriver, NMOS, gInputParameter->temperature, *gTech);
 				gm = CalculateTransconductance(widthNmosDriver, NMOS, *gTech);
 				beta = 1 / (resPullDown * gm);
-				tr = resPullDown * RES_ADJ *(capWire + drainCapDriver * 2) + capWire * resWire / 2 + (resPullDown + resWire) * senseAmp->capLoad;
+				tr = resPullDown * RES_ADJ *(capWire + drainCapDriver * 2) + capWire * resWire / 2 + (resPullDown + resWire) * senseAmp.capLoad;
 				if (delay)
 					*(delay) += horowitz(tr, beta, rampInput, &temp); //TO-DO: inconsistent with Cacti 6.5
 				if (dynamicEnergy) {
@@ -641,11 +641,11 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 
 				/* SA *(delay) and power */
 				if (delay)
-					*(delay) += senseAmp->readLatency;
+					*(delay) += senseAmp.readLatency;
 				if (dynamicEnergy)
-					*(dynamicEnergy) += senseAmp->readDynamicEnergy;
+					*(dynamicEnergy) += senseAmp.readDynamicEnergy;
 				if (leakagePower)
-					*(leakagePower) += senseAmp->leakage;
+					*(leakagePower) += senseAmp.leakage;
 
 			} else {
 				cout<<"Error: Low Swing Wires with Repeaters is not supported in this version!" <<endl;
