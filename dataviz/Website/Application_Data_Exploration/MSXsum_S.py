@@ -15,7 +15,7 @@ md_text = """
 
 The following visualizations show the characteristics of different memory cell types. The code assumes that these columns exist for filtering:
 
-- **Tecnology**
+- **Technology**
 - **Benchmark**
 - **Optimization Target**
 - **Capacity**
@@ -84,8 +84,9 @@ def load_data():
     #all file names are listed here
     #if you would like to use your own files, just replace the name and file names to what you are using
     paths = [
-        '../CSV_Files/MSX_Data/sniper_capacity_tech_sweep_results.csv',   # SRAM, MRAM, RRAM, FeFET
-        '../CSV_Files/MSX_Data/FeFET_sniper_capacity_sweep_results.csv'  # old FeFET
+        '../CSV_Files/MSX_Sum_Data/RAM_results.csv',
+        '../CSV_Files/MSX_Sum_Data/sniper_capacity_sweep_results.csv',   
+        '../CSV_Files/MSX_Sum_Data/sniper_capacity_tech_sweep_results.csv'
     ]
     
     dfs = []
@@ -223,6 +224,71 @@ stats_md = f"""
 
 ---
 """
+
+
+def build_summary(df):
+    tech_counts = df[tech].value_counts().reset_index()
+    tech_counts.columns = [tech, "count"]
+
+    opti_counts = df[opti].value_counts().reset_index()
+    opti_counts.columns = [opti, "count"]
+
+    return {
+        tech: tech_counts,
+        opti: opti_counts,
+    }
+
+summary_data = build_summary(df2)
+
+tech_summary = summary_data[tech]
+
+tech_source = ColumnDataSource(tech_summary)
+
+tech_fig = figure(
+    x_range=tech_summary[tech].tolist(),
+    title=f"Examples per {tech}",
+    height=300,
+    toolbar_location=None
+)
+
+tech_fig.vbar(x=tech, top="count", width=0.8, source=tech_source)
+hover = HoverTool(
+    tooltips=[
+        ("Category", f"@{tech}"),
+        ("Count", "@count")
+    ]
+)
+tech_fig.add_tools(hover)
+
+opti_summary = summary_data[opti]
+
+opti_source = ColumnDataSource(opti_summary)
+
+opti_fig = figure(
+    x_range=opti_summary[opti].tolist(),
+    title=f"Examples per {opti}",
+    height=300,
+    width=1000,
+    toolbar_location=None
+)
+hover = HoverTool(
+    tooltips=[
+        ("Category", f"@{{{opti}}}"),
+        ("Count", "@count")
+    ]
+)
+opti_fig.add_tools(hover)
+
+opti_fig.vbar(x=opti, top="count", width=0.8, source=opti_source)
+opti_fig.xaxis.major_label_orientation = 0.8
+
+
+summary_section = column(
+    Div(text="<h2>Dataset Overview</h2>"),
+    Div(text="<p>This section provides a summary of the dataset used in the visualizations, including the distribution of samples across different profilers, benchmark categories, and platforms.</p>"),
+    tech_fig,
+    opti_fig
+)
 
 #combine with existing markdown
 combined_md = md_text + "\n" + stats_md
@@ -592,6 +658,7 @@ filter_display.on_change('value', lambda attr, old, new: update_plot())
 #set layout
 layout = column(
     comment,
+    summary_section,
     row(column(
         row(cell_select, optimization_select),
         row(xaxis_select, yaxis_select, display_mode, benchmark_select, capacity_select,filter_display)
