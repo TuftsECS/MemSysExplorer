@@ -145,7 +145,7 @@ For a step-by-step guide to implementing your own `FrontendInterface`, visit:
    :maxdepth: 2
    :caption: Developer Tutorials
 
-   developing/frontendinterface_tutorial
+   developing/fe_interface_tutorial
 
 By following this registry-based structure, you ensure a clean separation of concerns, reduce boilerplate, and streamline extensibility for future memory technologies.
 
