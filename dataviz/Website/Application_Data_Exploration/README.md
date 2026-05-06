@@ -17,6 +17,7 @@ They both contain the same graph: jupyter notebook to see the code with the grap
 The graph presents application-level data from NVMExplorer, run with all technology, all optimization targets, all benchmarks, and all capacities. 
 
 # MSX
+Note that there may be limited data in certain categories for these visualizations.
 
 ## MSXsum
 
