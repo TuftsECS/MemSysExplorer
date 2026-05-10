@@ -48,7 +48,7 @@ using namespace std;
 
 Result::Result() {
 	// TODO Auto-generated constructor stub
-	if (gInputParameter->routingMode == h_tree)
+	if (gInputParameter.routingMode == h_tree)
         bank = std::make_unique<BankWithHtree>();
 	else
         bank = std::make_unique<BankWithoutHtree>();
@@ -142,7 +142,7 @@ void Result::print() {
 	cout << " - Senseamp Mux      : " << bank->muxSenseAmp << endl;
 	cout << " - Output Level-1 Mux: " << bank->muxOutputLev1 << endl;
 	cout << " - Output Level-2 Mux: " << bank->muxOutputLev2 << endl;
-	if (gInputParameter->designTarget == cache)
+	if (gInputParameter.designTarget == cache)
 		cout << " - One set is partitioned into " << bank->numRowPerSet << " rows" << endl;
 	cout << "Local Wire:" << endl;
 	cout << " - Wire Type : ";
@@ -279,24 +279,24 @@ void Result::print() {
 	cout << " - Total Area = " << TO_METER(bank->height) << " x " << TO_METER(bank->width)
 			<< " = " << TO_SQM(bank->area) << endl;
 	cout << " |--- Mat Area      = " << TO_METER(bank->mat.height) << " x " << TO_METER(bank->mat.width)
-			<< " = " << TO_SQM(bank->mat.area) << "   (" << gCell->area * gTech->featureSize * gTech->featureSize
+			<< " = " << TO_SQM(bank->mat.area) << "   (" << gCell.area * gTech.featureSize * gTech.featureSize
 			* bank->capacity / bank->numRowMat / bank->numColumnMat / bank->mat.area * 100 << "%)" << endl;
 	cout << " |--- Subarray Area = " << TO_METER(bank->mat.subarray.height) << " x "
 			<< TO_METER(bank->mat.subarray.width) << " = " << TO_SQM(bank->mat.subarray.area) << "   ("
-			<< gCell->area * gTech->featureSize * gTech->featureSize * bank->capacity / bank->numRowMat
+			<< gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / bank->numRowMat
 			/ bank->numColumnMat / bank->numRowSubarray / bank->numColumnSubarray
 			/ bank->mat.subarray.area * 100 << "%)" <<endl;
 	//Qing: subarray buffer area
 	cout << " |--- Subarray Buffer Area = " << TO_METER(bank->mat.subarray.subarrayBuffer.height) << " x "
 			<< TO_METER(bank->mat.subarray.subarrayBuffer.width) << " = " << TO_SQM(bank->mat.subarray.subarrayBuffer.area) <<endl;
 	//Qing.
-	cout << " - Area Efficiency = " << gCell->area * gTech->featureSize * gTech->featureSize
+	cout << " - Area Efficiency = " << gCell.area * gTech.featureSize * gTech.featureSize
 			* bank->capacity / bank->area * 100 << "%" << endl;
 
 	cout << "Timing:" << endl;
 
 	cout << " -  Read Latency = " << TO_SECOND(bank->readLatency) << endl;
-	if (gInputParameter->routingMode == h_tree)
+	if (gInputParameter.routingMode == h_tree)
 		cout << " |--- H-Tree Latency = " << TO_SECOND(bank->readLatency - bank->mat.readLatency) << endl;
 	else
 		cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->readLatency - bank->mat.readLatency) << endl;
@@ -304,11 +304,11 @@ void Result::print() {
 	cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << endl;
 	cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.readLatency) << endl;
 	cout << "       |--- Row Decoder Latency = " << TO_SECOND(bank->mat.subarray.rowDecoder.readLatency) << endl;
-	if (gCell->memCellType != eDRAM3T333 && gCell->memCellType != eDRAM3T)
+	if (gCell.memCellType != eDRAM3T333 && gCell.memCellType != eDRAM3T)
 		cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelay) << endl;
 	else
 		cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelayR) << endl;
-	if (gInputParameter->internalSensing)
+	if (gInputParameter.internalSensing)
 		cout << "       |--- Senseamp Latency    = " << TO_SECOND(bank->mat.subarray.senseAmp.readLatency) << endl;
 	cout << "       |--- Mux Latency         = " << TO_SECOND(bank->mat.subarray.bitlineMux.readLatency
 													+ bank->mat.subarray.senseAmpMuxLev1.readLatency
@@ -317,57 +317,57 @@ void Result::print() {
 	if (bank->mat.memoryType == tag && bank->mat.internalSenseAmp)
 		cout << "    |--- Comparator Latency  = " << TO_SECOND(bank->mat.comparator.readLatency) << endl;
 
-	if (gCell->memCellType == PCRAM || gCell->memCellType == FBRAM || gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM ||
-			(gCell->memCellType == memristor && (gCell->accessType == CMOS_access || gCell->accessType == BJT_access))) {
+	if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM ||
+			(gCell.memCellType == memristor && (gCell.accessType == CMOS_access || gCell.accessType == BJT_access))) {
 		cout << " - RESET Latency = " << TO_SECOND(bank->resetLatency) << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Latency = " << TO_SECOND(bank->resetLatency - bank->mat.resetLatency) << endl;
 		else
 			cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->resetLatency - bank->mat.resetLatency) << endl;
 		cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.resetLatency) << endl;
 		cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << endl;
 		cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.resetLatency) << endl;
-		cout << "       |--- RESET Pulse Duration = " << TO_SECOND(gCell->resetPulse) << endl;
+		cout << "       |--- RESET Pulse Duration = " << TO_SECOND(gCell.resetPulse) << endl;
 		cout << "       |--- Row Decoder Latency  = " << TO_SECOND(bank->mat.subarray.rowDecoder.writeLatency) << endl;
 		cout << "       |--- Charge Latency   = " << TO_SECOND(bank->mat.subarray.chargeLatency) << endl;
 		cout << " - SET Latency   = " << TO_SECOND(bank->setLatency) << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Latency = " << TO_SECOND(bank->setLatency - bank->mat.setLatency) << endl;
 		else
 			cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->setLatency - bank->mat.setLatency) << endl;
 		cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.setLatency) << endl;
 		cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << endl;
 		cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.setLatency) << endl;
-		cout << "       |--- SET Pulse Duration   = " << TO_SECOND(gCell->setPulse) << endl;
+		cout << "       |--- SET Pulse Duration   = " << TO_SECOND(gCell.setPulse) << endl;
 		cout << "       |--- Row Decoder Latency  = " << TO_SECOND(bank->mat.subarray.rowDecoder.writeLatency) << endl;
 		cout << "       |--- Charger Latency      = " << TO_SECOND(bank->mat.subarray.chargeLatency) << endl;
-	} else if (gCell->memCellType == SLCNAND) {
+	} else if (gCell.memCellType == SLCNAND) {
 		cout << " - Erase Latency = " << TO_SECOND(bank->resetLatency) << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Latency = " << TO_SECOND(bank->resetLatency - bank->mat.resetLatency) << endl;
 		else
 			cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->resetLatency - bank->mat.resetLatency) << endl;
 		cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.resetLatency) << endl;
 		cout << " - Programming Latency   = " << TO_SECOND(bank->setLatency) << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Latency = " << TO_SECOND(bank->setLatency - bank->mat.setLatency) << endl;
 		else
 			cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->setLatency - bank->mat.setLatency) << endl;
 		cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.setLatency) << endl;
 	} else {
 		cout << " - Write Latency = " << TO_SECOND(bank->writeLatency) << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Latency = " << TO_SECOND(bank->writeLatency - bank->mat.writeLatency) << endl;
 		else
 			cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->writeLatency - bank->mat.writeLatency) << endl;
 		cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.writeLatency) << endl;
 		cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << endl;
 		cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.writeLatency) << endl;
-		if (gCell->memCellType == MRAM)
-			cout << "       |--- Write Pulse Duration = " << TO_SECOND(gCell->resetPulse) << endl;	// MRAM reset/set is equal
+		if (gCell.memCellType == MRAM)
+			cout << "       |--- Write Pulse Duration = " << TO_SECOND(gCell.resetPulse) << endl;	// MRAM reset/set is equal
 		cout << "       |--- Row Decoder Latency = " << TO_SECOND(bank->mat.subarray.rowDecoder.writeLatency) << endl;
 		cout << "       |--- Charge Latency      = " << TO_SECOND(bank->mat.subarray.chargeLatency) << endl;
-		if (gCell->memCellType != eDRAM3T333 && gCell->memCellType != eDRAM3T)
+		if (gCell.memCellType != eDRAM3T333 && gCell.memCellType != eDRAM3T)
 			cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelay) << endl;
 		else
 			cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelayW) << endl;
@@ -381,8 +381,8 @@ void Result::print() {
 	double readBandwidth = (double)bank->blockSize /
 			(bank->mat.subarray.readLatency - bank->mat.subarray.rowDecoder.readLatency
 			+ bank->mat.subarray.precharger.readLatency) / 8;
-	if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
-            readBandwidth *= log2(gCell->nLvl);
+	if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
+            readBandwidth *= log2(gCell.nLvl);
         }
         cout << " - Read Bandwidth  = " << TO_BPS(readBandwidth) << endl;
 
@@ -393,7 +393,7 @@ void Result::print() {
 	cout << "Power:" << endl;
 
 	cout << " -  Read Dynamic Energy = " << TO_JOULE(bank->readDynamicEnergy) << endl;
-	if (gInputParameter->routingMode == h_tree)
+	if (gInputParameter.routingMode == h_tree)
 		cout << " |--- H-Tree Read Dynamic Energy = " << TO_JOULE(bank->readDynamicEnergy - bank->mat.readDynamicEnergy
 													* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 													<< endl;
@@ -410,20 +410,20 @@ void Result::print() {
 	cout << "       |--- Mux Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.bitlineMuxDecoder.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev1Decoder.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev2Decoder.readDynamicEnergy) << endl;
-	if (gCell->memCellType == PCRAM || gCell->memCellType == FBRAM || gCell->memCellType == MRAM || gCell->memCellType == memristor || gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
+	if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || gCell.memCellType == MRAM || gCell.memCellType == memristor || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
 		cout << "       |--- Bitline & Cell Read Energy = " << TO_JOULE(bank->mat.subarray.cellReadEnergy) << endl;
 	}
-	if (gInputParameter->internalSensing)
+	if (gInputParameter.internalSensing)
 		cout << "       |--- Senseamp Dynamic Energy    = " << TO_JOULE(bank->mat.subarray.senseAmp.readDynamicEnergy) << endl;
 	cout << "       |--- Mux Dynamic Energy         = " << TO_JOULE(bank->mat.subarray.bitlineMux.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev1.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev2.readDynamicEnergy) << endl;
 	cout << "       |--- Precharge Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.precharger.readDynamicEnergy) << endl;
 	
-	if (gCell->memCellType == PCRAM || gCell->memCellType == FBRAM || gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM ||
-			(gCell->memCellType == memristor && (gCell->accessType == CMOS_access || gCell->accessType == BJT_access))) {
+	if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM ||
+			(gCell.memCellType == memristor && (gCell.accessType == CMOS_access || gCell.accessType == BJT_access))) {
 		cout << " - RESET Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy) << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< endl;
@@ -445,7 +445,7 @@ void Result::print() {
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << endl;
 		cout << "       |--- Cell RESET Dynamic Energy  = " << TO_JOULE(bank->mat.subarray.cellResetEnergy) << endl;
 		cout << " - SET Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy) << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< endl;
@@ -466,9 +466,9 @@ void Result::print() {
 														+ bank->mat.subarray.senseAmpMuxLev1.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << endl;
 		cout << "       |--- Cell SET Dynamic Energy    = " << TO_JOULE(bank->mat.subarray.cellSetEnergy) << endl;
-	} else if (gCell->memCellType == SLCNAND) {
+	} else if (gCell.memCellType == SLCNAND) {
 		cout << " - Erase Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy) << " per block" << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< endl;
@@ -489,7 +489,7 @@ void Result::print() {
 														+ bank->mat.subarray.senseAmpMuxLev1.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << endl;
 		cout << " - Programming Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy) << " per page" << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< endl;
@@ -511,7 +511,7 @@ void Result::print() {
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << endl;
 	} else {
 		cout << " - Write Dynamic Energy = " << TO_JOULE(bank->writeDynamicEnergy) << endl;
-		if (gInputParameter->routingMode == h_tree)
+		if (gInputParameter.routingMode == h_tree)
 			cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->writeDynamicEnergy - bank->mat.writeDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< endl;
@@ -531,7 +531,7 @@ void Result::print() {
 		cout << "       |--- Mux Dynamic Energy         = " << TO_JOULE(bank->mat.subarray.bitlineMux.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << endl;
-		if (gCell->memCellType == MRAM) {
+		if (gCell.memCellType == MRAM) {
 			cout << "       |--- Bitline & Cell Write Energy= " << TO_JOULE(bank->mat.subarray.cellResetEnergy) << endl;
 		}
 	}
@@ -542,7 +542,7 @@ void Result::print() {
 	//Qing.
 	
 	cout << " - Leakage Power = " << TO_WATT(bank->leakage) << endl;
-	if (gInputParameter->routingMode == h_tree)
+	if (gInputParameter.routingMode == h_tree)
 		cout << " |--- H-Tree Leakage Power = " << TO_WATT(bank->leakage - bank->mat.leakage
 													* bank->numColumnMat * bank->numRowMat)
 													<< endl;
@@ -551,9 +551,9 @@ void Result::print() {
 													* bank->numColumnMat * bank->numRowMat)
 													<< endl;
 	cout << " |--- Mat Leakage Power    = " << TO_WATT(bank->mat.leakage) << " per mat" << endl;
-	if (gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
+	if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
 		// David Note: refresh period could be shorter than retention time 
-        cout << " - Refresh Power = " << TO_WATT(bank->refreshDynamicEnergy / (gCell->retentionTime)) << endl;
+        cout << " - Refresh Power = " << TO_WATT(bank->refreshDynamicEnergy / (gCell.retentionTime)) << endl;
     }
 }
 
@@ -625,23 +625,23 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 		cout << " - Cache Hit Latency   = " << cacheHitLatency * 1e9 << "ns" << endl;
 		cout << " - Cache Miss Latency  = " << cacheMissLatency * 1e9 << "ns" << endl;
 		cout << " - Cache Write Latency = " << cacheWriteLatency * 1e9 << "ns" << endl;
-        if (gCell->memCellType == eDRAM) {
+        if (gCell.memCellType == eDRAM) {
             cout << " - Cache Refresh Latency = " << MAX(tagResult.bank->refreshLatency, bank->refreshLatency) * 1e6 << "us per bank" << endl;
-            cout << " - Cache Availability = " << ((gCell->retentionTime - MAX(tagResult.bank->refreshLatency, bank->refreshLatency)) / gCell->retentionTime) * 100.0 << "%" << endl;
+            cout << " - Cache Availability = " << ((gCell.retentionTime - MAX(tagResult.bank->refreshLatency, bank->refreshLatency)) / gCell.retentionTime) * 100.0 << "%" << endl;
         }
 		cout << "Power:" << endl;
 		cout << " - Cache Hit Dynamic Energy   = " << cacheHitDynamicEnergy * 1e9 << "nJ per access" << endl;
 		cout << " - Cache Miss Dynamic Energy  = " << cacheMissDynamicEnergy * 1e9 << "nJ per access" << endl;
 		cout << " - Cache Write Dynamic Energy = " << cacheWriteDynamicEnergy * 1e9 << "nJ per access" << endl;
-        if (gCell->memCellType == eDRAM) {
+        if (gCell.memCellType == eDRAM) {
             cout << " - Cache Refresh Dynamic Energy = " << (tagResult.bank->refreshDynamicEnergy + bank->refreshDynamicEnergy) * 1e9 << "nJ per bank" << endl;
         }
 		cout << " - Cache Total Leakage Power  = " << cacheLeakage * 1e3 << "mW" << endl;
 		cout << " |--- Cache Data Array Leakage Power = " << bank->leakage * 1e3 << "mW" << endl;
 		cout << " |--- Cache Tag Array Leakage Power  = " << tagResult.bank->leakage * 1e3 << "mW" << endl;
-		if (gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
-            cout << " - Cache Refresh Power = " << TO_WATT(bank->refreshDynamicEnergy / (gCell->retentionTime)) << " per bank" << endl;
-			cout << " - Cache Retention Time = " << (gCell->retentionTime)*1e9 << "ns" << endl;
+		if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
+            cout << " - Cache Refresh Power = " << TO_WATT(bank->refreshDynamicEnergy / (gCell.retentionTime)) << " per bank" << endl;
+			cout << " - Cache Retention Time = " << (gCell.retentionTime)*1e9 << "ns" << endl;
         }
 		cout << endl << "CACHE DATA ARRAY";
 		print();
@@ -653,7 +653,7 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 YAML::Node Result::toYamlNode() {
 	YAML::Node result;
 
-	if(gInputParameter->designTarget != cache){
+	if(gInputParameter.designTarget != cache){
 		// Helper to convert DeviceRoadmap enums to string
 		auto roadmapToString = [](DeviceRoadmap roadmap) -> string {
 			switch (roadmap) {
@@ -665,7 +665,7 @@ YAML::Node Result::toYamlNode() {
 		};
 
 		// Memory cell type
-		switch (gCell->memCellType) {
+		switch (gCell.memCellType) {
 			case SRAM: result["MemoryCell"]["MemoryCellType"] = "SRAM"; break;
 			case DRAM: result["MemoryCell"]["MemoryCellType"] = "DRAM"; break;
 			case eDRAM: result["MemoryCell"]["MemoryCellType"] = "eDRAM"; break;
@@ -687,44 +687,44 @@ YAML::Node Result::toYamlNode() {
 
 
 		// Cell area
-		result["MemoryCell"]["CellArea_F2"]  = gCell->area;
-		result["MemoryCell"]["CellArea_um2"] = gCell->area / 1000000.0 * gTech->featureSizeInNano * gTech->featureSizeInNano;
-		result["MemoryCell"]["AspectRatio"]  = gCell->aspectRatio;
+		result["MemoryCell"]["CellArea_F2"]  = gCell.area;
+		result["MemoryCell"]["CellArea_um2"] = gCell.area / 1000000.0 * gTech.featureSizeInNano * gTech.featureSizeInNano;
+		result["MemoryCell"]["AspectRatio"]  = gCell.aspectRatio;
 
 		// Resistive / Non-volatile memory
-		if (gCell->memCellType == PCRAM || gCell->memCellType == MRAM || gCell->memCellType == memristor ||
-			gCell->memCellType == FBRAM || gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET ||
-			gCell->memCellType == MLCRRAM) {
+		if (gCell.memCellType == PCRAM || gCell.memCellType == MRAM || gCell.memCellType == memristor ||
+			gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET ||
+			gCell.memCellType == MLCRRAM) {
 
-			if (gCell->resistanceOn < 1e3)
-				result["MemoryCell"]["R_on_Ohm"] = gCell->resistanceOn;
-			else if (gCell->resistanceOn < 1e6)
-				result["MemoryCell"]["R_on_KOhm"] = gCell->resistanceOn / 1e3;
+			if (gCell.resistanceOn < 1e3)
+				result["MemoryCell"]["R_on_Ohm"] = gCell.resistanceOn;
+			else if (gCell.resistanceOn < 1e6)
+				result["MemoryCell"]["R_on_KOhm"] = gCell.resistanceOn / 1e3;
 			else
-				result["MemoryCell"]["R_on_MOhm"] = gCell->resistanceOn / 1e6;
+				result["MemoryCell"]["R_on_MOhm"] = gCell.resistanceOn / 1e6;
 
-			if (gCell->resistanceOff < 1e3)
-				result["MemoryCell"]["R_off_Ohm"] = gCell->resistanceOff;
-			else if (gCell->resistanceOff < 1e6)
-				result["MemoryCell"]["R_off_KOhm"] = gCell->resistanceOff / 1e3;
+			if (gCell.resistanceOff < 1e3)
+				result["MemoryCell"]["R_off_Ohm"] = gCell.resistanceOff;
+			else if (gCell.resistanceOff < 1e6)
+				result["MemoryCell"]["R_off_KOhm"] = gCell.resistanceOff / 1e3;
 			else
-				result["MemoryCell"]["R_off_MOhm"] = gCell->resistanceOff / 1e6;
+				result["MemoryCell"]["R_off_MOhm"] = gCell.resistanceOff / 1e6;
 
-			result["MemoryCell"]["ReadMode"]  = gCell->readMode ? "Voltage-Sensing" : "Current-Sensing";
-			if (gCell->readCurrent > 0) result["MemoryCell"]["ReadCurrent_uA"] = gCell->readCurrent * 1e6;
-			if (gCell->readVoltage > 0) result["MemoryCell"]["ReadVoltage_V"] = gCell->readVoltage;
+			result["MemoryCell"]["ReadMode"]  = gCell.readMode ? "Voltage-Sensing" : "Current-Sensing";
+			if (gCell.readCurrent > 0) result["MemoryCell"]["ReadCurrent_uA"] = gCell.readCurrent * 1e6;
+			if (gCell.readVoltage > 0) result["MemoryCell"]["ReadVoltage_V"] = gCell.readVoltage;
 
-			result["MemoryCell"]["ResetMode"] = gCell->resetMode ? "Voltage" : "Current";
-			result["MemoryCell"]["ResetVoltage_V"] = gCell->resetVoltage;
-			result["MemoryCell"]["ResetCurrent_uA"] = gCell->resetCurrent * 1e6;
-			result["MemoryCell"]["ResetPulse_s"] = gCell->resetPulse / 1e9;
+			result["MemoryCell"]["ResetMode"] = gCell.resetMode ? "Voltage" : "Current";
+			result["MemoryCell"]["ResetVoltage_V"] = gCell.resetVoltage;
+			result["MemoryCell"]["ResetCurrent_uA"] = gCell.resetCurrent * 1e6;
+			result["MemoryCell"]["ResetPulse_s"] = gCell.resetPulse / 1e9;
 
-			result["MemoryCell"]["SetMode"] = gCell->setMode ? "Voltage" : "Current";
-			result["MemoryCell"]["SetVoltage_V"] = gCell->setVoltage;
-			result["MemoryCell"]["SetCurrent_uA"] = gCell->setCurrent * 1e6;
-			result["MemoryCell"]["SetPulse_s"] = gCell->setPulse / 1e9;
+			result["MemoryCell"]["SetMode"] = gCell.setMode ? "Voltage" : "Current";
+			result["MemoryCell"]["SetVoltage_V"] = gCell.setVoltage;
+			result["MemoryCell"]["SetCurrent_uA"] = gCell.setCurrent * 1e6;
+			result["MemoryCell"]["SetPulse_s"] = gCell.setPulse / 1e9;
 
-			switch (gCell->accessType) {
+			switch (gCell.accessType) {
 				case CMOS_access: result["MemoryCell"]["AccessType"] = "CMOS"; break;
 				case BJT_access: result["MemoryCell"]["AccessType"] = "BJT"; break;
 				case diode_access: result["MemoryCell"]["AccessType"] = "Diode"; break;
@@ -733,73 +733,73 @@ YAML::Node Result::toYamlNode() {
 		}
 
 		// SRAM
-		if (gCell->memCellType == SRAM) {
-			result["MemoryCell"]["WidthAccessCMOS_F"]   = gCell->widthAccessCMOS;
-			result["MemoryCell"]["WidthSRAMCellNMOS_F"] = gCell->widthSRAMCellNMOS;
-			result["MemoryCell"]["WidthSRAMCellPMOS_F"] = gCell->widthSRAMCellPMOS;
-			result["MemoryCell"]["PeripheralRoadmap"]   = roadmapToString(gTech->deviceRoadmap);
-			result["MemoryCell"]["PeripheralNode_nm"]   = gTech->featureSizeInNano;
-			result["MemoryCell"]["VDD_V"]               = gTech->vdd;
-			result["MemoryCell"]["WWL_SWING"]           = gTech->vdd;
-			result["MemoryCell"]["Temperature_K"]       = gCell->temperature;
+		if (gCell.memCellType == SRAM) {
+			result["MemoryCell"]["WidthAccessCMOS_F"]   = gCell.widthAccessCMOS;
+			result["MemoryCell"]["WidthSRAMCellNMOS_F"] = gCell.widthSRAMCellNMOS;
+			result["MemoryCell"]["WidthSRAMCellPMOS_F"] = gCell.widthSRAMCellPMOS;
+			result["MemoryCell"]["PeripheralRoadmap"]   = roadmapToString(gTech.deviceRoadmap);
+			result["MemoryCell"]["PeripheralNode_nm"]   = gTech.featureSizeInNano;
+			result["MemoryCell"]["VDD_V"]               = gTech.vdd;
+			result["MemoryCell"]["WWL_SWING"]           = gTech.vdd;
+			result["MemoryCell"]["Temperature_K"]       = gCell.temperature;
 		}
 
 		// DRAM / eDRAM
-		if (gCell->memCellType == DRAM || gCell->memCellType == eDRAM) {
-			result["MemoryCell"]["WidthAccessCMOS_F"] = gCell->widthAccessCMOS;
-			result["MemoryCell"]["PeripheralRoadmap"] = roadmapToString(gTech->deviceRoadmap);
-			result["MemoryCell"]["PeripheralNode_nm"] = gTech->featureSizeInNano;
-			result["MemoryCell"]["VDD_V"] = gTech->vdd;
-			result["MemoryCell"]["WWL_SWING"] = gTech->vpp;
-			result["MemoryCell"]["Temperature_K"] = gCell->temperature;
+		if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM) {
+			result["MemoryCell"]["WidthAccessCMOS_F"] = gCell.widthAccessCMOS;
+			result["MemoryCell"]["PeripheralRoadmap"] = roadmapToString(gTech.deviceRoadmap);
+			result["MemoryCell"]["PeripheralNode_nm"] = gTech.featureSizeInNano;
+			result["MemoryCell"]["VDD_V"] = gTech.vdd;
+			result["MemoryCell"]["WWL_SWING"] = gTech.vpp;
+			result["MemoryCell"]["Temperature_K"] = gCell.temperature;
 		}
 
 		// 3T DRAM
-		if (gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
-			result["MemoryCell"]["WidthWriteAccessCMOS_F"] = gCell->widthAccessCMOS;
-			result["MemoryCell"]["WidthReadAccessCMOS_F"]  = gCell->widthAccessCMOSR;
-			result["MemoryCell"]["PeripheralRoadmap"]      = roadmapToString(gTech->deviceRoadmap);
-			result["MemoryCell"]["WriteAccessRoadmap"]     = roadmapToString(gTechW->deviceRoadmap);
-			result["MemoryCell"]["ReadAccessRoadmap"]      = roadmapToString(gTechR->deviceRoadmap);
-			result["MemoryCell"]["PeripheralNode_nm"]      = gTech->featureSizeInNano;
-			result["MemoryCell"]["WriteAccessNode_nm"]     = gTechW->featureSizeInNano;
-			result["MemoryCell"]["ReadAccessNode_nm"]      = gTechR->featureSizeInNano;
-			result["MemoryCell"]["VDD_V"]                  = gTech->vdd;
-			result["MemoryCell"]["WWL_SWING"]              = gTechW->vpp;
-			result["MemoryCell"]["Temperature_K"]          = gCell->temperature;
+		if (gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
+			result["MemoryCell"]["WidthWriteAccessCMOS_F"] = gCell.widthAccessCMOS;
+			result["MemoryCell"]["WidthReadAccessCMOS_F"]  = gCell.widthAccessCMOSR;
+			result["MemoryCell"]["PeripheralRoadmap"]      = roadmapToString(gTech.deviceRoadmap);
+			result["MemoryCell"]["WriteAccessRoadmap"]     = roadmapToString(gTechW.deviceRoadmap);
+			result["MemoryCell"]["ReadAccessRoadmap"]      = roadmapToString(gTechR.deviceRoadmap);
+			result["MemoryCell"]["PeripheralNode_nm"]      = gTech.featureSizeInNano;
+			result["MemoryCell"]["WriteAccessNode_nm"]     = gTechW.featureSizeInNano;
+			result["MemoryCell"]["ReadAccessNode_nm"]      = gTechR.featureSizeInNano;
+			result["MemoryCell"]["VDD_V"]                  = gTech.vdd;
+			result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp;
+			result["MemoryCell"]["Temperature_K"]          = gCell.temperature;
 		}
 
 		// SLC NAND Flash
-		if (gCell->memCellType == SLCNAND) {
-			result["MemoryCell"]["PassVoltage_V"]     = gCell->flashPassVoltage;
-			result["MemoryCell"]["ProgramVoltage_V"]  = gCell->flashProgramVoltage;
-			result["MemoryCell"]["EraseVoltage_V"]    = gCell->flashEraseVoltage;
-			result["MemoryCell"]["ProgramTime_s"]     = gCell->flashProgramTime / 1e9;
-			result["MemoryCell"]["EraseTime_s"]       = gCell->flashEraseTime / 1e9;
-			result["MemoryCell"]["GateCouplingRatio"] = gCell->gateCouplingRatio;
+		if (gCell.memCellType == SLCNAND) {
+			result["MemoryCell"]["PassVoltage_V"]     = gCell.flashPassVoltage;
+			result["MemoryCell"]["ProgramVoltage_V"]  = gCell.flashProgramVoltage;
+			result["MemoryCell"]["EraseVoltage_V"]    = gCell.flashEraseVoltage;
+			result["MemoryCell"]["ProgramTime_s"]     = gCell.flashProgramTime / 1e9;
+			result["MemoryCell"]["EraseTime_s"]       = gCell.flashEraseTime / 1e9;
+			result["MemoryCell"]["GateCouplingRatio"] = gCell.gateCouplingRatio;
 		}
 
 		// Multi-level cells
-		if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
-			result["MemoryCell"]["NumberOfInputFingers"]   = gCell->nFingers;
-			result["MemoryCell"]["NumberOfLevelsPerCell"] = gCell->nLvl;
+		if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
+			result["MemoryCell"]["NumberOfInputFingers"]   = gCell.nFingers;
+			result["MemoryCell"]["NumberOfLevelsPerCell"] = gCell.nLvl;
 		}
 
 	}
 
-	if(gInputParameter->designTarget != cache){
+	if(gInputParameter.designTarget != cache){
 		//Capacity
-		if (gInputParameter->capacity < 1024) {
-			result["Capacity"]["Value"] = gInputParameter->capacity;
+		if (gInputParameter.capacity < 1024) {
+			result["Capacity"]["Value"] = gInputParameter.capacity;
 			result["Capacity"]["Unit"] = "B";
-		} else if (gInputParameter->capacity < 1024 * 1024) {
-			result["Capacity"]["Value"] = gInputParameter->capacity / 1024;
+		} else if (gInputParameter.capacity < 1024 * 1024) {
+			result["Capacity"]["Value"] = gInputParameter.capacity / 1024;
 			result["Capacity"]["Unit"] = "KB";
-		} else if (gInputParameter->capacity < 1024 * 1024 * 1024) {
-			result["Capacity"]["Value"] = gInputParameter->capacity / 1024 / 1024;
+		} else if (gInputParameter.capacity < 1024 * 1024 * 1024) {
+			result["Capacity"]["Value"] = gInputParameter.capacity / 1024 / 1024;
 			result["Capacity"]["Unit"] = "MB";
 		} else {
-			result["Capacity"]["Value"] = gInputParameter->capacity / 1024 / 1024 / 1024;
+			result["Capacity"]["Value"] = gInputParameter.capacity / 1024 / 1024 / 1024;
 			result["Capacity"]["Unit"] = "GB";
 		}
 	
@@ -838,7 +838,7 @@ YAML::Node Result::toYamlNode() {
     result["Configuration"]["MuxLevels"]["SenseampMux"] = bank->muxSenseAmp;
     result["Configuration"]["MuxLevels"]["OutputLevel1Mux"] = bank->muxOutputLev1;
     result["Configuration"]["MuxLevels"]["OutputLevel2Mux"] = bank->muxOutputLev2;
-    if (gInputParameter->designTarget == cache)
+    if (gInputParameter.designTarget == cache)
         result["Configuration"]["MuxLevels"]["RowsPerSet"] = bank->numRowPerSet;
     
     // Local Wire
@@ -902,19 +902,19 @@ YAML::Node Result::toYamlNode() {
     result["Results"]["Area"]["Mat"]["Width_um"] = bank->mat.width * 1e6;
     result["Results"]["Area"]["Mat"]["Area_mm2"] = bank->mat.area * 1e6;
     result["Results"]["Area"]["Mat"]["Efficiency_percent"] = 
-        (gCell->area * gTech->featureSize * gTech->featureSize * bank->capacity / 
+        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / 
          bank->numRowMat / bank->numColumnMat / bank->mat.area * 100);
     
     result["Results"]["Area"]["Subarray"]["Height_um"] = bank->mat.subarray.height * 1e6;
     result["Results"]["Area"]["Subarray"]["Width_um"] = bank->mat.subarray.width * 1e6;
     result["Results"]["Area"]["Subarray"]["Area_mm2"] = bank->mat.subarray.area * 1e6;
     result["Results"]["Area"]["Subarray"]["Efficiency_percent"] =
-        (gCell->area * gTech->featureSize * gTech->featureSize * bank->capacity / 
+        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / 
          bank->numRowMat / bank->numColumnMat / bank->numRowSubarray / 
          bank->numColumnSubarray / bank->mat.subarray.area * 100);
     
     result["Results"]["Area"]["AreaEfficiency_percent"] =
-        (gCell->area * gTech->featureSize * gTech->featureSize * bank->capacity / bank->area * 100);
+        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / bank->area * 100);
     
     // Timing
     result["Results"]["Timing"]["Read"]["Latency_ns"] = bank->readLatency * 1e9;
@@ -925,12 +925,12 @@ YAML::Node Result::toYamlNode() {
     result["Results"]["Timing"]["Read"]["SubarrayLatency_ns"] = bank->mat.subarray.readLatency * 1e9;
     result["Results"]["Timing"]["Read"]["RowDecoderLatency_ns"] = 
         bank->mat.subarray.rowDecoder.readLatency * 1e9;
-	if (gCell->memCellType == eDRAM3T333 || gCell->memCellType == eDRAM3T) {
+	if (gCell.memCellType == eDRAM3T333 || gCell.memCellType == eDRAM3T) {
     	result["Results"]["Timing"]["Read"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelayR * 1e9;
 	} else {
 		result["Results"]["Timing"]["Read"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelay * 1e9;
 	}
-    if (gInputParameter->internalSensing)
+    if (gInputParameter.internalSensing)
         result["Results"]["Timing"]["Read"]["SenseampLatency_ns"] = 
             bank->mat.subarray.senseAmp.readLatency * 1e9;
     result["Results"]["Timing"]["Read"]["MuxLatency_ns"] =
@@ -940,27 +940,27 @@ YAML::Node Result::toYamlNode() {
     result["Results"]["Timing"]["Read"]["PrechargeLatency_ns"] = 
         bank->mat.subarray.precharger.readLatency * 1e9;
 
-    if (gCell->memCellType == PCRAM || gCell->memCellType == FBRAM || 
-        gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET || 
-        gCell->memCellType == MLCRRAM ||
-        (gCell->memCellType == memristor && (gCell->accessType == CMOS_access || 
-         gCell->accessType == BJT_access))) {
+    if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || 
+        gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || 
+        gCell.memCellType == MLCRRAM ||
+        (gCell.memCellType == memristor && (gCell.accessType == CMOS_access || 
+         gCell.accessType == BJT_access))) {
 
         // RESET latency with proper TreeLatency calculation
         result["Results"]["Timing"]["Reset"]["Latency_ns"] = bank->resetLatency * 1e9;
         result["Results"]["Timing"]["Reset"]["TreeLatency_ns"] = 
             (bank->resetLatency - bank->mat.resetLatency) * 1e9;
         result["Results"]["Timing"]["Reset"]["MatLatency_ns"] = bank->mat.resetLatency * 1e9;
-        result["Results"]["Timing"]["Reset"]["PulseDuration_ns"] = gCell->resetPulse * 1e9;
+        result["Results"]["Timing"]["Reset"]["PulseDuration_ns"] = gCell.resetPulse * 1e9;
 
         // SET latency with proper TreeLatency calculation
         result["Results"]["Timing"]["Set"]["Latency_ns"] = bank->setLatency * 1e9;
         result["Results"]["Timing"]["Set"]["TreeLatency_ns"] = 
             (bank->setLatency - bank->mat.setLatency) * 1e9;
         result["Results"]["Timing"]["Set"]["MatLatency_ns"] = bank->mat.setLatency * 1e9;
-        result["Results"]["Timing"]["Set"]["PulseDuration_ns"] = gCell->setPulse * 1e9;
+        result["Results"]["Timing"]["Set"]["PulseDuration_ns"] = gCell.setPulse * 1e9;
 
-    } else if (gCell->memCellType == SLCNAND) {
+    } else if (gCell.memCellType == SLCNAND) {
         result["Results"]["Timing"]["Erase"]["Latency_ns"] = bank->resetLatency * 1e9;
         result["Results"]["Timing"]["Programming"]["Latency_ns"] = bank->setLatency * 1e9;
 
@@ -973,7 +973,7 @@ YAML::Node Result::toYamlNode() {
 		result["Results"]["Timing"]["Write"]["SubarrayLatency_ns"] = bank->mat.subarray.readLatency * 1e9;
 		result["Results"]["Timing"]["Write"]["RowDecoderLatency_ns"] = 
 			bank->mat.subarray.rowDecoder.readLatency * 1e9;
-		if (gCell->memCellType == eDRAM3T333 || gCell->memCellType == eDRAM3T) {
+		if (gCell.memCellType == eDRAM3T333 || gCell.memCellType == eDRAM3T) {
 			result["Results"]["Timing"]["Write"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelayW * 1e9;
 		} else {
 			result["Results"]["Timing"]["Write"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelay * 1e9;
@@ -983,9 +983,9 @@ YAML::Node Result::toYamlNode() {
     double readBandwidth = (double)bank->blockSize /
         (bank->mat.subarray.readLatency - bank->mat.subarray.rowDecoder.readLatency
          + bank->mat.subarray.precharger.readLatency) / 8;
-    if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || 
-        gCell->memCellType == MLCRRAM) {
-        readBandwidth *= log2(gCell->nLvl);
+    if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || 
+        gCell.memCellType == MLCRRAM) {
+        readBandwidth *= log2(gCell.nLvl);
     }
     result["Results"]["Timing"]["ReadBandwidth_Bps"] = readBandwidth;
 
@@ -1002,11 +1002,11 @@ YAML::Node Result::toYamlNode() {
     result["Results"]["Power"]["Read"]["SubarrayDynamicEnergy_pJ"] = 
         bank->mat.subarray.readDynamicEnergy * 1e12;
 
-    if (gCell->memCellType == PCRAM || gCell->memCellType == FBRAM || 
-        gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET || 
-        gCell->memCellType == MLCRRAM ||
-        (gCell->memCellType == memristor && (gCell->accessType == CMOS_access || 
-         gCell->accessType == BJT_access))) {
+    if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || 
+        gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || 
+        gCell.memCellType == MLCRRAM ||
+        (gCell.memCellType == memristor && (gCell.accessType == CMOS_access || 
+         gCell.accessType == BJT_access))) {
 
         result["Results"]["Power"]["Reset"]["DynamicEnergy_pJ"] = bank->resetDynamicEnergy * 1e12;
         result["Results"]["Power"]["Reset"]["CellResetEnergy_pJ"] = 
@@ -1016,7 +1016,7 @@ YAML::Node Result::toYamlNode() {
         result["Results"]["Power"]["Set"]["CellSetEnergy_pJ"] = 
             bank->mat.subarray.cellSetEnergy * 1e12;
 
-    } else if (gCell->memCellType == SLCNAND) {
+    } else if (gCell.memCellType == SLCNAND) {
         result["Results"]["Power"]["Erase"]["DynamicEnergy_pJ"] = bank->resetDynamicEnergy * 1e12;
         result["Results"]["Power"]["Programming"]["DynamicEnergy_pJ"] = bank->setDynamicEnergy * 1e12;
 
@@ -1026,10 +1026,10 @@ YAML::Node Result::toYamlNode() {
 
     result["Results"]["Power"]["Leakage_mW"] = bank->leakage * 1e3;
 
-    if (gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || 
-        gCell->memCellType == eDRAM3T333) {
+    if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || 
+        gCell.memCellType == eDRAM3T333) {
         result["Results"]["Power"]["RefreshPower_W"] = 
-            (bank->refreshDynamicEnergy / gCell->retentionTime);
+            (bank->refreshDynamicEnergy / gCell.retentionTime);
     }
 
     return result;
@@ -1054,7 +1054,7 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 	};
 
 	// Memory cell type
-	switch (gCell->memCellType) {
+	switch (gCell.memCellType) {
 		case SRAM: result["MemoryCell"]["MemoryCellType"] = "SRAM"; break;
 		case DRAM: result["MemoryCell"]["MemoryCellType"] = "DRAM"; break;
 		case eDRAM: result["MemoryCell"]["MemoryCellType"] = "eDRAM"; break;
@@ -1075,44 +1075,44 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 	}
 
 	// Cell area
-	result["MemoryCell"]["CellArea_F2"]  = gCell->area;
-	result["MemoryCell"]["CellArea_um2"] = gCell->area / 1000000.0 * gTech->featureSizeInNano * gTech->featureSizeInNano;
-	result["MemoryCell"]["AspectRatio"]  = gCell->aspectRatio;
+	result["MemoryCell"]["CellArea_F2"]  = gCell.area;
+	result["MemoryCell"]["CellArea_um2"] = gCell.area / 1000000.0 * gTech.featureSizeInNano * gTech.featureSizeInNano;
+	result["MemoryCell"]["AspectRatio"]  = gCell.aspectRatio;
 
 	// Resistive / Non-volatile memory
-	if (gCell->memCellType == PCRAM || gCell->memCellType == MRAM || gCell->memCellType == memristor ||
-		gCell->memCellType == FBRAM || gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET ||
-		gCell->memCellType == MLCRRAM) {
+	if (gCell.memCellType == PCRAM || gCell.memCellType == MRAM || gCell.memCellType == memristor ||
+		gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET ||
+		gCell.memCellType == MLCRRAM) {
 
-		if (gCell->resistanceOn < 1e3)
-			result["MemoryCell"]["R_on_Ohm"] = gCell->resistanceOn;
-		else if (gCell->resistanceOn < 1e6)
-			result["MemoryCell"]["R_on_KOhm"] = gCell->resistanceOn / 1e3;
+		if (gCell.resistanceOn < 1e3)
+			result["MemoryCell"]["R_on_Ohm"] = gCell.resistanceOn;
+		else if (gCell.resistanceOn < 1e6)
+			result["MemoryCell"]["R_on_KOhm"] = gCell.resistanceOn / 1e3;
 		else
-			result["MemoryCell"]["R_on_MOhm"] = gCell->resistanceOn / 1e6;
+			result["MemoryCell"]["R_on_MOhm"] = gCell.resistanceOn / 1e6;
 
-		if (gCell->resistanceOff < 1e3)
-			result["MemoryCell"]["R_off_Ohm"] = gCell->resistanceOff;
-		else if (gCell->resistanceOff < 1e6)
-			result["MemoryCell"]["R_off_KOhm"] = gCell->resistanceOff / 1e3;
+		if (gCell.resistanceOff < 1e3)
+			result["MemoryCell"]["R_off_Ohm"] = gCell.resistanceOff;
+		else if (gCell.resistanceOff < 1e6)
+			result["MemoryCell"]["R_off_KOhm"] = gCell.resistanceOff / 1e3;
 		else
-			result["MemoryCell"]["R_off_MOhm"] = gCell->resistanceOff / 1e6;
+			result["MemoryCell"]["R_off_MOhm"] = gCell.resistanceOff / 1e6;
 
-		result["MemoryCell"]["ReadMode"]  = gCell->readMode ? "Voltage-Sensing" : "Current-Sensing";
-		if (gCell->readCurrent > 0) result["MemoryCell"]["ReadCurrent_uA"] = gCell->readCurrent * 1e6;
-		if (gCell->readVoltage > 0) result["MemoryCell"]["ReadVoltage_V"] = gCell->readVoltage;
+		result["MemoryCell"]["ReadMode"]  = gCell.readMode ? "Voltage-Sensing" : "Current-Sensing";
+		if (gCell.readCurrent > 0) result["MemoryCell"]["ReadCurrent_uA"] = gCell.readCurrent * 1e6;
+		if (gCell.readVoltage > 0) result["MemoryCell"]["ReadVoltage_V"] = gCell.readVoltage;
 
-		result["MemoryCell"]["ResetMode"] = gCell->resetMode ? "Voltage" : "Current";
-		result["MemoryCell"]["ResetVoltage_V"] = gCell->resetVoltage;
-		result["MemoryCell"]["ResetCurrent_uA"] = gCell->resetCurrent * 1e6;
-		result["MemoryCell"]["ResetPulse_s"] = gCell->resetPulse / 1e9;
+		result["MemoryCell"]["ResetMode"] = gCell.resetMode ? "Voltage" : "Current";
+		result["MemoryCell"]["ResetVoltage_V"] = gCell.resetVoltage;
+		result["MemoryCell"]["ResetCurrent_uA"] = gCell.resetCurrent * 1e6;
+		result["MemoryCell"]["ResetPulse_s"] = gCell.resetPulse / 1e9;
 
-		result["MemoryCell"]["SetMode"] = gCell->setMode ? "Voltage" : "Current";
-		result["MemoryCell"]["SetVoltage_V"] = gCell->setVoltage;
-		result["MemoryCell"]["SetCurrent_uA"] = gCell->setCurrent * 1e6;
-		result["MemoryCell"]["SetPulse_s"] = gCell->setPulse / 1e9;
+		result["MemoryCell"]["SetMode"] = gCell.setMode ? "Voltage" : "Current";
+		result["MemoryCell"]["SetVoltage_V"] = gCell.setVoltage;
+		result["MemoryCell"]["SetCurrent_uA"] = gCell.setCurrent * 1e6;
+		result["MemoryCell"]["SetPulse_s"] = gCell.setPulse / 1e9;
 
-		switch (gCell->accessType) {
+		switch (gCell.accessType) {
 			case CMOS_access: result["MemoryCell"]["AccessType"] = "CMOS"; break;
 			case BJT_access: result["MemoryCell"]["AccessType"] = "BJT"; break;
 			case diode_access: result["MemoryCell"]["AccessType"] = "Diode"; break;
@@ -1121,55 +1121,55 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 	}
 
 	// SRAM
-	if (gCell->memCellType == SRAM) {
-		result["MemoryCell"]["WidthAccessCMOS_F"]   = gCell->widthAccessCMOS;
-		result["MemoryCell"]["WidthSRAMCellNMOS_F"] = gCell->widthSRAMCellNMOS;
-		result["MemoryCell"]["WidthSRAMCellPMOS_F"] = gCell->widthSRAMCellPMOS;
-		result["MemoryCell"]["PeripheralRoadmap"]   = roadmapToString(gTech->deviceRoadmap);
-		result["MemoryCell"]["PeripheralNode_nm"]   = gTech->featureSizeInNano;
-		result["MemoryCell"]["VDD_V"]               = gTech->vdd;
-		result["MemoryCell"]["Temperature_K"]       = gCell->temperature;
+	if (gCell.memCellType == SRAM) {
+		result["MemoryCell"]["WidthAccessCMOS_F"]   = gCell.widthAccessCMOS;
+		result["MemoryCell"]["WidthSRAMCellNMOS_F"] = gCell.widthSRAMCellNMOS;
+		result["MemoryCell"]["WidthSRAMCellPMOS_F"] = gCell.widthSRAMCellPMOS;
+		result["MemoryCell"]["PeripheralRoadmap"]   = roadmapToString(gTech.deviceRoadmap);
+		result["MemoryCell"]["PeripheralNode_nm"]   = gTech.featureSizeInNano;
+		result["MemoryCell"]["VDD_V"]               = gTech.vdd;
+		result["MemoryCell"]["Temperature_K"]       = gCell.temperature;
 	}
 
 	// DRAM / eDRAM
-	if (gCell->memCellType == DRAM || gCell->memCellType == eDRAM) {
-		result["MemoryCell"]["WidthAccessCMOS_F"] = gCell->widthAccessCMOS;
-		result["MemoryCell"]["PeripheralRoadmap"] = roadmapToString(gTech->deviceRoadmap);
-		result["MemoryCell"]["PeripheralNode_nm"] = gTech->featureSizeInNano;
-		result["MemoryCell"]["VDD_V"] = gTech->vdd;
-		result["MemoryCell"]["WL_SWING"] = gTech->vpp;
-		result["MemoryCell"]["Temperature_K"] = gCell->temperature;
+	if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM) {
+		result["MemoryCell"]["WidthAccessCMOS_F"] = gCell.widthAccessCMOS;
+		result["MemoryCell"]["PeripheralRoadmap"] = roadmapToString(gTech.deviceRoadmap);
+		result["MemoryCell"]["PeripheralNode_nm"] = gTech.featureSizeInNano;
+		result["MemoryCell"]["VDD_V"] = gTech.vdd;
+		result["MemoryCell"]["WL_SWING"] = gTech.vpp;
+		result["MemoryCell"]["Temperature_K"] = gCell.temperature;
 	}
 
 	// 3T DRAM
-	if (gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
-		result["MemoryCell"]["WidthWriteAccessCMOS_F"] = gCell->widthAccessCMOS;
-		result["MemoryCell"]["WidthReadAccessCMOS_F"]  = gCell->widthAccessCMOSR;
-		result["MemoryCell"]["PeripheralRoadmap"]      = roadmapToString(gTech->deviceRoadmap);
-		result["MemoryCell"]["WriteAccessRoadmap"]     = roadmapToString(gTechW->deviceRoadmap);
-		result["MemoryCell"]["ReadAccessRoadmap"]      = roadmapToString(gTechR->deviceRoadmap);
-		result["MemoryCell"]["PeripheralNode_nm"]      = gTech->featureSizeInNano;
-		result["MemoryCell"]["WriteAccessNode_nm"]     = gTechW->featureSizeInNano;
-		result["MemoryCell"]["ReadAccessNode_nm"]      = gTechR->featureSizeInNano;
-		result["MemoryCell"]["VDD_V"]                  = gTech->vdd;
-		result["MemoryCell"]["WWL_SWING"]              = gTechW->vpp;
-		result["MemoryCell"]["Temperature_K"]          = gCell->temperature;
+	if (gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
+		result["MemoryCell"]["WidthWriteAccessCMOS_F"] = gCell.widthAccessCMOS;
+		result["MemoryCell"]["WidthReadAccessCMOS_F"]  = gCell.widthAccessCMOSR;
+		result["MemoryCell"]["PeripheralRoadmap"]      = roadmapToString(gTech.deviceRoadmap);
+		result["MemoryCell"]["WriteAccessRoadmap"]     = roadmapToString(gTechW.deviceRoadmap);
+		result["MemoryCell"]["ReadAccessRoadmap"]      = roadmapToString(gTechR.deviceRoadmap);
+		result["MemoryCell"]["PeripheralNode_nm"]      = gTech.featureSizeInNano;
+		result["MemoryCell"]["WriteAccessNode_nm"]     = gTechW.featureSizeInNano;
+		result["MemoryCell"]["ReadAccessNode_nm"]      = gTechR.featureSizeInNano;
+		result["MemoryCell"]["VDD_V"]                  = gTech.vdd;
+		result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp;
+		result["MemoryCell"]["Temperature_K"]          = gCell.temperature;
 	}
 
 	// SLC NAND Flash
-	if (gCell->memCellType == SLCNAND) {
-		result["MemoryCell"]["PassVoltage_V"]     = gCell->flashPassVoltage;
-		result["MemoryCell"]["ProgramVoltage_V"]  = gCell->flashProgramVoltage;
-		result["MemoryCell"]["EraseVoltage_V"]    = gCell->flashEraseVoltage;
-		result["MemoryCell"]["ProgramTime_s"]     = gCell->flashProgramTime / 1e9;
-		result["MemoryCell"]["EraseTime_s"]       = gCell->flashEraseTime / 1e9;
-		result["MemoryCell"]["GateCouplingRatio"] = gCell->gateCouplingRatio;
+	if (gCell.memCellType == SLCNAND) {
+		result["MemoryCell"]["PassVoltage_V"]     = gCell.flashPassVoltage;
+		result["MemoryCell"]["ProgramVoltage_V"]  = gCell.flashProgramVoltage;
+		result["MemoryCell"]["EraseVoltage_V"]    = gCell.flashEraseVoltage;
+		result["MemoryCell"]["ProgramTime_s"]     = gCell.flashProgramTime / 1e9;
+		result["MemoryCell"]["EraseTime_s"]       = gCell.flashEraseTime / 1e9;
+		result["MemoryCell"]["GateCouplingRatio"] = gCell.gateCouplingRatio;
 	}
 
 	// Multi-level cells
-	if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
-		result["MemoryCell"]["NumberOfInputFingers"]   = gCell->nFingers;
-		result["MemoryCell"]["NumberOfLevelsPerCell"] = gCell->nLvl;
+	if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
+		result["MemoryCell"]["NumberOfInputFingers"]   = gCell.nFingers;
+		result["MemoryCell"]["NumberOfLevelsPerCell"] = gCell.nLvl;
 	}
 
     // Calculate cache metrics
@@ -1216,7 +1216,7 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
         default:                 result["CacheDesign"]["AccessMode"] = "Sequential";
     }
 
-	switch (gInputParameter->designTarget) {
+	switch (gInputParameter.designTarget) {
 		case cache: result["CacheDesign"]["DesignTarget"] = "Cache"; break;
 		case RAM_chip: result["CacheDesign"]["DesignTarget"] = "RAMChip"; break;
 		case CAM_chip: result["CacheDesign"]["DesignTarget"] = "CAMChip"; break;
@@ -1224,17 +1224,17 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 	}
 
 	//Capacity
-	if (gInputParameter->capacity < 1024) {
-		result["Capacity"]["Value"] = gInputParameter->capacity;
+	if (gInputParameter.capacity < 1024) {
+		result["Capacity"]["Value"] = gInputParameter.capacity;
 		result["Capacity"]["Unit"] = "B";
-	} else if (gInputParameter->capacity < 1024 * 1024) {
-		result["Capacity"]["Value"] = gInputParameter->capacity / 1024;
+	} else if (gInputParameter.capacity < 1024 * 1024) {
+		result["Capacity"]["Value"] = gInputParameter.capacity / 1024;
 		result["Capacity"]["Unit"] = "KB";
-	} else if (gInputParameter->capacity < 1024 * 1024 * 1024) {
-		result["Capacity"]["Value"] = gInputParameter->capacity / 1024 / 1024;
+	} else if (gInputParameter.capacity < 1024 * 1024 * 1024) {
+		result["Capacity"]["Value"] = gInputParameter.capacity / 1024 / 1024;
 		result["Capacity"]["Unit"] = "MB";
 	} else {
-		result["Capacity"]["Value"] = gInputParameter->capacity / 1024 / 1024 / 1024;
+		result["Capacity"]["Value"] = gInputParameter.capacity / 1024 / 1024 / 1024;
 		result["Capacity"]["Unit"] = "GB";
 	}
 
@@ -1258,19 +1258,19 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
     result["CacheDesign"]["Timing"]["CacheMissLatency_ns"] = cacheMissLatency * 1e9;
     result["CacheDesign"]["Timing"]["CacheWriteLatency_ns"] = cacheWriteLatency * 1e9;
 
-    if (gCell->memCellType == eDRAM) {
+    if (gCell.memCellType == eDRAM) {
         result["CacheDesign"]["Timing"]["CacheRefreshLatency_us"] =
             MAX(tagResult.bank->refreshLatency, bank->refreshLatency) * 1e6;
         result["CacheDesign"]["Timing"]["CacheAvailability_percent"] =
-            ((gCell->retentionTime - MAX(tagResult.bank->refreshLatency, bank->refreshLatency)) /
-             gCell->retentionTime) * 100.0;
+            ((gCell.retentionTime - MAX(tagResult.bank->refreshLatency, bank->refreshLatency)) /
+             gCell.retentionTime) * 100.0;
     }
 
     result["CacheDesign"]["Power"]["CacheHitDynamicEnergy_nJ"] = cacheHitDynamicEnergy * 1e9;
     result["CacheDesign"]["Power"]["CacheMissDynamicEnergy_nJ"] = cacheMissDynamicEnergy * 1e9;
     result["CacheDesign"]["Power"]["CacheWriteDynamicEnergy_nJ"] = cacheWriteDynamicEnergy * 1e9;
 
-    if (gCell->memCellType == eDRAM) {
+    if (gCell.memCellType == eDRAM) {
         result["CacheDesign"]["Power"]["CacheRefreshDynamicEnergy_nJ"] =
             (tagResult.bank->refreshDynamicEnergy + bank->refreshDynamicEnergy) * 1e9;
     }
@@ -1279,23 +1279,23 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
     result["CacheDesign"]["Power"]["CacheDataArrayLeakagePower_mW"] = bank->leakage * 1e3;
     result["CacheDesign"]["Power"]["CacheTagArrayLeakagePower_mW"] = tagResult.bank->leakage * 1e3;
 
-    if (gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || 
-        gCell->memCellType == eDRAM3T333) {
+    if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || 
+        gCell.memCellType == eDRAM3T333) {
         result["CacheDesign"]["Power"]["CacheRefreshPower_W"] =
-            (bank->refreshDynamicEnergy / gCell->retentionTime);
-        result["CacheDesign"]["Power"]["CacheRetentionTime_ns"] = gCell->retentionTime * 1e9;
+            (bank->refreshDynamicEnergy / gCell.retentionTime);
+        result["CacheDesign"]["Power"]["CacheRetentionTime_ns"] = gCell.retentionTime * 1e9;
     }
 
     // Add reset and set pulse durations (using global gCell pointer safely)
-    if (gCell) {
+    //if (gCell) {
         result["CacheDesign"]["Timing"]["Reset"]["PulseDuration_ns"] =
-            MAX(gCell->resetPulse, gCell->resetPulse) * 1e9;
+            MAX(gCell.resetPulse, gCell.resetPulse) * 1e9;
         result["CacheDesign"]["Timing"]["Set"]["PulseDuration_ns"] =
-            MAX(gCell->setPulse, gCell->setPulse) * 1e9;
-    } else {
-        result["CacheDesign"]["Timing"]["Reset"]["PulseDuration_ns"] = 0;
-        result["CacheDesign"]["Timing"]["Set"]["PulseDuration_ns"] = 0;
-    }
+            MAX(gCell.setPulse, gCell.setPulse) * 1e9;
+    //} else {
+        //result["CacheDesign"]["Timing"]["Reset"]["PulseDuration_ns"] = 0;
+        //result["CacheDesign"]["Timing"]["Set"]["PulseDuration_ns"] = 0;
+    //}
 
     // Add data and tag details
     result["DataArray"] = toYamlNode();

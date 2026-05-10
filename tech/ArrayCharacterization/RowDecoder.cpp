@@ -67,21 +67,21 @@ void RowDecoder::Initialize(int _numRow, double _capLoad, double _resLoad,
 		double logicEffortNand;
 		double capNand;
 		if (numNandInput == 2) {	/* NAND2 */
-			widthNandN = 2 * MIN_NMOS_SIZE * gTech->featureSize;
-			logicEffortNand = (2+gTech->pnSizeRatio) / (1+gTech->pnSizeRatio);
+			widthNandN = 2 * MIN_NMOS_SIZE * gTech.featureSize;
+			logicEffortNand = (2+gTech.pnSizeRatio) / (1+gTech.pnSizeRatio);
 		} else {					/* NAND3 */
-			widthNandN = 3 * MIN_NMOS_SIZE * gTech->featureSize;
-			logicEffortNand = (3+gTech->pnSizeRatio) / (1+gTech->pnSizeRatio);
+			widthNandN = 3 * MIN_NMOS_SIZE * gTech.featureSize;
+			logicEffortNand = (3+gTech.pnSizeRatio) / (1+gTech.pnSizeRatio);
 		}
-		widthNandP = gTech->pnSizeRatio * MIN_NMOS_SIZE * gTech->featureSize;
-		capNand = CalculateGateCap(widthNandN, *gTech) + CalculateGateCap(widthNandP, *gTech);
+		widthNandP = gTech.pnSizeRatio * MIN_NMOS_SIZE * gTech.featureSize;
+		capNand = CalculateGateCap(widthNandN, gTech) + CalculateGateCap(widthNandP, gTech);
 		outputDriver.Initialize(logicEffortNand, capNand, capLoad, resLoad, true, areaOptimizationLevel, minDriverCurrent);
 	} else {
 		/* we only need an 1-level output buffer to driver the wordline */
 		double capInv;
-		widthNandN = MIN_NMOS_SIZE * gTech->featureSize;
-		widthNandP = gTech->pnSizeRatio * MIN_NMOS_SIZE * gTech->featureSize;
-		capInv = CalculateGateCap(widthNandN, *gTech) + CalculateGateCap(widthNandP, *gTech);
+		widthNandN = MIN_NMOS_SIZE * gTech.featureSize;
+		widthNandP = gTech.pnSizeRatio * MIN_NMOS_SIZE * gTech.featureSize;
+		capInv = CalculateGateCap(widthNandN, gTech) + CalculateGateCap(widthNandP, gTech);
 		outputDriver.Initialize(1, capInv, capLoad, resLoad, true, areaOptimizationLevel, minDriverCurrent);
 	}
 
@@ -103,7 +103,7 @@ void RowDecoder::CalculateArea() {
 			width = outputDriver.width;
 		} else {
 			double hNand, wNand;
-			CalculateGateArea(NAND, numNandInput, widthNandN, widthNandP, gTech->featureSize*40, *gTech, &hNand, &wNand);
+			CalculateGateArea(NAND, numNandInput, widthNandN, widthNandP, gTech.featureSize*40, gTech, &hNand, &wNand);
 			height = MAX(hNand, outputDriver.height);
 			width = wNand + outputDriver.width;
 		}
@@ -120,7 +120,7 @@ void RowDecoder::CalculateRC() {
 		if (numNandInput == 0) {	/* no circuit needed, use predecoder outputs directly */
 			capNandInput = capNandOutput = 0;
 		} else {
-            CalculateGateCapacitance(NAND, numNandInput, widthNandN, widthNandP, gTech->featureSize * MAX_TRANSISTOR_HEIGHT, *gTech, &capNandInput, &capNandOutput);
+            CalculateGateCapacitance(NAND, numNandInput, widthNandN, widthNandP, gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech, &capNandInput, &capNandOutput);
 		}
 	}
 }
@@ -143,10 +143,10 @@ void RowDecoder::CalculateLatency(double _rampInput) {
 			double beta;	/* for horowitz calculation */
 			double rampInputForDriver;
 
-			resPullDown = CalculateOnResistance(widthNandN, NMOS, gInputParameter->temperature, *gTech) * numNandInput;
+			resPullDown = CalculateOnResistance(widthNandN, NMOS, gInputParameter.temperature, gTech) * numNandInput;
 			capLoad = capNandOutput + outputDriver.capInput[0];
 			tr = resPullDown * capLoad;
-			gm = CalculateTransconductance(widthNandN, NMOS, *gTech);
+			gm = CalculateTransconductance(widthNandN, NMOS, gTech);
 			beta = 1 / (resPullDown * gm);
 			readLatency = horowitz(tr, beta, rampInput, &rampInputForDriver);
 
@@ -169,14 +169,14 @@ void RowDecoder::CalculatePower() {
 		} else {
 			/* Leakage power */
 			leakage += CalculateGateLeakage(NAND, numNandInput, widthNandN, widthNandP,
-					gInputParameter->temperature, *gTech) * gTech->vdd;
+					gInputParameter.temperature, gTech) * gTech.vdd;
 			/* Dynamic energy */
 			double capLoad = capNandOutput + outputDriver.capInput[0];
             /* For DRAM types account for overdriven wordline. */
-            if (gCell->memCellType == DRAM || gCell->memCellType == eDRAM) {
-                readDynamicEnergy = capLoad * gTech->vpp * gTech->vpp;
+            if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM) {
+                readDynamicEnergy = capLoad * gTech.vpp * gTech.vpp;
             } else {
-			readDynamicEnergy = capLoad * gTech->vdd * gTech->vdd;
+			readDynamicEnergy = capLoad * gTech.vdd * gTech.vdd;
             }
 			readDynamicEnergy += outputDriver.readDynamicEnergy;
 			readDynamicEnergy *= 1;	/* only one row is activated each time */

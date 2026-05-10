@@ -51,7 +51,7 @@ void SenseAmp::Initialize(long long _numColumn, bool _currentSense, double _sens
         numLvl = _numLvl;
         numF = _numF;
 
-	if (pitchSenseAmp <= gTech->featureSize * 2) {
+	if (pitchSenseAmp <= gTech.featureSize * 2) {
 		/* too small, cannot do the layout */
 		invalid = true;
 	}
@@ -67,34 +67,34 @@ void SenseAmp::CalculateArea() {
 	} else {
 		height = width = area = 0;
 		if (currentSense) {	/* current-sensing needs IV converter */
-			area += IV_CONVERTER_AREA * gTech->featureSize * gTech->featureSize;
+			area += IV_CONVERTER_AREA * gTech.featureSize * gTech.featureSize;
 		}
 		/* the following codes are transformed from CACTI 6.5 */
 		double tempHeight = 0;
 		double tempWidth = 0;
 
-		CalculateGateArea(INV, 1, 0, ((gTech->featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * gTech->featureSize,
-				pitchSenseAmp, *gTech, &tempWidth, &tempHeight);
+		CalculateGateArea(INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * gTech.featureSize,
+				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += tempHeight;
 		
-		CalculateGateArea(INV, 1, 0, ((gTech->featureSize <= 14*1e-9)? 2:1)*W_SA_P * gTech->featureSize,
-				pitchSenseAmp, *gTech, &tempWidth, &tempHeight);
+		CalculateGateArea(INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_P * gTech.featureSize,
+				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += 2 * tempHeight;
 		
-		CalculateGateArea(INV, 1, ((gTech->featureSize <= 14*1e-9)? 2:1)*W_SA_N * gTech->featureSize, 0,
-				pitchSenseAmp, *gTech, &tempWidth, &tempHeight);
+		CalculateGateArea(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_N * gTech.featureSize, 0,
+				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += 2 * tempHeight;
 		
-		CalculateGateArea(INV, 1, ((gTech->featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * gTech->featureSize, 0,
-				pitchSenseAmp, *gTech, &tempWidth, &tempHeight);
+		CalculateGateArea(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * gTech.featureSize, 0,
+				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += 2 * tempHeight;
         
                 /* Scale SA area for MLC programming, or defer to ISLPED modeled values for FeFET sensing */
-                if (mlc && (gCell->memCellType == MLCCTT || gCell->memCellType == MLCRRAM)) {
+                if (mlc && (gCell.memCellType == MLCCTT || gCell.memCellType == MLCRRAM)) {
                     if (numF == 8)
                         width = 2.4E-6;
                     else if (numF == 16)
@@ -123,11 +123,11 @@ void SenseAmp::CalculateArea() {
 		area = height * width;
 
                 /* Override area value for FeFET SAs */
-                if (gCell->memCellType == FeFET) {
+                if (gCell.memCellType == FeFET) {
                     area = numColumn*3456;
-                } else if (gCell->memCellType == MLCFeFET && numLvl == 4){ // 2 bits per cell
+                } else if (gCell.memCellType == MLCFeFET && numLvl == 4){ // 2 bits per cell
                     area = numColumn*41328; 
-                } else if (gCell->memCellType == MLCFeFET && numLvl == 8){ // 3 bits per cell
+                } else if (gCell.memCellType == MLCFeFET && numLvl == 8){ // 3 bits per cell
                     area = numColumn*113462.4; 
                 } // else, given MLC config not supported yet, stick with default SA
 	}
@@ -139,13 +139,13 @@ void SenseAmp::CalculateRC() {
 	} else if (invalid) {
 		readLatency = writeLatency = invalid_value;
 	} else {
-	    capLoad = CalculateGateCap(((gTech->featureSize <= 14*1e-9)? 2:1)*(W_SA_P + W_SA_N) * gTech->featureSize, *gTech)
-				+ CalculateDrainCap(((gTech->featureSize <= 14*1e-9)? 2:1)*W_SA_N * gTech->featureSize, NMOS, pitchSenseAmp, *gTech)
-				+ CalculateDrainCap(((gTech->featureSize <= 14*1e-9)? 2:1)*W_SA_P * gTech->featureSize, PMOS, pitchSenseAmp, *gTech)
-				+ CalculateDrainCap(((gTech->featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * gTech->featureSize, PMOS, pitchSenseAmp, *gTech)
-				+ CalculateDrainCap(((gTech->featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * gTech->featureSize, NMOS, pitchSenseAmp, *gTech);
+	    capLoad = CalculateGateCap(((gTech.featureSize <= 14*1e-9)? 2:1)*(W_SA_P + W_SA_N) * gTech.featureSize, gTech)
+				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_N * gTech.featureSize, NMOS, pitchSenseAmp, gTech)
+				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_P * gTech.featureSize, PMOS, pitchSenseAmp, gTech)
+				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * gTech.featureSize, PMOS, pitchSenseAmp, gTech)
+				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * gTech.featureSize, NMOS, pitchSenseAmp, gTech);
             /* Scale SA capload for MLC programming, or defer to ISLPED modeled values for FeFET sensing */
-            if (mlc && (gCell->memCellType == MLCCTT || gCell->memCellType == MLCRRAM)) {
+            if (mlc && (gCell.memCellType == MLCCTT || gCell.memCellType == MLCRRAM)) {
                 if (numF == 8)
                     capLoad = 831E-18;
                 else if (numF == 16)
@@ -174,17 +174,17 @@ void SenseAmp::CalculateLatency() {
 		//Qing: re-model the current S/A
 		if (currentSense) {
 			/* all the following values achieved from HSPICE */
-			if (gTech->featureSize >= 179e-9)
+			if (gTech.featureSize >= 179e-9)
 				readLatency += 0.46e-9;		/* 120nm */
-			else if (gTech->featureSize >= 119e-9)
+			else if (gTech.featureSize >= 119e-9)
 				readLatency += 0.49e-9;		/* 120nm */
-			else if (gTech->featureSize >= 89e-9)
+			else if (gTech.featureSize >= 89e-9)
 				readLatency += 0.53e-9;		/* 90nm */
-			else if (gTech->featureSize >= 64e-9)
+			else if (gTech.featureSize >= 64e-9)
 				readLatency += 0.62e-9;		/* 65nm */
-			else if (gTech->featureSize >= 44e-9)
+			else if (gTech.featureSize >= 44e-9)
 				readLatency += 0.80e-9;		/* 45nm */
-			else if (gTech->featureSize >= 31e-9)
+			else if (gTech.featureSize >= 31e-9)
 				readLatency += 1.07e-9;		/* 32nm */
 			else
 			    //use new S/A number
@@ -193,10 +193,10 @@ void SenseAmp::CalculateLatency() {
 		}
 		else {
 		    /* Voltage sense amplifier */
-		    double gm = CalculateTransconductance(((gTech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_N * gTech->featureSize, NMOS, *gTech)
-				+ CalculateTransconductance(((gTech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_P * gTech->featureSize, PMOS, *gTech);
+		    double gm = CalculateTransconductance(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SENSE_N * gTech.featureSize, NMOS, gTech)
+				+ CalculateTransconductance(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SENSE_P * gTech.featureSize, PMOS, gTech);
                     /* Scale gm for MLC programming, or defer to ISLPED modeled values for FeFET sensing */
-                    if (mlc && (gCell->memCellType == MLCCTT || gCell->memCellType == MLCRRAM)) { 
+                    if (mlc && (gCell.memCellType == MLCCTT || gCell.memCellType == MLCRRAM)) { 
                         if (numF == 8)     
                             gm = 240.3E-6;
                         else if (numF == 16)
@@ -216,16 +216,16 @@ void SenseAmp::CalculateLatency() {
                     /* Since this value is going to depend on the sensing voltage 
                      * we can either characterize for all sensing references or 
                      * take an average/pessimistic value: current value is vin = vdd/2 */
-	            readLatency += tau * log(gTech->vdd / senseVoltage);
+	            readLatency += tau * log(gTech.vdd / senseVoltage);
 				refreshLatency = readLatency;
 		}
 
                 /* Override latency value for FeFET SAs */
-                if (gCell->memCellType == FeFET) {
+                if (gCell.memCellType == FeFET) {
                     readLatency = 1.2e-10;
-                } else if (gCell->memCellType == MLCFeFET && numLvl == 4){ // 2 bits per cell
+                } else if (gCell.memCellType == MLCFeFET && numLvl == 4){ // 2 bits per cell
                     readLatency = 4.5e-10;
-                } else if (gCell->memCellType == MLCFeFET && numLvl == 8){ // 3 bits per cell
+                } else if (gCell.memCellType == MLCFeFET && numLvl == 8){ // 3 bits per cell
                     readLatency = 7.0e-10;
                 } // else, given MLC config not supported yet, stick with default SLC SA
 	}
@@ -243,19 +243,19 @@ void SenseAmp::CalculatePower() {
 		//Qing: re-model the current S/A
 		if (currentSense) {
 			/* all the following values achieved from HSPICE */
-			if (gTech->featureSize >= 119e-9) {			/* 120nm */
+			if (gTech.featureSize >= 119e-9) {			/* 120nm */
 				readDynamicEnergy += 8.52e-14;	/* Unit: J */
 				leakage += 1.40e-8;				/* Unit: W */
-			} else if (gTech->featureSize >= 89e-9) {	/* 90nm */
+			} else if (gTech.featureSize >= 89e-9) {	/* 90nm */
 				readDynamicEnergy += 8.72e-14;
 				leakage += 1.87e-8;
-			} else if (gTech->featureSize >= 64e-9) {	/* 65nm */
+			} else if (gTech.featureSize >= 64e-9) {	/* 65nm */
 				readDynamicEnergy += 9.00e-14;
 				leakage += 2.57e-8;
-			} else if (gTech->featureSize >= 44e-9) {	/* 45nm */
+			} else if (gTech.featureSize >= 44e-9) {	/* 45nm */
 				readDynamicEnergy += 10.26e-14;
 				leakage += 4.41e-9;
-			} else if (gTech->featureSize >= 31e-9) {	/* 32nm */
+			} else if (gTech.featureSize >= 31e-9) {	/* 32nm */
 				readDynamicEnergy += 12.56e-14;
 				leakage += 12.54e-8;
 			} else {    /* TO-DO, need calibration below 22nm */
@@ -268,21 +268,21 @@ void SenseAmp::CalculatePower() {
 		}
 		else {
 		    /* Voltage sense amplifier */
-		    readDynamicEnergy += capLoad * gTech->vdd * gTech->vdd;
-		    double idleCurrent =  CalculateGateLeakage(INV, 1, ((gTech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_EN * gTech->featureSize, 0,
-				gInputParameter->temperature, *gTech) * gTech->vdd;
+		    readDynamicEnergy += capLoad * gTech.vdd * gTech.vdd;
+		    double idleCurrent =  CalculateGateLeakage(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SENSE_EN * gTech.featureSize, 0,
+				gInputParameter.temperature, gTech) * gTech.vdd;
 		    if (mlc)
                         idleCurrent = 1.35E-11 * (numLvl - 1.0);
-                    leakage += idleCurrent * gTech->vdd;
+                    leakage += idleCurrent * gTech.vdd;
 
 		}
 
                 /* Override energy value for FeFET SAs */
-                if (gCell->memCellType == FeFET) {
+                if (gCell.memCellType == FeFET) {
                     readDynamicEnergy = 7.3e-16;
-                } else if (gCell->memCellType == MLCFeFET && numLvl == 4){ // 2 bits per cell
+                } else if (gCell.memCellType == MLCFeFET && numLvl == 4){ // 2 bits per cell
                     readDynamicEnergy = 1.092e-14;
-                } else if (gCell->memCellType == MLCFeFET && numLvl == 8){ // 3 bits per cell
+                } else if (gCell.memCellType == MLCFeFET && numLvl == 8){ // 3 bits per cell
                     readDynamicEnergy = 3.823e-14;
                 } // else, given MLC config not supported yet, stick with default SLC SA
 		

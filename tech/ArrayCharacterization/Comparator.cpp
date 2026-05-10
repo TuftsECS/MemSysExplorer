@@ -46,16 +46,16 @@ void Comparator::Initialize(int _numTagBits, double _capLoad){
 
 	numTagBits = _numTagBits / 4;  /* Assuming there are 4 quarter comparators. input tagbits is already a multiple of 4 */
 	capLoad = _capLoad;
-	widthNMOSInv[0] = 7.5 * gTech->featureSize;
-	widthPMOSInv[0] = 12.5 * gTech->featureSize;
-	widthNMOSInv[1] = 15 * gTech->featureSize;
-	widthPMOSInv[1] = 25 * gTech->featureSize;
-	widthNMOSInv[2] = 30 * gTech->featureSize;
-	widthPMOSInv[2] = 50 * gTech->featureSize;
-	widthNMOSInv[3] = 50 * gTech->featureSize;
-	widthPMOSInv[3] = 100 * gTech->featureSize;
-	widthNMOSComp = 12.5 * gTech->featureSize;
-	widthPMOSComp = 37.5 * gTech->featureSize;
+	widthNMOSInv[0] = 7.5 * gTech.featureSize;
+	widthPMOSInv[0] = 12.5 * gTech.featureSize;
+	widthNMOSInv[1] = 15 * gTech.featureSize;
+	widthPMOSInv[1] = 25 * gTech.featureSize;
+	widthNMOSInv[2] = 30 * gTech.featureSize;
+	widthPMOSInv[2] = 50 * gTech.featureSize;
+	widthNMOSInv[3] = 50 * gTech.featureSize;
+	widthPMOSInv[3] = 100 * gTech.featureSize;
+	widthNMOSComp = 12.5 * gTech.featureSize;
+	widthPMOSComp = 37.5 * gTech.featureSize;
 
 	initialized = true;
 }
@@ -68,11 +68,11 @@ void Comparator::CalculateArea() {
 		double totalWidth = 0;
 		double h, w;
 		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN; i++) {
-			CalculateGateArea(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gTech->featureSize*40, *gTech, &h, &w);
+			CalculateGateArea(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gTech.featureSize*40, gTech, &h, &w);
 			totalHeight = MAX(totalHeight, h);
 			totalWidth += w;
 		}
-		CalculateGateArea(NAND, 2, widthNMOSComp, 0, gTech->featureSize*40, *gTech, &h, &w);
+		CalculateGateArea(NAND, 2, widthNMOSComp, 0, gTech.featureSize*40, gTech, &h, &w);
 		totalHeight += h;
 		totalWidth = MAX(totalWidth, numTagBits * w);
 		height = totalHeight * 1; // 4 quarter comparators can have different placement, here assumes 1*4
@@ -86,14 +86,14 @@ void Comparator::CalculateRC() {
 		cout << "[Comparator] Error: Require initialization first!" << endl;
 	} else {
 		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN; i++) {
-                    CalculateGateCapacitance(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gTech->featureSize * MAX_TRANSISTOR_HEIGHT, *gTech, &(capInput[i]), &(capOutput[i]));
+                    CalculateGateCapacitance(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech, &(capInput[i]), &(capOutput[i]));
 		}
 		double capComp, capTemp;
-		CalculateGateCapacitance(NAND, 2, widthNMOSComp, 0, gTech->featureSize*40, *gTech, &capTemp, &capComp);
+		CalculateGateCapacitance(NAND, 2, widthNMOSComp, 0, gTech.featureSize*40, gTech, &capTemp, &capComp);
 		capBottom = capOutput[COMPARATOR_INV_CHAIN_LEN-1] + numTagBits * capComp;
-		capTop = numTagBits * capComp + CalculateDrainCap(widthPMOSComp, PMOS, gTech->featureSize * MAX_TRANSISTOR_HEIGHT, *gTech) + capLoad;
-		resBottom = CalculateOnResistance(widthNMOSInv[COMPARATOR_INV_CHAIN_LEN-1], NMOS, gInputParameter->temperature, *gTech);
-		resTop = 2 * CalculateOnResistance(widthNMOSComp, NMOS, gInputParameter->temperature, *gTech);
+		capTop = numTagBits * capComp + CalculateDrainCap(widthPMOSComp, PMOS, gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech) + capLoad;
+		resBottom = CalculateOnResistance(widthNMOSInv[COMPARATOR_INV_CHAIN_LEN-1], NMOS, gInputParameter.temperature, gTech);
+		resTop = 2 * CalculateOnResistance(widthNMOSComp, NMOS, gInputParameter.temperature, gTech);
 	}
 }
 
@@ -110,10 +110,10 @@ void Comparator::CalculateLatency(double _rampInput) {
 		double temp;
 		readLatency = 0;
 		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN - 1; i++) {
-			resPullDown = CalculateOnResistance(widthNMOSInv[i], NMOS, gInputParameter->temperature, *gTech);
+			resPullDown = CalculateOnResistance(widthNMOSInv[i], NMOS, gInputParameter.temperature, gTech);
 			capNode = capOutput[i] + capInput[i+1];
 			tr = resPullDown * capNode;
-			gm = CalculateTransconductance(widthNMOSInv[i], NMOS, *gTech);
+			gm = CalculateTransconductance(widthNMOSInv[i], NMOS, gTech);
 			beta = 1 / (resPullDown * gm);
 			readLatency += horowitz(tr, beta, rampInput, &temp);
 			rampInput = temp;	/* for next stage */
@@ -132,20 +132,20 @@ void Comparator::CalculatePower() {
 		/* Leakage power */
 		leakage = 0;
 		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN; i++) {
-			leakage += CalculateGateLeakage(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gInputParameter->temperature, *gTech)
-					* gTech->vdd;
+			leakage += CalculateGateLeakage(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gInputParameter.temperature, gTech)
+					* gTech.vdd;
 		}
-		leakage += numTagBits * CalculateGateLeakage(NAND, 2, widthNMOSComp, 0, gInputParameter->temperature, *gTech)
-				* gTech->vdd;
+		leakage += numTagBits * CalculateGateLeakage(NAND, 2, widthNMOSComp, 0, gInputParameter.temperature, gTech)
+				* gTech.vdd;
 		leakage *= 4;
 		/* Dynamic energy */
 		readDynamicEnergy = 0;
 		double capNode;
 		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN - 1; i++) {
 			capNode = capOutput[i] + capInput[i+1];
-			readDynamicEnergy += capNode * gTech->vdd * gTech->vdd;
+			readDynamicEnergy += capNode * gTech.vdd * gTech.vdd;
 		}
-		readDynamicEnergy += (capBottom + capTop) * gTech->vdd * gTech->vdd;
+		readDynamicEnergy += (capBottom + capTop) * gTech.vdd * gTech.vdd;
 		readDynamicEnergy *= 4;
 		writeDynamicEnergy = readDynamicEnergy;
 	}

@@ -50,18 +50,18 @@ void Mux::Initialize(int _numInput, long long _numMux, double _capLoad, double _
 	minDriverCurrent = _minDriverCurrent;
 
 	if ((numInput > 1) && (numMux > 0 )) {
-		double minNMOSWidth = minDriverCurrent / gTech->currentOnNmos[gInputParameter->temperature - 300];
-		if (gCell->memCellType == MRAM || gCell->memCellType == PCRAM || gCell->memCellType == memristor || gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
+		double minNMOSWidth = minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300];
+		if (gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
 			/* Mux resistance should be small enough for voltage dividing */
-			double maxResNMOSPassTransistor = gCell->resistanceOn * IR_DROP_TOLERANCE;
-	    	        widthNMOSPassTransistor = CalculateOnResistance(((gTech->featureSize <= 14*1e-9)? 2:1)*gTech->featureSize, NMOS, gInputParameter->temperature, *gTech)
-					* gTech->featureSize / maxResNMOSPassTransistor;
-	    	        if (widthNMOSPassTransistor > gInputParameter->maxNmosSize * gTech->featureSize) {	// Change the transistor size to avoid severe IR drop
-	    		    widthNMOSPassTransistor = gInputParameter->maxNmosSize * gTech->featureSize;
+			double maxResNMOSPassTransistor = gCell.resistanceOn * IR_DROP_TOLERANCE;
+	    	        widthNMOSPassTransistor = CalculateOnResistance(((gTech.featureSize <= 14*1e-9)? 2:1)*gTech.featureSize, NMOS, gInputParameter.temperature, gTech)
+					* gTech.featureSize / maxResNMOSPassTransistor;
+	    	        if (widthNMOSPassTransistor > gInputParameter.maxNmosSize * gTech.featureSize) {	// Change the transistor size to avoid severe IR drop
+	    		    widthNMOSPassTransistor = gInputParameter.maxNmosSize * gTech.featureSize;
 	    	        }
-			widthNMOSPassTransistor = MAX(MAX(widthNMOSPassTransistor,minNMOSWidth), 6 * MIN_NMOS_SIZE * gTech->featureSize);
+			widthNMOSPassTransistor = MAX(MAX(widthNMOSPassTransistor,minNMOSWidth), 6 * MIN_NMOS_SIZE * gTech.featureSize);
 		} else {
-			widthNMOSPassTransistor = MAX(6 * MIN_NMOS_SIZE * gTech->featureSize, minNMOSWidth);
+			widthNMOSPassTransistor = MAX(6 * MIN_NMOS_SIZE * gTech.featureSize, minNMOSWidth);
 		}
 	}
 
@@ -74,7 +74,7 @@ void Mux::CalculateArea(){
 	} else {
 		if ((numInput > 1) && (numMux > 0 )) {
 			double h,w;
-			CalculateGateArea(INV, 1, widthNMOSPassTransistor, 0, ((gTech->featureSize <= 14*1e-9)? 2:1)*gTech->featureSize*40, *gTech, &h, &w);
+			CalculateGateArea(INV, 1, widthNMOSPassTransistor, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*gTech.featureSize*40, gTech, &h, &w);
 			width = numMux * numInput * w;
 			height = h;
 			area = width * height;
@@ -89,11 +89,11 @@ void Mux::CalculateRC() {
 		cout << "[Mux] Error: Require initialization first!" << endl;
 	} else {
 		if ((numInput > 1) && (numMux > 0 )) {
-			capNMOSPassTransistor = CalculateDrainCap(widthNMOSPassTransistor, NMOS, ((gTech->featureSize <= 14*1e-9)? 2:1)*gTech->featureSize*40, *gTech);
+			capNMOSPassTransistor = CalculateDrainCap(widthNMOSPassTransistor, NMOS, ((gTech.featureSize <= 14*1e-9)? 2:1)*gTech.featureSize*40, gTech);
 			capForPreviousPowerCalculation = capNMOSPassTransistor;
 			capOutput = numInput * capNMOSPassTransistor;
 			capForPreviousDelayCalculation = capOutput + capNMOSPassTransistor + capLoad;
-			resNMOSPassTransistor = CalculateOnResistance(widthNMOSPassTransistor, NMOS, gInputParameter->temperature, *gTech);
+			resNMOSPassTransistor = CalculateOnResistance(widthNMOSPassTransistor, NMOS, gInputParameter.temperature, gTech);
 		} else {
 			;	/* nothing to do */
 		}
@@ -122,7 +122,7 @@ void Mux::CalculatePower() {
 	} else {
 		if ((numInput > 1) && (numMux > 0 )) {
 			leakage = 0; //TO-DO
-			readDynamicEnergy = (capOutput + capInputNextStage) * gTech->vdd * (gTech->vdd - gTech->vth);
+			readDynamicEnergy = (capOutput + capInputNextStage) * gTech.vdd * (gTech.vdd - gTech.vth);
 			readDynamicEnergy *= numMux;  //worst-case dynamic power analysis
 			writeDynamicEnergy = readDynamicEnergy;
 		} else {

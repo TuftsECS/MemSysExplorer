@@ -42,13 +42,13 @@
 #include "MemCell.h"
 #include "Wire.h"
 
-extern InputParameter *gInputParameter;
-extern Technology *gTech;
-extern Technology *gTechR;
-extern Technology *gTechW;
-extern MemCell *gCell;
-extern Wire *gLocalWire;		/* The wire type of local interconnects (for example, wire in mat) */
-extern Wire *gGlobalWire;	/* The wire type of global interconnects (for example, the ones that connect mats) */
+extern InputParameter gInputParameter;
+extern Technology gTech;
+extern Technology gTechR;
+extern Technology gTechW;
+extern MemCell gCell;
+extern Wire gLocalWire;		/* The wire type of local interconnects (for example, wire in mat) */
+extern Wire gGlobalWire;	/* The wire type of global interconnects (for example, the ones that connect mats) */
 
 #endif
 

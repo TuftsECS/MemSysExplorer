@@ -53,11 +53,11 @@ void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _
 	}
 
 	if (!_internalSenseAmp) {
-		if (gCell->memCellType == DRAM || gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
+		if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
 			invalid = true;
 			cout << "[BankWithoutHtree] Error: DRAM does not support external sense amplification!" << endl;
 			return;
-		} else if (gGlobalWire->wireRepeaterType != repeated_none) {
+		} else if (gGlobalWire.wireRepeaterType != repeated_none) {
 			invalid = true;
 			initialized = true;
 			return;
@@ -132,7 +132,7 @@ void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _
 		int numWayPerRow = numWay / numRowPerSet;	/* At least 1, otherwise it is invalid, and returned already */
 		if (numWayPerRow > 1) {		/* multiple ways per row, needs extra mux level */
 			/* Do mux level recalculation to contain the multiple ways */
-			if (gCell->memCellType == DRAM || gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
+			if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
 				/* for DRAM, mux before sense amp has to be 1, only mux output1 and mux output2 can be used */
 				int numWayPerRowInLog = (int)(log2((double)numWayPerRow) + 0.1);
 				int extraMuxOutputLev2 = (int)pow(2, numWayPerRowInLog / 2);
@@ -186,12 +186,12 @@ void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _
 	if (!internalSenseAmp) {
 		bool voltageSense = true;
 		double senseVoltage;
-		senseVoltage = gCell->minSenseVoltage;
-		if (gCell->memCellType == SRAM) {
+		senseVoltage = gCell.minSenseVoltage;
+		if (gCell.memCellType == SRAM) {
 			/* SRAM, DRAM, and eDRAM all use voltage sensing */
 			voltageSense = true;
-		} else if (gCell->memCellType == MRAM || gCell->memCellType == PCRAM || gCell->memCellType == memristor || gCell->memCellType == FBRAM || gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
-			voltageSense = gCell->readMode;
+		} else if (gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor || gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
+			voltageSense = gCell.readMode;
 		} else {/* NAND flash */
 			// TO-DO
 		}
@@ -203,10 +203,10 @@ void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _
 			numSenseAmp = blockSize * associativity;
 
                 bool mlc = false; 
-                if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
+                if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
                     mlc = true;
                 }
-		globalSenseAmp.Initialize(numSenseAmp, !voltageSense, senseVoltage, mat.width * numColumnMat / numSenseAmp, mlc, gCell->nLvl, gCell->nFingers);
+		globalSenseAmp.Initialize(numSenseAmp, !voltageSense, senseVoltage, mat.width * numColumnMat / numSenseAmp, mlc, gCell.nLvl, gCell.nFingers);
 		if (globalSenseAmp.invalid) {
 			invalid = true;
 			initialized = true;
@@ -239,13 +239,13 @@ void BankWithoutHtree::CalculateArea() {
 
 		int numWireSharingWidth;
 		double effectivePitch;
-		if (gGlobalWire->wireRepeaterType == repeated_none) {
+		if (gGlobalWire.wireRepeaterType == repeated_none) {
 			numWireSharingWidth = 1;
 			effectivePitch = 0;		/* assume that the wire is built on another metal layer, there does not cause silicon area */
-			//effectivePitch = gGlobalWire->wirePitch;
+			//effectivePitch = gGlobalWire.wirePitch;
 		} else {
-			numWireSharingWidth = (int)floor(gGlobalWire->repeaterSpacing / gGlobalWire->repeaterHeight);
-			effectivePitch = gGlobalWire->repeatedWirePitch;
+			numWireSharingWidth = (int)floor(gGlobalWire.repeaterSpacing / gGlobalWire.repeaterHeight);
+			effectivePitch = gGlobalWire.repeatedWirePitch;
 		}
 
 		width += ceil((double)numRowMat * numColumnMat * numAddressBitRouteToMat / numWireSharingWidth) * effectivePitch;
@@ -314,7 +314,7 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 			lengthWire -= mat.height;
 			if (internalSenseAmp) {
 				double numBitRouteToMat = 0;
-				gGlobalWire->CalculateLatencyAndPower(lengthWire, &latency, &energy, &leakageWire);
+				gGlobalWire.CalculateLatencyAndPower(lengthWire, &latency, &energy, &leakageWire);
 				if (i == 0){
 					readLatency += latency;
 					writeLatency += latency;
@@ -337,12 +337,12 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 				resLocalBitline = mat.subarray.resBitline + 3 * resBitlineMux;
 				capLocalBitline = mat.subarray.capBitline + 6 * capBitlineMux;
 				double resGlobalBitline, capGlobalBitline;
-				resGlobalBitline = lengthWire * gGlobalWire->resWirePerUnit;
-				capGlobalBitline = lengthWire * gGlobalWire->capWirePerUnit;
+				resGlobalBitline = lengthWire * gGlobalWire.resWirePerUnit;
+				capGlobalBitline = lengthWire * gGlobalWire.capWirePerUnit;
 				double capGlobalBitlineMux;
 				capGlobalBitlineMux = globalBitlineMux.capForPreviousDelayCalculation;
-				if (gCell->memCellType == SRAM) {
-					double vpre = gCell->readVoltage;	/* This value should be equal to resetVoltage and setVoltage for SRAM */
+				if (gCell.memCellType == SRAM) {
+					double vpre = gCell.readVoltage;	/* This value should be equal to resetVoltage and setVoltage for SRAM */
 					if (i == 0) {
 						latency = resLocalBitline * capGlobalBitline / 2 +
 								(resLocalBitline + resGlobalBitline) * (capGlobalBitline / 2 + capGlobalBitlineMux);
@@ -356,14 +356,14 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 						readLatency += latency;
 					}
 					if (i <  numActiveMatPerColumn) {
-						energy = capGlobalBitline * gTech->vdd * gTech->vdd * numAddressBitRouteToMat;
+						energy = capGlobalBitline * gTech.vdd * gTech.vdd * numAddressBitRouteToMat;
 						readDynamicEnergy += energy;
 						writeDynamicEnergy += energy;
 						readDynamicEnergy += capGlobalBitline * vpre * vpre * numWay;
 						writeDynamicEnergy += capGlobalBitline * vpre * vpre * numDataBitRouteToMat;
 					}
-				} else if (gCell->memCellType == MRAM || gCell->memCellType == PCRAM || gCell->memCellType == memristor || gCell->memCellType == FBRAM || gCell->memCellType == FeFET || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
-					double vWrite = MAX(fabs(gCell->resetVoltage), fabs(gCell->setVoltage));
+				} else if (gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor || gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
+					double vWrite = MAX(fabs(gCell.resetVoltage), fabs(gCell.setVoltage));
 					double tau, latencyOff, latencyOn;
 					double vPre = mat.subarray.voltagePrecharge;
 					double vOn = mat.subarray.voltageMemCellOn;
@@ -373,18 +373,18 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 								* (capGlobalBitline + capLocalBitline) / 2 + (resBitlineMux + resGlobalBitline
 										+ resLocalBitline) * capLocalBitline / 2;
 						writeLatency += 0.63 * tau;
-						if (gCell->readMode == false) {	/* current-sensing */
+						if (gCell.readMode == false) {	/* current-sensing */
 							/* Use ICCAD 2009 model */
 							resLocalBitline += mat.subarray.resMemCellOff;
 							tau = resGlobalBitline * capGlobalBitline / 2 *
 									(resLocalBitline + resGlobalBitline / 3) / (resLocalBitline + resGlobalBitline);
 							readLatency += 0.63 * tau;
 						} else {						/* voltage-sensing */
-							if (gCell->readVoltage == 0) {  /* Current-in voltage sensing */
+							if (gCell.readVoltage == 0) {  /* Current-in voltage sensing */
 								resLocalBitline += mat.subarray.resMemCellOn;
 								tau = resLocalBitline * capGlobalBitline + (resLocalBitline + resGlobalBitline) * capGlobalBitline / 2;
 								latencyOn = tau * log((vPre - vOn)/(vPre - vOn - globalSenseAmp.senseVoltage));
-								resLocalBitline += gCell->resistanceOff - gCell->resistanceOn;
+								resLocalBitline += gCell.resistanceOff - gCell.resistanceOn;
 								tau = resLocalBitline * capGlobalBitline + (resLocalBitline + resGlobalBitline) * capGlobalBitline / 2;
 								latencyOff = tau * log((vOff - vPre)/(vOff - vPre - globalSenseAmp.senseVoltage));
 							} else {   /*Voltage-in voltage sensing */
@@ -403,11 +403,11 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 						}
 					}
 					if (i <  numActiveMatPerColumn) {
-						energy = capGlobalBitline * gTech->vdd * gTech->vdd * numAddressBitRouteToMat;
+						energy = capGlobalBitline * gTech.vdd * gTech.vdd * numAddressBitRouteToMat;
 						readDynamicEnergy += energy;
 						writeDynamicEnergy += energy;
 						writeDynamicEnergy += capGlobalBitline * vWrite * vWrite * numDataBitRouteToMat;
-						if (gCell->readMode) { /*Voltage-in voltage sensing */
+						if (gCell.readMode) { /*Voltage-in voltage sensing */
 							readDynamicEnergy += capGlobalBitline * (vPre * vPre - vOn * vOn )* numDataBitRouteToMat;
 						}
 					}
@@ -436,8 +436,8 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 	}
 
 	/* only 1/A wires are activated in fast mode cache write */
-	if (gInputParameter->designTarget == cache && gInputParameter->cacheAccessMode == fast_access_mode)
-		writeDynamicEnergy /= gInputParameter->associativity;
+	if (gInputParameter.designTarget == cache && gInputParameter.cacheAccessMode == fast_access_mode)
+		writeDynamicEnergy /= gInputParameter.associativity;
 
 	readLatency += mat.readLatency;
 	resetLatency = writeLatency + mat.resetLatency;
@@ -452,8 +452,8 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 	writeDynamicEnergy += mat.writeDynamicEnergy * numActiveMatPerRow * numActiveMatPerColumn;
 	leakage += mat.leakage * numRowMat * numColumnMat;
 
-	if (gCell->memCellType == eDRAM || gCell->memCellType == eDRAM3T || gCell->memCellType == eDRAM3T333) {
-        if (refreshLatency > gCell->retentionTime) {
+	if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
+        if (refreshLatency > gCell.retentionTime) {
             invalid = true;
         }
     }

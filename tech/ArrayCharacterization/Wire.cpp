@@ -495,8 +495,8 @@ void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterTy
 			findPenalizedRepeater(penalty);
 		}
 		/* calculate repeated wire pitch */
-		CalculateGateArea(INV, 1, repeaterSize * MIN_NMOS_SIZE * gTech->featureSize,
-				repeaterSize * MIN_NMOS_SIZE * gTech->featureSize * gTech->pnSizeRatio, 1e41, *gTech,
+		CalculateGateArea(INV, 1, repeaterSize * MIN_NMOS_SIZE * gTech.featureSize,
+				repeaterSize * MIN_NMOS_SIZE * gTech.featureSize * gTech.pnSizeRatio, 1e41, gTech,
 				&repeaterHeight, &repeaterWidth);
 		if (repeaterWidth < repeaterHeight) {
 			double temp = repeaterWidth;
@@ -517,8 +517,8 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 		if (isLowSwing) {
 			/* When it is low-swing */
 			if (wireRepeaterType == repeated_none) {
-				double widthNmos = MIN_NMOS_SIZE * gTech->featureSize;
-				double widthPmos = widthNmos * gTech->pnSizeRatio;
+				double widthNmos = MIN_NMOS_SIZE * gTech.featureSize;
+				double widthPmos = widthNmos * gTech.pnSizeRatio;
 				double capInput, capOutput;
 				double tr;
 				double gm;
@@ -531,17 +531,17 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				double rampInput;
 
 				/* Calculate rampInput */
-				CalculateGateCapacitance(INV, 1, widthNmos, widthPmos, gTech->featureSize * MAX_TRANSISTOR_HEIGHT, *gTech, &capInput, &capOutput);
+				CalculateGateCapacitance(INV, 1, widthNmos, widthPmos, gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech, &capInput, &capOutput);
 				capLoad = capInput + capOutput;
-				resPullUp = CalculateOnResistance(widthNmos, NMOS, gInputParameter->temperature, *gTech);
-				resPullUp = CalculateOnResistance(widthPmos, PMOS, gInputParameter->temperature, *gTech);
+				resPullUp = CalculateOnResistance(widthNmos, NMOS, gInputParameter.temperature, gTech);
+				resPullUp = CalculateOnResistance(widthPmos, PMOS, gInputParameter.temperature, gTech);
 				tr = resPullUp * capLoad;
-				gm = CalculateTransconductance(widthPmos, PMOS, *gTech);
+				gm = CalculateTransconductance(widthPmos, PMOS, gTech);
 				beta = 1 / (resPullUp * gm);
 				horowitz(tr, beta, 1e20, &riseTime);
-				resPullDown = CalculateOnResistance(widthNmos, NMOS, gInputParameter->temperature, *gTech);
+				resPullDown = CalculateOnResistance(widthNmos, NMOS, gInputParameter.temperature, gTech);
 				tr = resPullDown * capLoad;
-				gm = CalculateTransconductance(widthNmos, NMOS, *gTech);
+				gm = CalculateTransconductance(widthNmos, NMOS, gTech);
 				beta = 1 / (resPullDown * gm);
 				horowitz(tr, beta, riseTime, &fallTime);
 				rampInput = fallTime;
@@ -559,23 +559,23 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				double resWire = resWirePerUnit * wireLength;
 				double resDriver = ((-8) * delayFO4 / ( log(0.5) * capWire)) / RES_ADJ;
 				double widthNmosDriver = resPullDown * widthNmos / resDriver;
-				widthNmosDriver = MIN(widthNmosDriver, MAX_NMOS_SIZE * gTech->featureSize);
-				widthNmosDriver = MAX(widthNmosDriver, MIN_NMOS_SIZE * gTech->featureSize);
+				widthNmosDriver = MIN(widthNmosDriver, MAX_NMOS_SIZE * gTech.featureSize);
+				widthNmosDriver = MAX(widthNmosDriver, MIN_NMOS_SIZE * gTech.featureSize);
 
 				if(resWire * capWire > 8 * delayFO4)
 				{
-					widthNmosDriver = gInputParameter->maxNmosSize * gTech->featureSize;
+					widthNmosDriver = gInputParameter.maxNmosSize * gTech.featureSize;
 				}
 
 				// size the inverter appropriately to minimize the transmitter delay
 				// Note - In order to minimize leakage, we are not adding a set of inverters to
 				// bring down delay. Instead, we are sizing the single gate
 				// based on the logical effort.
-				CalculateGateCapacitance(INV, 1, widthNmosDriver, 0, gTech->featureSize*40, *gTech, &capGateDriver, &temp);
-				CalculateGateCapacitance(INV, 1, 2 * widthNmos, 2 * widthPmos, gTech->featureSize*40, *gTech, &capInput, &capOutput);
-				double stageEffort   = sqrt(((2 + gTech->pnSizeRatio) / (1 + gTech->pnSizeRatio)) * capGateDriver / capInput);
-				double reqCin  = (((2 + gTech->pnSizeRatio) / (1 + gTech->pnSizeRatio)) * capGateDriver) / stageEffort;
-				CalculateGateCapacitance(INV, 1, widthNmos, widthPmos, gTech->featureSize*40, *gTech, &capInput, &capOutput);
+				CalculateGateCapacitance(INV, 1, widthNmosDriver, 0, gTech.featureSize*40, gTech, &capGateDriver, &temp);
+				CalculateGateCapacitance(INV, 1, 2 * widthNmos, 2 * widthPmos, gTech.featureSize*40, gTech, &capInput, &capOutput);
+				double stageEffort   = sqrt(((2 + gTech.pnSizeRatio) / (1 + gTech.pnSizeRatio)) * capGateDriver / capInput);
+				double reqCin  = (((2 + gTech.pnSizeRatio) / (1 + gTech.pnSizeRatio)) * capGateDriver) / stageEffort;
+				CalculateGateCapacitance(INV, 1, widthNmos, widthPmos, gTech.featureSize*40, gTech, &capInput, &capOutput);
 				double sizeInverter = reqCin / capInput;
 				sizeInverter = MAX(sizeInverter, 1);
 
@@ -583,12 +583,12 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				resPullDown *= 2;
 				beta = 1 / (resPullDown * gm);
 				double capNandInput, capNandOutput;
-				CalculateGateCapacitance(NAND, 2, 2 * widthNmos, widthPmos, gTech->featureSize*40, *gTech, &capNandInput, &capNandOutput);
-				CalculateGateCapacitance(INV, 1, sizeInverter * widthNmos, sizeInverter * widthPmos, gTech->featureSize*40, *gTech, &capInput, &capOutput);
+				CalculateGateCapacitance(NAND, 2, 2 * widthNmos, widthPmos, gTech.featureSize*40, gTech, &capNandInput, &capNandOutput);
+				CalculateGateCapacitance(INV, 1, sizeInverter * widthNmos, sizeInverter * widthPmos, gTech.featureSize*40, gTech, &capInput, &capOutput);
 				capLoad = capNandOutput + capInput;
 				tr = resPullDown * capLoad;
 				*(delay) = horowitz(tr, beta, rampInput, &temp);
-				*(dynamicEnergy) = capLoad * gTech->vdd * gTech->vdd;
+				*(dynamicEnergy) = capLoad * gTech.vdd * gTech.vdd;
 				rampInput = temp; /* for the next stage */
 
 				/* Inverter *(delay):
@@ -596,25 +596,25 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				 *    * the gate capacitance of the final stage nmos
 				 *    * transistor which in turn depends on nsize
 				 *    */
-				resPullDown = CalculateOnResistance(sizeInverter * widthNmos, NMOS, gInputParameter->temperature, *gTech);
-				gm = CalculateTransconductance(widthNmos, NMOS, *gTech);
+				resPullDown = CalculateOnResistance(sizeInverter * widthNmos, NMOS, gInputParameter.temperature, gTech);
+				gm = CalculateTransconductance(widthNmos, NMOS, gTech);
 				beta = 1 / (resPullDown * gm);
 				capLoad = capOutput + capGateDriver;
 				tr = resPullDown * capLoad;
 				*(delay) += horowitz(tr, beta, rampInput, &temp);
-				*(dynamicEnergy) += capLoad * gTech->vdd * gTech->vdd;
+				*(dynamicEnergy) += capLoad * gTech.vdd * gTech.vdd;
 				rampInput = temp; /* for the next stage */
 
-				*(leakagePower) = 2 * gTech->vdd * CalculateGateLeakage(INV, 1, sizeInverter * widthNmos, sizeInverter * widthPmos, gInputParameter->temperature, *gTech);
-				*(leakagePower) += 2 * gTech->vdd * CalculateGateLeakage(NAND, 2, 2 * widthNmos, widthPmos, gInputParameter->temperature, *gTech);
+				*(leakagePower) = 2 * gTech.vdd * CalculateGateLeakage(INV, 1, sizeInverter * widthNmos, sizeInverter * widthPmos, gInputParameter.temperature, gTech);
+				*(leakagePower) += 2 * gTech.vdd * CalculateGateLeakage(NAND, 2, 2 * widthNmos, widthPmos, gInputParameter.temperature, gTech);
 				*(leakagePower) *= 2;
 
 				SenseAmp senseAmp;
 				bool mlc = false;
-                if (gCell->memCellType == MLCCTT || gCell->memCellType == MLCFeFET || gCell->memCellType == MLCRRAM) {
+                if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
                     mlc = true;
                 }
-                senseAmp.Initialize(1, false, gCell->minSenseVoltage, 1 /* for test */, mlc, gCell->nLvl, gCell->nFingers);
+                senseAmp.Initialize(1, false, gCell.minSenseVoltage, 1 /* for test */, mlc, gCell.nLvl, gCell.nFingers);
 				senseAmp.CalculateRC();
 
 				/* nmos *(delay) + wire *(delay) */
@@ -624,10 +624,10 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				 *			   * resistance of nmos is less than pmos
 				 *			   * (for a detailed graph ref: On-Chip Wires: Scaling and Efficiency)
 			   */
-				double drainCapDriver = CalculateDrainCap(widthNmosDriver, NMOS, gTech->featureSize*40, *gTech);
+				double drainCapDriver = CalculateDrainCap(widthNmosDriver, NMOS, gTech.featureSize*40, gTech);
 				capLoad = capWire + drainCapDriver * 2 + senseAmp.capLoad;
-				resPullDown = CalculateOnResistance(widthNmosDriver, NMOS, gInputParameter->temperature, *gTech);
-				gm = CalculateTransconductance(widthNmosDriver, NMOS, *gTech);
+				resPullDown = CalculateOnResistance(widthNmosDriver, NMOS, gInputParameter.temperature, gTech);
+				gm = CalculateTransconductance(widthNmosDriver, NMOS, gTech);
 				beta = 1 / (resPullDown * gm);
 				tr = resPullDown * RES_ADJ *(capWire + drainCapDriver * 2) + capWire * resWire / 2 + (resPullDown + resWire) * senseAmp.capLoad;
 				if (delay)
@@ -637,7 +637,7 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 					*(dynamicEnergy) *=2;
 				}
 				if (leakagePower)
-					*(leakagePower) += 4 * gTech->vdd * CalculateGateLeakage(INV, 1, widthNmosDriver, 0, gInputParameter->temperature, *gTech);
+					*(leakagePower) += 4 * gTech.vdd * CalculateGateLeakage(INV, 1, widthNmosDriver, 0, gInputParameter.temperature, gTech);
 
 				/* SA *(delay) and power */
 				if (delay)
@@ -657,7 +657,7 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				if (delay)
 					*(delay) = 2.3 * resWirePerUnit * capWirePerUnit * _wireLength * _wireLength / 2;
 				if (dynamicEnergy)
-					*(dynamicEnergy) = capWirePerUnit * _wireLength * gTech->vdd * gTech->vdd;
+					*(dynamicEnergy) = capWirePerUnit * _wireLength * gTech.vdd * gTech.vdd;
 				if (leakagePower)
 					*(leakagePower) = 0;
 			} else {		/* with repeaters */
@@ -674,13 +674,13 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 
 void Wire::findOptimalRepeater() {
 	/* Use minimum sized inverter */
-	double nmosSize = MIN_NMOS_SIZE * gTech->featureSize;
-	double pmosSize = nmosSize * gTech->pnSizeRatio;
-	double inputCap = CalculateGateCap(nmosSize, *gTech) + CalculateGateCap(pmosSize, *gTech);
-	double outputCap = CalculateDrainCap(nmosSize, NMOS, 1 /*no limit*/, *gTech)
-			+ CalculateDrainCap(pmosSize, PMOS, 1 /*no limit*/, *gTech);
-	double outputRes = CalculateOnResistance(nmosSize, NMOS, gInputParameter->temperature, *gTech)
-			+ CalculateOnResistance(pmosSize, PMOS, gInputParameter->temperature, *gTech);
+	double nmosSize = MIN_NMOS_SIZE * gTech.featureSize;
+	double pmosSize = nmosSize * gTech.pnSizeRatio;
+	double inputCap = CalculateGateCap(nmosSize, gTech) + CalculateGateCap(pmosSize, gTech);
+	double outputCap = CalculateDrainCap(nmosSize, NMOS, 1 /*no limit*/, gTech)
+			+ CalculateDrainCap(pmosSize, PMOS, 1 /*no limit*/, gTech);
+	double outputRes = CalculateOnResistance(nmosSize, NMOS, gInputParameter.temperature, gTech)
+			+ CalculateOnResistance(pmosSize, PMOS, gInputParameter.temperature, gTech);
 
 	repeaterSize = sqrt(outputRes * capWirePerUnit / inputCap / resWirePerUnit);
 	repeaterSpacing = sqrt(2 * outputRes * (outputCap + inputCap) / (resWirePerUnit * capWirePerUnit));
@@ -722,13 +722,13 @@ void Wire::findPenalizedRepeater(double _penalty) {
 
 double Wire::getRepeatedWireUnitDelay() {
 	/* Use the scaled size of the repeater */
-	double nmosSize = MIN_NMOS_SIZE * gTech->featureSize * repeaterSize;
-	double pmosSize = nmosSize * gTech->pnSizeRatio;
-	double inputCap = CalculateGateCap(nmosSize, *gTech) + CalculateGateCap(pmosSize, *gTech);
-	double outputCap = CalculateDrainCap(nmosSize, NMOS, 1 /*no limit*/, *gTech)
-			+ CalculateDrainCap(pmosSize, PMOS, 1 /*no limit*/, *gTech);
-	double outputRes = CalculateOnResistance(nmosSize, NMOS, gInputParameter->temperature, *gTech)
-			+ CalculateOnResistance(pmosSize, PMOS, gInputParameter->temperature, *gTech);
+	double nmosSize = MIN_NMOS_SIZE * gTech.featureSize * repeaterSize;
+	double pmosSize = nmosSize * gTech.pnSizeRatio;
+	double inputCap = CalculateGateCap(nmosSize, gTech) + CalculateGateCap(pmosSize, gTech);
+	double outputCap = CalculateDrainCap(nmosSize, NMOS, 1 /*no limit*/, gTech)
+			+ CalculateDrainCap(pmosSize, PMOS, 1 /*no limit*/, gTech);
+	double outputRes = CalculateOnResistance(nmosSize, NMOS, gInputParameter.temperature, gTech)
+			+ CalculateOnResistance(pmosSize, PMOS, gInputParameter.temperature, gTech);
 	double wireCap = capWirePerUnit * repeaterSpacing;
 	double wireRes = resWirePerUnit * repeaterSpacing;
 
@@ -741,24 +741,24 @@ double Wire::getRepeatedWireUnitDelay() {
 
 double Wire::getRepeatedWireUnitDynamicEnergy() {
 	/* Use the scaled size of the repeater */
-	double nmosSize = MIN_NMOS_SIZE * gTech->featureSize * repeaterSize;
-	double pmosSize = nmosSize * gTech->pnSizeRatio;
-	double inputCap = CalculateGateCap(nmosSize, *gTech) + CalculateGateCap(pmosSize, *gTech);
-	double outputCap = CalculateDrainCap(nmosSize, NMOS, 1 /*no limit*/, *gTech)
-			+ CalculateDrainCap(pmosSize, PMOS, 1 /*no limit*/, *gTech);
+	double nmosSize = MIN_NMOS_SIZE * gTech.featureSize * repeaterSize;
+	double pmosSize = nmosSize * gTech.pnSizeRatio;
+	double inputCap = CalculateGateCap(nmosSize, gTech) + CalculateGateCap(pmosSize, gTech);
+	double outputCap = CalculateDrainCap(nmosSize, NMOS, 1 /*no limit*/, gTech)
+			+ CalculateDrainCap(pmosSize, PMOS, 1 /*no limit*/, gTech);
 	double wireCap = capWirePerUnit * repeaterSpacing;
 
-	double switchingEnergy = (inputCap + outputCap + wireCap) * gTech->vdd * gTech->vdd;
+	double switchingEnergy = (inputCap + outputCap + wireCap) * gTech.vdd * gTech.vdd;
 	double shortCircuitEnergy = 0;		/* TO-DO: no short circuit energy in this version */
 
 	return (switchingEnergy + shortCircuitEnergy) / repeaterSpacing;
 }
 
 double Wire::getRepeatedWireUnitLeakage() {
-	double nmosSize = MIN_NMOS_SIZE * gTech->featureSize * repeaterSize;
-	double pmosSize = nmosSize * gTech->pnSizeRatio;
-	double leakagePerRepeater = CalculateGateLeakage(INV, 1, nmosSize, pmosSize, gInputParameter->temperature, *gTech)
-			* gTech->vdd;
+	double nmosSize = MIN_NMOS_SIZE * gTech.featureSize * repeaterSize;
+	double pmosSize = nmosSize * gTech.pnSizeRatio;
+	double leakagePerRepeater = CalculateGateLeakage(INV, 1, nmosSize, pmosSize, gInputParameter.temperature, gTech)
+			* gTech.vdd;
 
 	return leakagePerRepeater / repeaterSpacing;
 }

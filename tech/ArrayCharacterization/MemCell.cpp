@@ -391,7 +391,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
 }
 
 void MemCell::ApplyPVT() {
-	temperature = gInputParameter->temperature;
+	temperature = gInputParameter.temperature;
     if (retentionTime == invalid_value) {
 		// Calculate retention time if not given
 		double leakageCurrent = 0;
@@ -400,25 +400,25 @@ void MemCell::ApplyPVT() {
 		double* currentOffNmosArr = nullptr;
 
 		if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
-			chosenTech = gTechW;
-			currentOffNmosArr = gTechW->currentOffNmos;
+			chosenTech = &gTechW;
+			currentOffNmosArr = gTechW.currentOffNmos;
 		} else if (memCellType == eDRAM || memCellType == DRAM) {
-			chosenTech = gTech;
-			currentOffNmosArr = gTech->currentOffNmos;
+			chosenTech = &gTech;
+			currentOffNmosArr = gTech.currentOffNmos;
 		}
 
 		if (chosenTech != nullptr) {
 			if (chosenTech->featureSizeInNano >= 22) {
-				effWidthAccessCMOS = gCell->widthAccessCMOS * chosenTech->featureSizeInNano * 1e-9;
+				effWidthAccessCMOS = gCell.widthAccessCMOS * chosenTech->featureSizeInNano * 1e-9;
 			} else if (chosenTech->featureSizeInNano >= 3) {
-				effWidthAccessCMOS = (int)ceil(gCell->widthAccessCMOS) * chosenTech->effective_width;
+				effWidthAccessCMOS = (int)ceil(gCell.widthAccessCMOS) * chosenTech->effective_width;
 			} else {
-				effWidthAccessCMOS = (int)ceil(gCell->widthAccessCMOS)
+				effWidthAccessCMOS = (int)ceil(gCell.widthAccessCMOS)
 					* chosenTech->effective_width
 					* chosenTech->max_sheet_num
 					/ chosenTech->max_fin_per_GAA;
 			}
-			leakageCurrent = currentOffNmosArr[gInputParameter->temperature - 300] * effWidthAccessCMOS;
+			leakageCurrent = currentOffNmosArr[gInputParameter.temperature - 300] * effWidthAccessCMOS;
 		} else {
 			leakageCurrent = 0;
 		}
@@ -512,7 +512,7 @@ void MemCell::CalculateWriteEnergy() {
 				resetEnergy = fabs(resetVoltage) * (fabs(resetVoltage) - voltageDropAccessDevice) / resistanceOn * resetPulse;
 		} else {
 			if (resetVoltage == 0){
-				resetEnergy = gTech->vdd * fabs(resetCurrent) * resetPulse; /*TO-DO consider charge pump*/
+				resetEnergy = gTech.vdd * fabs(resetCurrent) * resetPulse; /*TO-DO consider charge pump*/
 			} else {
 				resetEnergy = fabs(resetVoltage) * fabs(resetCurrent) * resetPulse;
 			}
@@ -547,7 +547,7 @@ void MemCell::CalculateWriteEnergy() {
 				setEnergy = fabs(setVoltage) * (fabs(setVoltage) - voltageDropAccessDevice) / resistanceOn * setPulse;
 		} else {
 			if (resetVoltage == 0){
-				setEnergy = gTech->vdd * fabs(setCurrent) * setPulse; /*TO-DO consider charge pump*/
+				setEnergy = gTech.vdd * fabs(setCurrent) * setPulse; /*TO-DO consider charge pump*/
 			} else {
 				setEnergy = fabs(setVoltage) * fabs(setCurrent) * setPulse;
 			}
@@ -570,19 +570,19 @@ void MemCell::CalculateWriteEnergy() {
 
 double MemCell::CalculateReadPower() { /* TO-DO consider charge pumped read voltage */
 	if (readPower == 0) {
-		if (gCell->readMode) {	/* voltage-sensing */
+		if (gCell.readMode) {	/* voltage-sensing */
 			if (readVoltage == 0) { /* Current-in voltage sensing */
-				return gTech->vdd * readCurrent;
+				return gTech.vdd * readCurrent;
 			}
 			if (readCurrent == 0) { /*Voltage-divider sensing */
 				double resInSerialForSenseAmp, maxBitlineCurrent;
 				resInSerialForSenseAmp = sqrt(resistanceOn * resistanceOff);
 				maxBitlineCurrent = (readVoltage - voltageDropAccessDevice) / (resistanceOn + resInSerialForSenseAmp);
-				return gTech->vdd * maxBitlineCurrent;
+				return gTech.vdd * maxBitlineCurrent;
 			}
 		} else { /* current-sensing */
 			double maxBitlineCurrent = (readVoltage - voltageDropAccessDevice) / resistanceOn;
-			return gTech->vdd * maxBitlineCurrent;
+			return gTech.vdd * maxBitlineCurrent;
 		}
 	} else {
 		return -1.0; /* should not call the function if read energy exists */
@@ -645,7 +645,7 @@ void MemCell::PrintCell()
 		cout << "Memory Cell: Unknown" << endl;
 	}
 	cout << "Cell Area (F^2)    : " << area << " (" << heightInFeatureSize << "Fx" << widthInFeatureSize << "F)" << endl;
-	cout << "Cell Area (um^2)    : " << area/1000000.0*gTech->featureSizeInNano*gTech->featureSizeInNano << " (" << heightInFeatureSize*gTech->featureSizeInNano << "nm x" << widthInFeatureSize*gTech->featureSizeInNano << "nm y)" << endl;
+	cout << "Cell Area (um^2)    : " << area/1000000.0*gTech.featureSizeInNano*gTech.featureSizeInNano << " (" << heightInFeatureSize*gTech.featureSizeInNano << "nm x" << widthInFeatureSize*gTech.featureSizeInNano << "nm y)" << endl;
 	cout << "Cell Aspect Ratio  : " << aspectRatio << endl;
 
 	if (memCellType == PCRAM || memCellType == MRAM || memCellType == memristor || memCellType == FBRAM || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM) {
@@ -711,29 +711,29 @@ void MemCell::PrintCell()
 		cout << "SRAM Cell Access Transistor Width: " << widthAccessCMOS << "F" << endl;
 		cout << "SRAM Cell NMOS Width: " << widthSRAMCellNMOS << "F" << endl;
 		cout << "SRAM Cell PMOS Width: " << widthSRAMCellPMOS << "F" << endl;
-		cout << "SRAM Cell Peripheral Roadmap: " << gTech->deviceRoadmap << endl;
-		cout << "SRAM Cell Peripheral Node: " << gTech->featureSizeInNano << "nm" << endl;
-		cout << "SRAM Cell VDD: " << gTech->vdd << "V" << endl;
-		cout << "Temperature: " << gCell->temperature << "K" << endl;
+		cout << "SRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << endl;
+		cout << "SRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << endl;
+		cout << "SRAM Cell VDD: " << gTech.vdd << "V" << endl;
+		cout << "Temperature: " << gCell.temperature << "K" << endl;
 	} else if (memCellType == DRAM || memCellType == eDRAM) {
 		cout << "DRAM Cell Access Transistor Width: " << widthAccessCMOS << "F" << endl;
-		cout << "DRAM Cell Peripheral Roadmap: " << gTech->deviceRoadmap << endl;
-		cout << "DRAM Cell Peripheral Node: " << gTech->featureSizeInNano << "nm" << endl;
-		cout << "DRAM Cell VDD: " << gTech->vdd << "V" << endl;
-		cout << "DRAM Cell WL_SWING: " << gTech->vpp << "V" << endl;
-		cout << "Temperature: " << gCell->temperature << "K" << endl;
+		cout << "DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << endl;
+		cout << "DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << endl;
+		cout << "DRAM Cell VDD: " << gTech.vdd << "V" << endl;
+		cout << "DRAM Cell WL_SWING: " << gTech.vpp << "V" << endl;
+		cout << "Temperature: " << gCell.temperature << "K" << endl;
 	} else if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
 		cout << "3T DRAM Cell Write Access Transistor Width: " << widthAccessCMOS << "F" << endl;
 		cout << "3T DRAM Cell Read Access Transistor Width: " << widthAccessCMOSR << "F" << endl;
-		cout << "3T DRAM Cell Peripheral Roadmap: " << gTech->deviceRoadmap << endl;
-		cout << "3T DRAM Cell Write Access Roadmap: " << gTechW->deviceRoadmap << endl;
-		cout << "3T DRAM Cell Read Access Roadmap: " << gTechR->deviceRoadmap << endl;
-		cout << "3T DRAM Cell Peripheral Node: " << gTech->featureSizeInNano << "nm" << endl;
-		cout << "3T DRAM Cell Write Access Node: " << gTechW->featureSizeInNano << "nm" << endl;
-		cout << "3T DRAM Cell Read Access Node: " << gTechR->featureSizeInNano << "nm" << endl;
-		cout << "3T DRAM Cell VDD: " << gTech->vdd << "V" << endl;
-		cout << "3T DRAM Cell WWL_SWING: " << gTechW->vpp << "V" << endl;
-		cout << "Temperature: " << gCell->temperature << "K" << endl;
+		cout << "3T DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << endl;
+		cout << "3T DRAM Cell Write Access Roadmap: " << gTechW.deviceRoadmap << endl;
+		cout << "3T DRAM Cell Read Access Roadmap: " << gTechR.deviceRoadmap << endl;
+		cout << "3T DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << endl;
+		cout << "3T DRAM Cell Write Access Node: " << gTechW.featureSizeInNano << "nm" << endl;
+		cout << "3T DRAM Cell Read Access Node: " << gTechR.featureSizeInNano << "nm" << endl;
+		cout << "3T DRAM Cell VDD: " << gTech.vdd << "V" << endl;
+		cout << "3T DRAM Cell WWL_SWING: " << gTechW.vpp << "V" << endl;
+		cout << "Temperature: " << gCell.temperature << "K" << endl;
 	} else if (memCellType == SLCNAND) {
 		cout << "Pass Voltage       : " << flashPassVoltage << "V" << endl;
 		cout << "Programming Voltage: " << flashProgramVoltage << "V" << endl;

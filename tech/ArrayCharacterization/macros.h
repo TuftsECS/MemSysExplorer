@@ -43,79 +43,79 @@
 	WireType basicWireType; \
 	WireRepeaterType basicWireRepeaterType; \
 	bool isBasicLowSwing; \
-	if (gInputParameter->minLocalWireType == gInputParameter->maxLocalWireType) \
-		basicWireType = (WireType)gInputParameter->minLocalWireType; \
+	if (gInputParameter.minLocalWireType == gInputParameter.maxLocalWireType) \
+		basicWireType = (WireType)gInputParameter.minLocalWireType; \
 	else \
 		basicWireType = local_aggressive; \
-	if (gInputParameter->minLocalWireRepeaterType == gInputParameter->maxLocalWireRepeaterType) \
-		basicWireRepeaterType = (WireRepeaterType)gInputParameter->minLocalWireRepeaterType; \
+	if (gInputParameter.minLocalWireRepeaterType == gInputParameter.maxLocalWireRepeaterType) \
+		basicWireRepeaterType = (WireRepeaterType)gInputParameter.minLocalWireRepeaterType; \
 	else \
 		basicWireRepeaterType = repeated_none; \
-	if (gInputParameter->minIsLocalWireLowSwing == gInputParameter->maxIsLocalWireLowSwing) \
-		isBasicLowSwing = gInputParameter->minIsLocalWireLowSwing; \
+	if (gInputParameter.minIsLocalWireLowSwing == gInputParameter.maxIsLocalWireLowSwing) \
+		isBasicLowSwing = gInputParameter.minIsLocalWireLowSwing; \
 	else \
 		isBasicLowSwing = false; \
-	gLocalWire->Initialize(gInputParameter->processNode, basicWireType, basicWireRepeaterType, gInputParameter->temperature, isBasicLowSwing); \
-	if (gInputParameter->minGlobalWireType == gInputParameter->maxGlobalWireType) \
-		basicWireType = (WireType)gInputParameter->minGlobalWireType; \
+	gLocalWire.Initialize(gInputParameter.processNode, basicWireType, basicWireRepeaterType, gInputParameter.temperature, isBasicLowSwing); \
+	if (gInputParameter.minGlobalWireType == gInputParameter.maxGlobalWireType) \
+		basicWireType = (WireType)gInputParameter.minGlobalWireType; \
 	else \
 		basicWireType = global_aggressive; \
-	if (gInputParameter->minGlobalWireRepeaterType == gInputParameter->maxGlobalWireRepeaterType) \
-		basicWireRepeaterType = (WireRepeaterType)gInputParameter->minGlobalWireRepeaterType; \
+	if (gInputParameter.minGlobalWireRepeaterType == gInputParameter.maxGlobalWireRepeaterType) \
+		basicWireRepeaterType = (WireRepeaterType)gInputParameter.minGlobalWireRepeaterType; \
 	else \
 		basicWireRepeaterType = repeated_none; \
-	if (gInputParameter->minIsGlobalWireLowSwing == gInputParameter->maxIsGlobalWireLowSwing) \
-		isBasicLowSwing = gInputParameter->minIsGlobalWireLowSwing; \
+	if (gInputParameter.minIsGlobalWireLowSwing == gInputParameter.maxIsGlobalWireLowSwing) \
+		isBasicLowSwing = gInputParameter.minIsGlobalWireLowSwing; \
 	else \
 		isBasicLowSwing = false; \
-	gGlobalWire->Initialize(gInputParameter->processNode, basicWireType, basicWireRepeaterType, gInputParameter->temperature, isBasicLowSwing); \
+	gGlobalWire.Initialize(gInputParameter.processNode, basicWireType, basicWireRepeaterType, gInputParameter.temperature, isBasicLowSwing); \
 }
 
 
 
 #define REFINE_LOCAL_WIRE_FORLOOP \
-	for (localWireType = gInputParameter->minLocalWireType; localWireType <= gInputParameter->maxLocalWireType; localWireType++) \
-	for (localWireRepeaterType = gInputParameter->minLocalWireRepeaterType; localWireRepeaterType <= gInputParameter->maxLocalWireRepeaterType; localWireRepeaterType++) \
-	for (isLocalWireLowSwing = gInputParameter->minIsLocalWireLowSwing; isLocalWireLowSwing <= gInputParameter->maxIsLocalWireLowSwing; isLocalWireLowSwing++) \
+	for (localWireType = gInputParameter.minLocalWireType; localWireType <= gInputParameter.maxLocalWireType; localWireType++) \
+	for (localWireRepeaterType = gInputParameter.minLocalWireRepeaterType; localWireRepeaterType <= gInputParameter.maxLocalWireRepeaterType; localWireRepeaterType++) \
+	for (isLocalWireLowSwing = gInputParameter.minIsLocalWireLowSwing; isLocalWireLowSwing <= gInputParameter.maxIsLocalWireLowSwing; isLocalWireLowSwing++) \
 	if ((WireRepeaterType)localWireRepeaterType == repeated_none || (bool)isLocalWireLowSwing == false)
 
 
 #define REFINE_GLOBAL_WIRE_FORLOOP \
-	for (globalWireType = gInputParameter->minGlobalWireType; globalWireType <= gInputParameter->maxGlobalWireType; globalWireType++) \
-	for (globalWireRepeaterType = gInputParameter->minGlobalWireRepeaterType; globalWireRepeaterType <= gInputParameter->maxGlobalWireRepeaterType; globalWireRepeaterType++) \
-	for (isGlobalWireLowSwing = gInputParameter->minIsGlobalWireLowSwing; isGlobalWireLowSwing <= gInputParameter->maxIsGlobalWireLowSwing; isGlobalWireLowSwing++) \
+	for (globalWireType = gInputParameter.minGlobalWireType; globalWireType <= gInputParameter.maxGlobalWireType; globalWireType++) \
+	for (globalWireRepeaterType = gInputParameter.minGlobalWireRepeaterType; globalWireRepeaterType <= gInputParameter.maxGlobalWireRepeaterType; globalWireRepeaterType++) \
+	for (isGlobalWireLowSwing = gInputParameter.minIsGlobalWireLowSwing; isGlobalWireLowSwing <= gInputParameter.maxIsGlobalWireLowSwing; isGlobalWireLowSwing++) \
 	if ((WireRepeaterType)globalWireRepeaterType == repeated_none || (bool)isGlobalWireLowSwing == false)
 
 
 
 
 #define LOAD_GLOBAL_WIRE(oldResult) { \
-	gGlobalWire->Initialize(gInputParameter->processNode, (oldResult).globalWire->wireType, (oldResult).globalWire->wireRepeaterType, \
-			gInputParameter->temperature, (oldResult).globalWire->isLowSwing); \
+	gGlobalWire.Initialize(gInputParameter.processNode, (oldResult).globalWire->wireType, (oldResult).globalWire->wireRepeaterType, \
+			gInputParameter.temperature, (oldResult).globalWire->isLowSwing); \
 }
 
 
 #define LOAD_LOCAL_WIRE(oldResult) \
-	gLocalWire->Initialize(gInputParameter->processNode, (oldResult).localWire->wireType, (oldResult).localWire->wireRepeaterType, \
-			gInputParameter->temperature, (oldResult).localWire->isLowSwing);
+	gLocalWire.Initialize(gInputParameter.processNode, (oldResult).localWire->wireType, (oldResult).localWire->wireRepeaterType, \
+			gInputParameter.temperature, (oldResult).localWire->isLowSwing);
 
 
 
 #define TRY_AND_UPDATE(oldResult, memoryType) { \
-	if (gInputParameter->routingMode == h_tree) \
+	if (gInputParameter.routingMode == h_tree) \
 		trialBank = new BankWithHtree(); \
 	else \
 		trialBank = new BankWithoutHtree(); \
 	trialBank->Initialize((oldResult).bank->numRowMat, (oldResult).bank->numColumnMat, (oldResult).bank->capacity, (oldResult).bank->blockSize, (oldResult).bank->associativity, \
 				(oldResult).bank->numRowPerSet, (oldResult).bank->numActiveMatPerRow, (oldResult).bank->numActiveMatPerColumn, (oldResult).bank->muxSenseAmp, \
-				gInputParameter->internalSensing, (oldResult).bank->muxOutputLev1, (oldResult).bank->muxOutputLev2, (oldResult).bank->numRowSubarray, (oldResult).bank->numColumnSubarray, \
+				gInputParameter.internalSensing, (oldResult).bank->muxOutputLev1, (oldResult).bank->muxOutputLev2, (oldResult).bank->numRowSubarray, (oldResult).bank->numColumnSubarray, \
 				(oldResult).bank->numActiveSubarrayPerRow, (oldResult).bank->numActiveSubarrayPerColumn, (oldResult).bank->areaOptimizationLevel, (memoryType)); \
 	trialBank->CalculateArea(); \
 	trialBank->CalculateRC(); \
 	trialBank->CalculateLatencyAndPower(); \
 	*(tempResult.bank) = *trialBank; \
-	*(tempResult.localWire) = *gLocalWire; \
-	*(tempResult.globalWire) = *gGlobalWire; \
+	*(tempResult.localWire) = gLocalWire; \
+	*(tempResult.globalWire) = gGlobalWire; \
 	oldResult.compareAndUpdate(tempResult); \
 	delete trialBank; \
 }
@@ -123,30 +123,30 @@
 
 
 #define BIGFOR \
-	for (numRowMat = gInputParameter->minNumRowMat; numRowMat <= gInputParameter->maxNumRowMat; numRowMat *= 2) \
-	for (numColumnMat = gInputParameter->minNumColumnMat; numColumnMat <= gInputParameter->maxNumColumnMat; numColumnMat *= 2) \
-	for (numActiveMatPerRow = MIN(numColumnMat, gInputParameter->minNumActiveMatPerRow); numActiveMatPerRow <= MIN(numColumnMat, gInputParameter->maxNumActiveMatPerRow); numActiveMatPerRow *= 2) \
-	for (numActiveMatPerColumn = MIN(numRowMat, gInputParameter->minNumActiveMatPerColumn); numActiveMatPerColumn <= MIN(numRowMat, gInputParameter->maxNumActiveMatPerColumn); numActiveMatPerColumn *= 2) \
-	for (numRowSubarray = gInputParameter->minNumRowSubarray; numRowSubarray <= gInputParameter->maxNumRowSubarray; numRowSubarray *= 2) \
-	for (numColumnSubarray = gInputParameter->minNumColumnSubarray; numColumnSubarray <= gInputParameter->maxNumColumnSubarray; numColumnSubarray *= 2) \
-	for (numActiveSubarrayPerRow = MIN(numColumnSubarray, gInputParameter->minNumActiveSubarrayPerRow); numActiveSubarrayPerRow <= MIN(numColumnSubarray, gInputParameter->maxNumActiveSubarrayPerRow); numActiveSubarrayPerRow *=2) \
-	for (numActiveSubarrayPerColumn = MIN(numRowSubarray, gInputParameter->minNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn <= MIN(numRowSubarray, gInputParameter->maxNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn *= 2) \
-	for (muxSenseAmp = gInputParameter->minMuxSenseAmp; muxSenseAmp <= gInputParameter->maxMuxSenseAmp; muxSenseAmp *= 2) \
-	for (muxOutputLev1 = gInputParameter->minMuxOutputLev1; muxOutputLev1 <= gInputParameter->maxMuxOutputLev1; muxOutputLev1 *= 2) \
-	for (muxOutputLev2 = gInputParameter->minMuxOutputLev2; muxOutputLev2 <= gInputParameter->maxMuxOutputLev2; muxOutputLev2 *= 2) \
-	for (numRowPerSet = gInputParameter->minNumRowPerSet; numRowPerSet <= MIN(gInputParameter->maxNumRowPerSet, gInputParameter->associativity); numRowPerSet *= 2) \
-	for (areaOptimizationLevel = gInputParameter->minAreaOptimizationLevel; areaOptimizationLevel <= gInputParameter->maxAreaOptimizationLevel; areaOptimizationLevel++)
+	for (numRowMat = gInputParameter.minNumRowMat; numRowMat <= gInputParameter.maxNumRowMat; numRowMat *= 2) \
+	for (numColumnMat = gInputParameter.minNumColumnMat; numColumnMat <= gInputParameter.maxNumColumnMat; numColumnMat *= 2) \
+	for (numActiveMatPerRow = MIN(numColumnMat, gInputParameter.minNumActiveMatPerRow); numActiveMatPerRow <= MIN(numColumnMat, gInputParameter.maxNumActiveMatPerRow); numActiveMatPerRow *= 2) \
+	for (numActiveMatPerColumn = MIN(numRowMat, gInputParameter.minNumActiveMatPerColumn); numActiveMatPerColumn <= MIN(numRowMat, gInputParameter.maxNumActiveMatPerColumn); numActiveMatPerColumn *= 2) \
+	for (numRowSubarray = gInputParameter.minNumRowSubarray; numRowSubarray <= gInputParameter.maxNumRowSubarray; numRowSubarray *= 2) \
+	for (numColumnSubarray = gInputParameter.minNumColumnSubarray; numColumnSubarray <= gInputParameter.maxNumColumnSubarray; numColumnSubarray *= 2) \
+	for (numActiveSubarrayPerRow = MIN(numColumnSubarray, gInputParameter.minNumActiveSubarrayPerRow); numActiveSubarrayPerRow <= MIN(numColumnSubarray, gInputParameter.maxNumActiveSubarrayPerRow); numActiveSubarrayPerRow *=2) \
+	for (numActiveSubarrayPerColumn = MIN(numRowSubarray, gInputParameter.minNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn <= MIN(numRowSubarray, gInputParameter.maxNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn *= 2) \
+	for (muxSenseAmp = gInputParameter.minMuxSenseAmp; muxSenseAmp <= gInputParameter.maxMuxSenseAmp; muxSenseAmp *= 2) \
+	for (muxOutputLev1 = gInputParameter.minMuxOutputLev1; muxOutputLev1 <= gInputParameter.maxMuxOutputLev1; muxOutputLev1 *= 2) \
+	for (muxOutputLev2 = gInputParameter.minMuxOutputLev2; muxOutputLev2 <= gInputParameter.maxMuxOutputLev2; muxOutputLev2 *= 2) \
+	for (numRowPerSet = gInputParameter.minNumRowPerSet; numRowPerSet <= MIN(gInputParameter.maxNumRowPerSet, gInputParameter.associativity); numRowPerSet *= 2) \
+	for (areaOptimizationLevel = gInputParameter.minAreaOptimizationLevel; areaOptimizationLevel <= gInputParameter.maxAreaOptimizationLevel; areaOptimizationLevel++)
 
 
 
 #define CALCULATE(bank, memoryType) { \
-	if (gInputParameter->routingMode == h_tree) \
+	if (gInputParameter.routingMode == h_tree) \
 		(bank) = new BankWithHtree(); \
 	else \
 		(bank) = new BankWithoutHtree(); \
 	(bank)->Initialize(numRowMat, numColumnMat, capacity, blockSize, associativity, \
 				numRowPerSet, numActiveMatPerRow, numActiveMatPerColumn, muxSenseAmp, \
-				gInputParameter->internalSensing, muxOutputLev1, muxOutputLev2, numRowSubarray, numColumnSubarray, \
+				gInputParameter.internalSensing, muxOutputLev1, muxOutputLev2, numRowSubarray, numColumnSubarray, \
 				numActiveSubarrayPerRow, numActiveSubarrayPerColumn, (BufferDesignTarget)areaOptimizationLevel, (memoryType)); \
 	(bank)->CalculateArea(); \
 	(bank)->CalculateRC(); \
@@ -156,8 +156,8 @@
 
 #define UPDATE_BEST_DATA { \
 	*(tempResult.bank) = *dataBank; \
-	*(tempResult.localWire) = *gLocalWire; \
-	*(tempResult.globalWire) = *gGlobalWire; \
+	*(tempResult.localWire) = gLocalWire; \
+	*(tempResult.globalWire) = gGlobalWire; \
 	for (int i = 0; i < (int)full_exploration; i++) \
 		bestDataResults[i].compareAndUpdate(tempResult); \
 }
@@ -179,8 +179,8 @@
 
 #define UPDATE_BEST_TAG { \
 	*(tempResult.bank) = *tagBank; \
-	*(tempResult.localWire) = *gLocalWire; \
-	*(tempResult.globalWire) = *gGlobalWire; \
+	*(tempResult.localWire) = gLocalWire; \
+	*(tempResult.globalWire) = gGlobalWire; \
 	for (int i = 0; i < (int)full_exploration; i++) \
 		bestTagResults[i].compareAndUpdate(tempResult); \
 }
@@ -201,86 +201,86 @@
 
 
 #define REDUCE_SEARCH_SIZE { \
-	gInputParameter->minNumRowMat = 1; \
-	gInputParameter->maxNumRowMat = 64; \
-	gInputParameter->minNumColumnMat = 1; \
-	gInputParameter->maxNumColumnMat = 64; \
-	gInputParameter->minNumActiveMatPerRow = 1; \
-	gInputParameter->maxNumActiveMatPerRow = gInputParameter->maxNumColumnMat; \
-	gInputParameter->minNumActiveMatPerColumn = 1; \
-	gInputParameter->maxNumActiveMatPerColumn = gInputParameter->maxNumRowMat; \
-	gInputParameter->minNumRowSubarray = 1; \
-	gInputParameter->maxNumRowSubarray = 2; \
-	gInputParameter->minNumColumnSubarray = 1; \
-	gInputParameter->maxNumColumnSubarray = 2; \
-	gInputParameter->minNumActiveSubarrayPerRow = 1; \
-	gInputParameter->maxNumActiveSubarrayPerRow = gInputParameter->maxNumColumnSubarray; \
-	gInputParameter->minNumActiveSubarrayPerColumn = 1; \
-	gInputParameter->maxNumActiveSubarrayPerColumn = gInputParameter->maxNumRowSubarray; \
-	gInputParameter->minMuxSenseAmp = 1; \
-	gInputParameter->maxMuxSenseAmp = 64; \
-	gInputParameter->minMuxOutputLev1 = 1; \
-	gInputParameter->maxMuxOutputLev1 = 64; \
-	gInputParameter->minMuxOutputLev2 = 1; \
-	gInputParameter->maxMuxOutputLev2 = 64; \
-	gInputParameter->minNumRowPerSet = 1; \
-	gInputParameter->maxNumRowPerSet = 1; \
-	gInputParameter->minAreaOptimizationLevel = latency_first; \
-	gInputParameter->maxAreaOptimizationLevel = area_first;	\
-	gInputParameter->minLocalWireType = local_aggressive; \
-	gInputParameter->maxLocalWireType = local_conservative; \
-	gInputParameter->minGlobalWireType = global_aggressive; \
-	gInputParameter->maxGlobalWireType = global_conservative; \
-	gInputParameter->minLocalWireRepeaterType = repeated_none; \
-	gInputParameter->maxLocalWireRepeaterType = repeated_opt; \
-	gInputParameter->minGlobalWireRepeaterType = repeated_none; \
-	gInputParameter->maxGlobalWireRepeaterType = repeated_opt; \
-	gInputParameter->minIsLocalWireLowSwing = false; \
-	gInputParameter->maxIsLocalWireLowSwing = true; \
-	gInputParameter->minIsGlobalWireLowSwing = false; \
-	gInputParameter->maxIsGlobalWireLowSwing = true; \
+	gInputParameter.minNumRowMat = 1; \
+	gInputParameter.maxNumRowMat = 64; \
+	gInputParameter.minNumColumnMat = 1; \
+	gInputParameter.maxNumColumnMat = 64; \
+	gInputParameter.minNumActiveMatPerRow = 1; \
+	gInputParameter.maxNumActiveMatPerRow = gInputParameter.maxNumColumnMat; \
+	gInputParameter.minNumActiveMatPerColumn = 1; \
+	gInputParameter.maxNumActiveMatPerColumn = gInputParameter.maxNumRowMat; \
+	gInputParameter.minNumRowSubarray = 1; \
+	gInputParameter.maxNumRowSubarray = 2; \
+	gInputParameter.minNumColumnSubarray = 1; \
+	gInputParameter.maxNumColumnSubarray = 2; \
+	gInputParameter.minNumActiveSubarrayPerRow = 1; \
+	gInputParameter.maxNumActiveSubarrayPerRow = gInputParameter.maxNumColumnSubarray; \
+	gInputParameter.minNumActiveSubarrayPerColumn = 1; \
+	gInputParameter.maxNumActiveSubarrayPerColumn = gInputParameter.maxNumRowSubarray; \
+	gInputParameter.minMuxSenseAmp = 1; \
+	gInputParameter.maxMuxSenseAmp = 64; \
+	gInputParameter.minMuxOutputLev1 = 1; \
+	gInputParameter.maxMuxOutputLev1 = 64; \
+	gInputParameter.minMuxOutputLev2 = 1; \
+	gInputParameter.maxMuxOutputLev2 = 64; \
+	gInputParameter.minNumRowPerSet = 1; \
+	gInputParameter.maxNumRowPerSet = 1; \
+	gInputParameter.minAreaOptimizationLevel = latency_first; \
+	gInputParameter.maxAreaOptimizationLevel = area_first;	\
+	gInputParameter.minLocalWireType = local_aggressive; \
+	gInputParameter.maxLocalWireType = local_conservative; \
+	gInputParameter.minGlobalWireType = global_aggressive; \
+	gInputParameter.maxGlobalWireType = global_conservative; \
+	gInputParameter.minLocalWireRepeaterType = repeated_none; \
+	gInputParameter.maxLocalWireRepeaterType = repeated_opt; \
+	gInputParameter.minGlobalWireRepeaterType = repeated_none; \
+	gInputParameter.maxGlobalWireRepeaterType = repeated_opt; \
+	gInputParameter.minIsLocalWireLowSwing = false; \
+	gInputParameter.maxIsLocalWireLowSwing = true; \
+	gInputParameter.minIsGlobalWireLowSwing = false; \
+	gInputParameter.maxIsGlobalWireLowSwing = true; \
 }
 
 
 #define RESTORE_SEARCH_SIZE { \
-	gInputParameter->minNumRowMat = 1; \
-	gInputParameter->maxNumRowMat = 512; \
-	gInputParameter->minNumColumnMat = 1; \
-	gInputParameter->maxNumColumnMat = 512; \
-	gInputParameter->minNumActiveMatPerRow = 1; \
-	gInputParameter->maxNumActiveMatPerRow = gInputParameter->maxNumColumnMat; \
-	gInputParameter->minNumActiveMatPerColumn = 1; \
-	gInputParameter->maxNumActiveMatPerColumn = gInputParameter->maxNumRowMat; \
-	gInputParameter->minNumRowSubarray = 1; \
-	gInputParameter->maxNumRowSubarray = 2; \
-	gInputParameter->minNumColumnSubarray = 1; \
-	gInputParameter->maxNumColumnSubarray = 2; \
-	gInputParameter->minNumActiveSubarrayPerRow = 1; \
-	gInputParameter->maxNumActiveSubarrayPerRow = gInputParameter->maxNumColumnSubarray; \
-	gInputParameter->minNumActiveSubarrayPerColumn = 1; \
-	gInputParameter->maxNumActiveSubarrayPerColumn = gInputParameter->maxNumRowSubarray; \
-	gInputParameter->minMuxSenseAmp = 1; \
-	gInputParameter->maxMuxSenseAmp = 256; \
-	gInputParameter->minMuxOutputLev1 = 1; \
-	gInputParameter->maxMuxOutputLev1 = 256; \
-	gInputParameter->minMuxOutputLev2 = 1; \
-	gInputParameter->maxMuxOutputLev2 = 256; \
-	gInputParameter->minNumRowPerSet = 1; \
-	gInputParameter->maxNumRowPerSet = gInputParameter->associativity; \
-	gInputParameter->minAreaOptimizationLevel = latency_first; \
-	gInputParameter->maxAreaOptimizationLevel = area_first; \
-	gInputParameter->minLocalWireType = local_aggressive; \
-	gInputParameter->maxLocalWireType = semi_conservative; \
-	gInputParameter->minGlobalWireType = semi_aggressive; \
-	gInputParameter->maxGlobalWireType = global_conservative; \
-	gInputParameter->minLocalWireRepeaterType = repeated_none; \
-	gInputParameter->maxLocalWireRepeaterType = repeated_50;		/* The limit is repeated_50 */ \
-	gInputParameter->minGlobalWireRepeaterType = repeated_none; \
-	gInputParameter->maxGlobalWireRepeaterType = repeated_50;	/* The limit is repeated_50 */ \
-	gInputParameter->minIsLocalWireLowSwing = false; \
-	gInputParameter->maxIsLocalWireLowSwing = true; \
-	gInputParameter->minIsGlobalWireLowSwing = false; \
-	gInputParameter->maxIsGlobalWireLowSwing = true; \
+	gInputParameter.minNumRowMat = 1; \
+	gInputParameter.maxNumRowMat = 512; \
+	gInputParameter.minNumColumnMat = 1; \
+	gInputParameter.maxNumColumnMat = 512; \
+	gInputParameter.minNumActiveMatPerRow = 1; \
+	gInputParameter.maxNumActiveMatPerRow = gInputParameter.maxNumColumnMat; \
+	gInputParameter.minNumActiveMatPerColumn = 1; \
+	gInputParameter.maxNumActiveMatPerColumn = gInputParameter.maxNumRowMat; \
+	gInputParameter.minNumRowSubarray = 1; \
+	gInputParameter.maxNumRowSubarray = 2; \
+	gInputParameter.minNumColumnSubarray = 1; \
+	gInputParameter.maxNumColumnSubarray = 2; \
+	gInputParameter.minNumActiveSubarrayPerRow = 1; \
+	gInputParameter.maxNumActiveSubarrayPerRow = gInputParameter.maxNumColumnSubarray; \
+	gInputParameter.minNumActiveSubarrayPerColumn = 1; \
+	gInputParameter.maxNumActiveSubarrayPerColumn = gInputParameter.maxNumRowSubarray; \
+	gInputParameter.minMuxSenseAmp = 1; \
+	gInputParameter.maxMuxSenseAmp = 256; \
+	gInputParameter.minMuxOutputLev1 = 1; \
+	gInputParameter.maxMuxOutputLev1 = 256; \
+	gInputParameter.minMuxOutputLev2 = 1; \
+	gInputParameter.maxMuxOutputLev2 = 256; \
+	gInputParameter.minNumRowPerSet = 1; \
+	gInputParameter.maxNumRowPerSet = gInputParameter.associativity; \
+	gInputParameter.minAreaOptimizationLevel = latency_first; \
+	gInputParameter.maxAreaOptimizationLevel = area_first; \
+	gInputParameter.minLocalWireType = local_aggressive; \
+	gInputParameter.maxLocalWireType = semi_conservative; \
+	gInputParameter.minGlobalWireType = semi_aggressive; \
+	gInputParameter.maxGlobalWireType = global_conservative; \
+	gInputParameter.minLocalWireRepeaterType = repeated_none; \
+	gInputParameter.maxLocalWireRepeaterType = repeated_50;		/* The limit is repeated_50 */ \
+	gInputParameter.minGlobalWireRepeaterType = repeated_none; \
+	gInputParameter.maxGlobalWireRepeaterType = repeated_50;	/* The limit is repeated_50 */ \
+	gInputParameter.minIsLocalWireLowSwing = false; \
+	gInputParameter.maxIsLocalWireLowSwing = true; \
+	gInputParameter.minIsGlobalWireLowSwing = false; \
+	gInputParameter.maxIsGlobalWireLowSwing = true; \
 }
 
 
@@ -298,8 +298,8 @@
 
 
 #define OUTPUT_TO_FILE { \
-	if (gInputParameter->designTarget == cache) { \
-		tempResult.printAsCacheToYamlFile(bestTagResults[0], gInputParameter->cacheAccessMode, outputFile); \
+	if (gInputParameter.designTarget == cache) { \
+		tempResult.printAsCacheToYamlFile(bestTagResults[0], gInputParameter.cacheAccessMode, outputFile); \
 	} else { \
 		tempResult.printToYamlFile(outputFile); \
 	} \
