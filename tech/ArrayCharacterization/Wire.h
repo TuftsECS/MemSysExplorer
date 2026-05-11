@@ -42,8 +42,6 @@
 #include "typedef.h"
 #include "SenseAmp.h"
 
-using namespace std;
-
 class Wire {
 public:
 	/* Functions */

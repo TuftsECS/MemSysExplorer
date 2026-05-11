@@ -45,8 +45,6 @@
 #include "constant.h"
 #include "typedef.h"
 
-using namespace std;
-
 class InputParameter {
 public:
 	/* Functions */
@@ -64,7 +62,7 @@ public:
 	DeviceRoadmap deviceRoadmap = LOP;	/* ITRS roadmap: HP, LSTP, or LOP */
 	DeviceRoadmap deviceRoadmapW = LOP;	/* ITRS roadmap: HP, LSTP, or LOP */
 	DeviceRoadmap deviceRoadmapR = LOP;	/* ITRS roadmap: HP, LSTP, or LOP */
-	string fileMemCell;				/* Input file name of memory cell type */
+	std::string fileMemCell;				/* Input file name of memory cell type */
 	int temperature;				/* The ambient temperature, Unit: K */
 	double maxDriverCurrent = 0;        /* The maximum driving current that the wordline/bitline driver can provide */
 	WriteScheme writeScheme = normal_write;		/* The write scheme */
@@ -91,8 +89,8 @@ public:
 
 	double maxNmosSize = MAX_NMOS_SIZE;				/* Default value is MAX_NMOS_SIZE in constant.h, however, user might change it, Unit: F */
 
-	string outputFilePrefix = "output";
-	string outputDirectory = "results/";
+	std::string outputFilePrefix = "output";
+	std::string outputDirectory = "results/";
 
 	int minNumRowMat = 1;
 	int maxNumRowMat = 512;

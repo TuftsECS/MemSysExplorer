@@ -46,7 +46,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 		int _muxSenseAmp, bool _internalSenseAmp, int _muxOutputLev1, int _muxOutputLev2,
 		BufferDesignTarget _areaOptimizationLevel) {
 	if (initialized)
-		cout << "[Subarray] Warning: Already initialized!" << endl;
+		std::cout << "[Subarray] Warning: Already initialized!" << std::endl;
 
 	numRow = _numRow;
 	numColumn = _numColumn;
@@ -189,7 +189,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 			voltageSense = true;
 		}
 	} else if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
-		cout << "[Subarray] Error: DRAM does not support external sense amplifiers!" << endl;
+		std::cout << "[Subarray] Error: DRAM does not support external sense amplifiers!" << std::endl;
 		exit(-1);
 	}
 
@@ -297,7 +297,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				voltagePrecharge = (voltageMemCellOff + voltageMemCellOn) / 2;
 				voltagePrecharge = MIN(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
 				if ((voltagePrecharge - voltageMemCellOn) <= senseVoltage) {
-					cout <<"Error[Subarray]: Read current too large or too small that no reasonable precharge voltage existing" <<endl;
+					std::cout <<"Error[Subarray]: Read current too large or too small that no reasonable precharge voltage existing" << std::endl;
 					invalid = true;
 					return;
 				}
@@ -310,7 +310,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				voltagePrecharge = (voltageMemCellOff + voltageMemCellOn) / 2;
 				voltagePrecharge = MIN(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
 				if ((voltagePrecharge - voltageMemCellOn) <= senseVoltage) {
-					cout <<"Error[Subarray]: Read Voltage too large or too small that no reasonable precharge voltage existing" <<endl;
+					std::cout <<"Error[Subarray]: Read Voltage too large or too small that no reasonable precharge voltage existing" << std::endl;
 					invalid = true;
 					return;
 				}
@@ -337,7 +337,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 					resCellAccess = gCell.voltageDropAccessDevice / (gCell.readVoltage
 							- gCell.voltageDropAccessDevice) * gCell.resistanceOn;
 				} else {
-					cout<<"Error[Subarray]: Diode access do not support voltage-input voltage sensing" <<endl;
+					std::cout<<"Error[Subarray]: Diode access do not support voltage-input voltage sensing" <<endl;
 					exit(-1);
 				}
 			}
@@ -359,7 +359,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				voltagePrecharge = (voltageMemCellOff + voltageMemCellOn) / 2;
 				voltagePrecharge = MIN(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
 				if ((voltagePrecharge - voltageMemCellOn) <= senseVoltage) {
-					cout <<"Error[Subarray]: Read current too large or too small that no reasonable precharge voltage existing" <<endl;
+					std::cout <<"Error[Subarray]: Read current too large or too small that no reasonable precharge voltage existing" << std::endl;
 					invalid = true;
 					return;
 				}
@@ -372,7 +372,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				voltagePrecharge = (voltageMemCellOff + voltageMemCellOn) / 2;
 				voltagePrecharge = MIN(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
 				if ((voltagePrecharge - voltageMemCellOn) <= senseVoltage) {
-					cout <<"Error[Subarray]: Read Voltage too large or too small that no reasonable precharge voltage existing" <<endl;
+					std::cout <<"Error[Subarray]: Read Voltage too large or too small that no reasonable precharge voltage existing" << std::endl;
 					invalid = true;
 					return;
 				}
@@ -480,7 +480,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 
 void SubArray::CalculateArea() {
 	if (!initialized) {
-		cout << "[Subarray] Error: Require initialization first!" << endl;
+		std::cout << "[Subarray] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		height = width = area = invalid_value;
 	} else {
@@ -515,11 +515,11 @@ void SubArray::CalculateArea() {
 			senseAmp.CalculateArea();
 			if (senseAmp.width > width * 1.001) {
 				/* should never happen */
-				cout << "[ERROR] Sense Amplifier area calculation is wrong!" << endl;
+				std::cout << "[ERROR] Sense Amplifier area calculation is wrong!" << std::endl;
 			} else {
                 //cout << addHeight*1E6 << " -> ";
 				addHeight += senseAmp.height;
-                //cout << addHeight*1E6 << endl;
+                //cout << addHeight*1E6 << std::endl;
 			}
 		}
 
@@ -557,7 +557,7 @@ void SubArray::CalculateArea() {
 
 void SubArray::CalculateLatency(double _rampInput) {
 	if (!initialized) {
-		cout << "[Subarray] Error: Require initialization first!" << endl;
+		std::cout << "[Subarray] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readLatency = writeLatency = invalid_value;
 	} else {
@@ -781,7 +781,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 
 void SubArray::CalculatePower() {
 	if (!initialized) {
-		cout << "[Subarray] Error: Require initialization first!" << endl;
+		std::cout << "[Subarray] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readDynamicEnergy = writeDynamicEnergy = leakage = invalid_value;
 	} else {
@@ -1012,14 +1012,14 @@ void SubArray::CalculatePower() {
 }
 
 void SubArray::PrintProperty() {
-	cout << "Subarray Properties:" << endl;
+	std::cout << "Subarray Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
-	cout << "numRow:" << numRow << " numColumn:" << numColumn << endl;
-	cout << "lenWordline * lenBitline = " << lenWordline*1e6 << "um * " << lenBitline*1e6 << "um = " << lenWordline * lenBitline * 1e6 << "mm^2" << endl;
-	cout << "Row Decoder Area:" << rowDecoder.height*1e6 << "um x " << rowDecoder.width*1e6 << "um = " << rowDecoder.area*1e6 << "mm^2" << endl;
-	cout << "Sense Amplifier Area:" << std::scientific << senseAmp.height*1e6 << "um x " << senseAmp.width*1e6 << "um = " << senseAmp.area*1e6 << "mm^2" << std::fixed << endl;
-	cout << "Subarray Area Efficiency = " << lenWordline * lenBitline / area * 100 <<"%" << endl;
-	cout << "bitlineDelay: " << bitlineDelay*1e12 << "ps" << endl;
-	cout << "chargeLatency: " << chargeLatency*1e12 << "ps" << endl;
-	cout << "columnDecoderLatency: " << columnDecoderLatency*1e12 << "ps" << endl;
+	std::cout << "numRow:" << numRow << " numColumn:" << numColumn << std::endl;
+	std::cout << "lenWordline * lenBitline = " << lenWordline*1e6 << "um * " << lenBitline*1e6 << "um = " << lenWordline * lenBitline * 1e6 << "mm^2" << std::endl;
+	std::cout << "Row Decoder Area:" << rowDecoder.height*1e6 << "um x " << rowDecoder.width*1e6 << "um = " << rowDecoder.area*1e6 << "mm^2" << std::endl;
+	std::cout << "Sense Amplifier Area:" << std::scientific << senseAmp.height*1e6 << "um x " << senseAmp.width*1e6 << "um = " << senseAmp.area*1e6 << "mm^2" << std::fixed << std::endl;
+	std::cout << "Subarray Area Efficiency = " << lenWordline * lenBitline / area * 100 <<"%" << std::endl;
+	std::cout << "bitlineDelay: " << bitlineDelay*1e12 << "ps" << std::endl;
+	std::cout << "chargeLatency: " << chargeLatency*1e12 << "ps" << std::endl;
+	std::cout << "columnDecoderLatency: " << columnDecoderLatency*1e12 << "ps" << std::endl;
 }

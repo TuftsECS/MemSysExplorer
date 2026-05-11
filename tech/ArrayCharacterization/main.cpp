@@ -58,8 +58,6 @@
 #include "formula.h"
 #include "macros.h"
 
-using namespace std;
-
 InputParameter gInputParameter;
 Technology gTech;
 Technology gTechW;
@@ -72,22 +70,22 @@ void applyConstraint();
 
 int main(int argc, char* argv[])
 {
-	cout << fixed << setprecision(3);
-	string inputFileName;
+	std::cout << std::fixed << std::setprecision(3);
+	std::string inputFileName;
 
 	if (argc == 1) {
 		inputFileName = "nvsim.cfg";
-		cout << "Default configuration file (nvsim.cfg) is loaded" << endl;
+		std::cout << "Default configuration file (nvsim.cfg) is loaded" << std::endl;
 	} else if (argc == 2) {
 		inputFileName = argv[1];
-		cout << "User-defined configuration file (" << inputFileName << ") is loaded" << endl;
+		std::cout << "User-defined configuration file (" << inputFileName << ") is loaded" << std::endl;
 	} else {
-		cout << "[NVSIM Error]: Please use the correct format as follows" << endl;
-		cout << "  Use the default configuration: " << argv[0] << endl;
-		cout << "  Use the customized configuration: " << argv[0] << " <.cfg file>"  << endl;
+		std::cout << "[NVSIM Error]: Please use the correct format as follows" << std::endl;
+		std::cout << "  Use the default configuration: " << argv[0] << std::endl;
+		std::cout << "  Use the customized configuration: " << argv[0] << " <.cfg file>"  << std::endl;
 		exit(-1);
 	}
-	cout << endl;
+	std::cout << std::endl;
 
 	RESTORE_SEARCH_SIZE;
 	gInputParameter.ReadInputParameterFromFile(inputFileName);
@@ -148,7 +146,7 @@ int main(int argc, char* argv[])
 		alphaR = (gInputParameter.processNodeR - 1.0) / 1;
 	} else {
 		// Below 1 nm is not yet modeled:
-		cout << "Technology node below 1 nm is not supported!" << endl;
+		std::cout << "Technology node below 1 nm is not supported!" << std::endl;
 		exit(1);
 	}
 	gTechR.InterpolateWith(techHighR, alphaR);
@@ -198,7 +196,7 @@ int main(int argc, char* argv[])
 		alphaW = (gInputParameter.processNodeW - 1.0) / 1;
 	} else {
 		// Below 1 nm is not yet modeled:
-		cout << "Technology node below 1 nm is not supported!" << endl;
+		std::cout << "Technology node below 1 nm is not supported!" << std::endl;
 		exit(1);
 	}
 	gTechW.InterpolateWith(techHighW, alphaW);
@@ -245,7 +243,7 @@ int main(int argc, char* argv[])
 		alpha = (gInputParameter.processNode - 1.0) / 1;
 	} else {
 		// Below 1 nm is not yet modeled:
-		cout << "Technology node below 1 nm is not supported!" << endl;
+		std::cout << "Technology node below 1 nm is not supported!" << std::endl;
 		exit(1);
 	}
 
@@ -253,10 +251,10 @@ int main(int argc, char* argv[])
 
 	gCell.ApplyPVT(); // must apply PVT after tech initialization
 
-	ofstream outputFile;
-	string outputFileName;
+	std::ofstream outputFile;
+	std::string outputFileName;
 	if (gInputParameter.optimizationTarget == full_exploration) {
-		stringstream temp;
+		std::stringstream temp;
 		temp << gInputParameter.outputFilePrefix << "_" << gInputParameter.capacity / 1024 << "K_" << gInputParameter.wordWidth
 				<< "_" << gInputParameter.associativity;
 		if (gInputParameter.internalSensing)
@@ -269,7 +267,7 @@ int main(int argc, char* argv[])
 			temp << "_CUR";
 		temp << ".yaml";
 		outputFileName = temp.str();
-		outputFile.open(outputFileName.c_str(), ofstream::app);
+		outputFile.open(outputFileName.c_str(), std::ofstream::app);
 	}
 
 	gCell.PrintCell();
@@ -362,8 +360,8 @@ int main(int argc, char* argv[])
 		}
 
 		if (numSolution == 0) {
-			cout << "No valid solutions for tags." << endl;
-			cout << endl << "Finished!" << endl;
+			std::cout << "No valid solutions for tags." << std::endl;
+			std::cout << std::endl << "Finished!" << std::endl;
 			outputFile.close();
 			return 0;
 		} else {
@@ -379,10 +377,10 @@ int main(int argc, char* argv[])
 	blockSize = gInputParameter.wordWidth;
 	associativity = gInputParameter.associativity;
         //if (cell->memCellType == MLCCTT || cell->memCellType == MLCFeFET || cell->memCellType == MLCRRAM) {
-        //    cout << capacity << endl;
+        //    std::cout << capacity << std::endl;
         //    capacity = (int)(pow(2.0, ceil(log2(capacity/log2(cell->nLvl)))));
         //    blockSize = (int)(ceil(blockSize/log2(cell->nLvl)));    
-        //    cout << capacity << endl;
+        //    std::cout << capacity << std::endl;
         //}
 
 	if (gInputParameter.designTarget == cache) {
@@ -508,7 +506,7 @@ int main(int argc, char* argv[])
 						break;
 					default:
 						/* nothing should happen here */
-						cout << "Warning: should not happen" << endl;
+						std::cout << "Warning: should not happen" << std::endl;
 					}
 				}
 
@@ -518,7 +516,7 @@ int main(int argc, char* argv[])
     		else
         		bestDataResults[i].printToYamlFile(outputFile);
 		}
-		cout << "Pruning done" << endl;
+		std::cout << "Pruning done" << std::endl;
 		for (int i = 0; i < (int)full_exploration; i++) {
 			for (int j = 0; j < (int)full_exploration; j++) {
 				for (int k = 0; k < 3; k++)
@@ -575,11 +573,11 @@ int main(int argc, char* argv[])
 				bestDataResults[gInputParameter.optimizationTarget].print();
 			
 			// NEW: Also write to YAML file (for pipeline to parse)
-			string outputDirectory = gInputParameter.outputDirectory;
-			stringstream temp;
+			std::string outputDirectory = gInputParameter.outputDirectory;
+			std::stringstream temp;
 			temp << outputDirectory << gInputParameter.outputFilePrefix << ".yaml";
-			string yamlFileName = temp.str();
-			ofstream yamlFile;
+			std::string yamlFileName = temp.str();
+			std::ofstream yamlFile;
 			yamlFile.open(yamlFileName.c_str());
 			if (yamlFile.is_open()) {
 				if (gInputParameter.designTarget == cache)
@@ -590,21 +588,21 @@ int main(int argc, char* argv[])
 				else
 					bestDataResults[gInputParameter.optimizationTarget].printToYamlFile(yamlFile);
 				yamlFile.close();
-				cout << "Results written to " << yamlFileName << endl;
+				std::cout << "Results written to " << yamlFileName << std::endl;
 			}
 		} else {
-			cout << "No valid solutions." << endl;
+			std::cout << "No valid solutions." << std::endl;
 		}
-    cout << endl << "Finished!" << endl;
+    std::cout << std::endl << "Finished!" << std::endl;
 	} else {
-		cout << endl << outputFileName << " generated successfully!" << endl;
+		std::cout << std::endl << outputFileName << " generated successfully!" << std::endl;
 		if (gInputParameter.isPruningEnabled) {
-			cout << "The results are pruned" << endl;
+			std::cout << "The results are pruned" << std::endl;
 		} else {
 			int solutionMultiplier = 1;
 			if (gInputParameter.designTarget == cache)
 				solutionMultiplier = 8;
-			cout << numSolution * solutionMultiplier << " solutions in total" << endl;
+			std::cout << numSolution * solutionMultiplier << " solutions in total" << std::endl;
 		}
 	}
 
@@ -617,34 +615,34 @@ int main(int argc, char* argv[])
 void applyConstraint() {
 	/* Check functions that are not yet implemented */
 	if (gInputParameter.designTarget == CAM_chip) {
-		cout << "[ERROR] CAM model is still under development" << endl;
+		std::cout << "[ERROR] CAM model is still under development" << std::endl;
 		exit(-1);
 	}
 	if (gCell.memCellType == DRAM) {
-		cout << "[ERROR] DRAM model is still under development" << endl;
+		std::cout << "[ERROR] DRAM model is still under development" << std::endl;
 		exit(-1);
 	}
 	if (gCell.memCellType == eDRAM) {
-		cout << "[Warning] Embedded DRAM model is still under development" << endl;
+		std::cout << "[Warning] Embedded DRAM model is still under development" << std::endl;
 		//exit(-1);
 	}
 	if (gCell.memCellType == MLCNAND) {
-		cout << "[ERROR] MLC NAND flash model is still under development" << endl;
+		std::cout << "[ERROR] MLC NAND flash model is still under development" << std::endl;
 		exit(-1);
 	}
 
 	if (gInputParameter.designTarget != cache && gInputParameter.associativity > 1) {
-		cout << "[WARNING] Associativity setting is ignored for non-cache designs" << endl;
+		std::cout << "[WARNING] Associativity setting is ignored for non-cache designs" << std::endl;
 		gInputParameter.associativity = 1;
 	}
 
 	if (!isPow2(gInputParameter.associativity)) {
-		cout << "[ERROR] The associativity value has to be a power of 2 in this version" << endl;
+		std::cout << "[ERROR] The associativity value has to be a power of 2 in this version" << std::endl;
 		exit(-1);
 	}
 
 	if (gInputParameter.routingMode == h_tree && gInputParameter.internalSensing == false) {
-		cout << "[ERROR] H-tree does not support external sensing scheme in this version" << endl;
+		std::cout << "[ERROR] H-tree does not support external sensing scheme in this version" << std::endl;
 		exit(-1);
 	}
 }

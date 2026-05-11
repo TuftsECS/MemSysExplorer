@@ -44,7 +44,7 @@ void Mat::Initialize(int _numRowSubarray, int _numColumnSubarray, int _numAddres
 		int _muxSenseAmp, bool _internalSenseAmp, int _muxOutputLev1, int _muxOutputLev2,
 		BufferDesignTarget _areaOptimizationLevel, MemoryType _memoryType) {
 	if (initialized)
-		cout << "[Mat] Warning: Already initialized!" << endl;
+		std::cout << "[Mat] Warning: Already initialized!" << std::endl;
 
 	numRowSubarray = _numRowSubarray;
 	numColumnSubarray = _numColumnSubarray;
@@ -58,15 +58,15 @@ void Mat::Initialize(int _numRowSubarray, int _numColumnSubarray, int _numAddres
 	memoryType =_memoryType;
 
 	if (_numActiveSubarrayPerRow > numColumnSubarray) {
-		cout << "[Mat] Warning: The number of active subarray per row is larger than the number of subarray per row!"  << endl;
-		cout << _numActiveSubarrayPerRow << " > " << numColumnSubarray << endl;
+		std::cout << "[Mat] Warning: The number of active subarray per row is larger than the number of subarray per row!"  << std::endl;
+		std::cout << _numActiveSubarrayPerRow << " > " << numColumnSubarray << std::endl;
 		numActiveSubarrayPerRow = numColumnSubarray;
 	} else {
 		numActiveSubarrayPerRow = _numActiveSubarrayPerRow;
 	}
 	if (_numActiveSubarrayPerColumn > numRowSubarray) {
-		cout << "[Mat] Warning: The number of active subarray per column is larger than the number of subarray per column!"  << endl;
-		cout << _numActiveSubarrayPerColumn << " > " << numRowSubarray << endl;
+		std::cout << "[Mat] Warning: The number of active subarray per column is larger than the number of subarray per column!"  << std::endl;
+		std::cout << _numActiveSubarrayPerColumn << " > " << numRowSubarray << std::endl;
 		numActiveSubarrayPerColumn = numRowSubarray;
 	} else {
 		numActiveSubarrayPerColumn = _numActiveSubarrayPerColumn;
@@ -180,7 +180,7 @@ void Mat::Initialize(int _numRowSubarray, int _numColumnSubarray, int _numAddres
 
 void Mat::CalculateArea() {
 	if (!initialized) {
-		cout << "[Mat] Error: Require initialization first!" << endl;
+		std::cout << "[Mat] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		height = width = area = invalid_value;
 	} else {
@@ -218,7 +218,7 @@ void Mat::CalculateArea() {
 
 void Mat::CalculateRC() {
 	if (!initialized) {
-		cout << "[Mat] Error: Require initialization first!" << endl;
+		std::cout << "[Mat] Error: Require initialization first!" << std::endl;
 	} else if (!invalid){
 		/* subarray does not have CalculateRC() function, since it is integrated as a part of initialization */
 		rowPredecoderBlock1.CalculateRC();
@@ -237,7 +237,7 @@ void Mat::CalculateRC() {
 
 void Mat::CalculateLatency(double _rampInput) {
 	if (!initialized) {
-		cout << "[Mat] Error: Require initialization first!" << endl;
+		std::cout << "[Mat] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readLatency = writeLatency = invalid_value;
 	} else {
@@ -283,7 +283,7 @@ void Mat::CalculateLatency(double _rampInput) {
 
 void Mat::CalculatePower() {
 	if (!initialized) {
-		cout << "[Mat] Error: Require initialization first!" << endl;
+		std::cout << "[Mat] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readDynamicEnergy = writeDynamicEnergy = leakage = invalid_value;
 	} else {
@@ -336,6 +336,6 @@ void Mat::CalculatePower() {
 }
 
 void Mat::PrintProperty() {
-	cout << "Mat Properties:" << endl;
+	std::cout << "Mat Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }

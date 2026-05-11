@@ -55,7 +55,7 @@ void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _
 	if (!_internalSenseAmp) {
 		if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
 			invalid = true;
-			cout << "[BankWithoutHtree] Error: DRAM does not support external sense amplification!" << endl;
+			std::cout << "[BankWithoutHtree] Error: DRAM does not support external sense amplification!" << std::endl;
 			return;
 		} else if (gGlobalWire.wireRepeaterType != repeated_none) {
 			invalid = true;
@@ -80,15 +80,15 @@ void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _
 			/* use double during the calculation to avoid overflow */
 
 	if (_numActiveMatPerRow > numColumnMat) {
-		cout << "[Bank] Warning: The number of active subarray per row is larger than the number of subarray per row!"  << endl;
-		cout << _numActiveMatPerRow << " > " << numColumnMat << endl;
+		std::cout << "[Bank] Warning: The number of active subarray per row is larger than the number of subarray per row!"  << std::endl;
+		std::cout << _numActiveMatPerRow << " > " << numColumnMat << std::endl;
 		numActiveMatPerRow = numColumnMat;
 	} else {
 		numActiveMatPerRow = _numActiveMatPerRow;
 	}
 	if (_numActiveMatPerColumn > numRowMat) {
-		cout << "[Bank] Warning: The number of active subarray per column is larger than the number of subarray per column!"  << endl;
-		cout << _numActiveMatPerColumn << " > " << numRowMat << endl;
+		std::cout << "[Bank] Warning: The number of active subarray per column is larger than the number of subarray per column!"  << std::endl;
+		std::cout << _numActiveMatPerColumn << " > " << numRowMat << std::endl;
 		numActiveMatPerColumn = numRowMat;
 	} else {
 		numActiveMatPerColumn = _numActiveMatPerColumn;
@@ -100,15 +100,15 @@ void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _
 	numRowSubarray = _numRowSubarray;
 	numColumnSubarray = _numColumnSubarray;
 	if (_numActiveSubarrayPerRow > numColumnSubarray) {
-		cout << "[Bank] Warning: The number of active subarray per row is larger than the number of subarray per row!"  << endl;
-		cout << _numActiveSubarrayPerRow << " > " << numColumnSubarray << endl;
+		std::cout << "[Bank] Warning: The number of active subarray per row is larger than the number of subarray per row!"  << std::endl;
+		std::cout << _numActiveSubarrayPerRow << " > " << numColumnSubarray << std::endl;
 		numActiveSubarrayPerRow = numColumnSubarray;
 	} else {
 		numActiveSubarrayPerRow = _numActiveSubarrayPerRow;
 	}
 	if (_numActiveSubarrayPerColumn > numRowSubarray) {
-		cout << "[Bank] Warning: The number of active subarray per column is larger than the number of subarray per column!"  << endl;
-		cout << _numActiveSubarrayPerColumn << " > " << numRowSubarray << endl;
+		std::cout << "[Bank] Warning: The number of active subarray per column is larger than the number of subarray per column!"  << std::endl;
+		std::cout << _numActiveSubarrayPerColumn << " > " << numRowSubarray << std::endl;
 		numActiveSubarrayPerColumn = numRowSubarray;
 	} else {
 		numActiveSubarrayPerColumn = _numActiveSubarrayPerColumn;
@@ -230,7 +230,7 @@ void BankWithoutHtree::Initialize(int _numRowMat, int _numColumnMat, long long _
 
 void BankWithoutHtree::CalculateArea() {
 	if (!initialized) {
-		cout << "[BankWithoutHtree] Error: Require initialization first!" << endl;
+		std::cout << "[BankWithoutHtree] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		height = width = area = invalid_value;
 	} else {
@@ -276,7 +276,7 @@ void BankWithoutHtree::CalculateArea() {
 
 void BankWithoutHtree::CalculateRC() {
 	if (!initialized) {
-		cout << "[BankWithoutHtree] Error: Require initialization first!" << endl;
+		std::cout << "[BankWithoutHtree] Error: Require initialization first!" << std::endl;
 	} else if (!invalid) {
 		mat.CalculateRC();
 		if (!internalSenseAmp) {
@@ -290,7 +290,7 @@ void BankWithoutHtree::CalculateRC() {
 
 void BankWithoutHtree::CalculateLatencyAndPower() {
 	if (!initialized) {
-		cout << "[BankWithoutHtree] Error: Require initialization first!" << endl;
+		std::cout << "[BankWithoutHtree] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readLatency = writeLatency = invalid_value;
 		readDynamicEnergy = writeDynamicEnergy = invalid_value;

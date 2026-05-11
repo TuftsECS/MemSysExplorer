@@ -40,7 +40,7 @@
 
 void Buffer::Initialize(long long _numRow, long long _numColumn) {
 	if (initialized)
-		cout << "[Buffer] Warning: Already initialized!" << endl;
+		std::cout << "[Buffer] Warning: Already initialized!" << std::endl;
 
 	numRow = _numRow;
 	numColumn = _numColumn;
@@ -53,7 +53,7 @@ void Buffer::CalculateArea() {
     double xorheight;
     
 	if (!initialized) {
-		cout << "[Buffer] Error: Require initialization first!" << endl;
+		std::cout << "[Buffer] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		height = width = area = 1e41;
 	} else {
@@ -86,7 +86,7 @@ void Buffer::CalculateArea() {
 
 void Buffer::CalculateRC() {
 	if (!initialized) {
-		cout << "[Buffer] Error: Require initialization first!" << endl;
+		std::cout << "[Buffer] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readLatency = writeLatency = xorLatency = 1e41;
 	} else {
@@ -96,7 +96,7 @@ void Buffer::CalculateRC() {
 
 void Buffer::CalculateLatency() {
 	if (!initialized) {
-		cout << "[Buffer] Error: Require initialization first!" << endl;
+		std::cout << "[Buffer] Error: Require initialization first!" << std::endl;
 	} else {
 		if (gTech.featureSize >= 44e-9) {       /* 45nm */
 		    readLatency = 0.043e-9;
@@ -122,7 +122,7 @@ void Buffer::CalculateLatency() {
 
 void Buffer::CalculatePower() {
 	if (!initialized) {
-		cout << "[Buffer] Error: Require initialization first!" << endl;
+		std::cout << "[Buffer] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readDynamicEnergy = writeDynamicEnergy = leakage = 1e41;
 		xorDynamicEnergy = xorLeakage = 1e41;
@@ -165,10 +165,10 @@ void Buffer::CalculatePower() {
 }
 
 void Buffer::PrintProperty() {
-	cout << "Subarray Buffer Properties:" << endl;
+	std::cout << "Subarray Buffer Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
-	cout << "XOR Properties:" << endl;
-	cout << " -        Latency = " << xorLatency*1e9 << "ns" << endl;
-	cout << " - Dynamic Energy = " << xorDynamicEnergy*1e12 << "pJ" << endl;
-	cout << " -  Leakage Power = " << xorLeakage*1e3 << "mW" << endl;
+	std::cout << "XOR Properties:" << std::endl;
+	std::cout << " -        Latency = " << xorLatency*1e9 << "ns" << std::endl;
+	std::cout << " - Dynamic Energy = " << xorDynamicEnergy*1e12 << "pJ" << std::endl;
+	std::cout << " -  Leakage Power = " << xorLeakage*1e3 << "mW" << std::endl;
 }

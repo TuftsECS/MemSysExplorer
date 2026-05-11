@@ -166,12 +166,12 @@
 #define VERIFY_DATA_CAPACITY { \
 	if ((long long)dataBank->mat.subarray.numColumn * dataBank->mat.subarray.numRow * dataBank->numColumnMat * \
 			dataBank->numRowMat * dataBank->numColumnSubarray * dataBank->numRowSubarray != capacity) { \
-				cout << "1 Bank = " << dataBank->numRowMat << "x" << dataBank->numColumnMat << " Mats" << endl; \
-				cout << "Activation - " << dataBank->numActiveMatPerColumn << "x" << dataBank->numActiveMatPerRow << " Mats" << endl; \
-				cout << "1 Mat  = " << dataBank->numRowSubarray << "x" << dataBank->numColumnSubarray << " Subarrays" << endl; \
-				cout << "Activation - " << dataBank->numActiveSubarrayPerColumn << "x" << dataBank->numActiveSubarrayPerRow << " Subarrays" << endl; \
-				cout << "Mux Degree - " << dataBank->muxSenseAmp << " x " << dataBank->muxOutputLev1 << " x " << dataBank->muxOutputLev2 << endl; \
-				cout << "ERROR: DATA capacity violation. Shouldn't happen" << endl; \
+				std::cout << "1 Bank = " << dataBank->numRowMat << "x" << dataBank->numColumnMat << " Mats" << std::endl; \
+				std::cout << "Activation - " << dataBank->numActiveMatPerColumn << "x" << dataBank->numActiveMatPerRow << " Mats" << std::endl; \
+				std::cout << "1 Mat  = " << dataBank->numRowSubarray << "x" << dataBank->numColumnSubarray << " Subarrays" << std::endl; \
+				std::cout << "Activation - " << dataBank->numActiveSubarrayPerColumn << "x" << dataBank->numActiveSubarrayPerRow << " Subarrays" << std::endl; \
+				std::cout << "Mux Degree - " << dataBank->muxSenseAmp << " x " << dataBank->muxOutputLev1 << " x " << dataBank->muxOutputLev2 << std::endl; \
+				std::cout << "ERROR: DATA capacity violation. Shouldn't happen" << std::endl; \
 				exit(-1); \
 			} \
 }
@@ -189,12 +189,12 @@
 #define VERIFY_TAG_CAPACITY { \
 	if ((long long)tagBank->mat.subarray.numColumn * tagBank->mat.subarray.numRow * tagBank->numColumnMat * \
 			tagBank->numRowMat * tagBank->numColumnSubarray * tagBank->numRowSubarray != capacity) { \
-				cout << "1 Bank = " << tagBank->numRowMat << "x" << tagBank->numColumnMat << " Mats" << endl; \
-				cout << "Activation - " << tagBank->numActiveMatPerColumn << "x" << tagBank->numActiveMatPerRow << " Mats" << endl; \
-				cout << "1 Mat  = " << tagBank->numRowSubarray << "x" << tagBank->numColumnSubarray << " Subarrays" << endl; \
-				cout << "Activation - " << tagBank->numActiveSubarrayPerColumn << "x" << tagBank->numActiveSubarrayPerRow << " Subarrays" << endl; \
-				cout << "Mux Degree - " << tagBank->muxSenseAmp << " x " << tagBank->muxOutputLev1 << " x " << tagBank->muxOutputLev2 << endl; \
-				cout << "ERROR: DATA capacity violation. Shouldn't happen" << endl; \
+				std::cout << "1 Bank = " << tagBank->numRowMat << "x" << tagBank->numColumnMat << " Mats" << std::endl; \
+				std::cout << "Activation - " << tagBank->numActiveMatPerColumn << "x" << tagBank->numActiveMatPerRow << " Mats" << std::endl; \
+				std::cout << "1 Mat  = " << tagBank->numRowSubarray << "x" << tagBank->numColumnSubarray << " Subarrays" << std::endl; \
+				std::cout << "Activation - " << tagBank->numActiveSubarrayPerColumn << "x" << tagBank->numActiveSubarrayPerRow << " Subarrays" << std::endl; \
+				std::cout << "Mux Degree - " << tagBank->muxSenseAmp << " x " << tagBank->muxOutputLev1 << " x " << tagBank->muxOutputLev2 << std::endl; \
+				std::cout << "ERROR: DATA capacity violation. Shouldn't happen" << std::endl; \
 				exit(-1); \
 			} \
 }

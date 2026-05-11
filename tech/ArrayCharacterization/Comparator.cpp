@@ -42,7 +42,7 @@
 
 void Comparator::Initialize(int _numTagBits, double _capLoad){
 	if (initialized)
-		cout << "[Comparator] Warning: Already initialized!" << endl;
+		std::cout << "[Comparator] Warning: Already initialized!" << std::endl;
 
 	numTagBits = _numTagBits / 4;  /* Assuming there are 4 quarter comparators. input tagbits is already a multiple of 4 */
 	capLoad = _capLoad;
@@ -62,7 +62,7 @@ void Comparator::Initialize(int _numTagBits, double _capLoad){
 
 void Comparator::CalculateArea() {
 	if (!initialized) {
-		cout << "[Comparator] Error: Require initialization first!" << endl;
+		std::cout << "[Comparator] Error: Require initialization first!" << std::endl;
 	} else {
 		double totalHeight = 0;
 		double totalWidth = 0;
@@ -83,7 +83,7 @@ void Comparator::CalculateArea() {
 
 void Comparator::CalculateRC() {
 	if (!initialized) {
-		cout << "[Comparator] Error: Require initialization first!" << endl;
+		std::cout << "[Comparator] Error: Require initialization first!" << std::endl;
 	} else {
 		for (int i = 0; i < COMPARATOR_INV_CHAIN_LEN; i++) {
                     CalculateGateCapacitance(INV, 1, widthNMOSInv[i], widthPMOSInv[i], gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech, &(capInput[i]), &(capOutput[i]));
@@ -99,7 +99,7 @@ void Comparator::CalculateRC() {
 
 void Comparator::CalculateLatency(double _rampInput) {
 	if (!initialized) {
-		cout << "[Comparator] Error: Require initialization first!" << endl;
+		std::cout << "[Comparator] Error: Require initialization first!" << std::endl;
 	} else {
 		rampInput = _rampInput;
 		double resPullDown;
@@ -127,7 +127,7 @@ void Comparator::CalculateLatency(double _rampInput) {
 
 void Comparator::CalculatePower() {
 	if (!initialized) {
-		cout << "[Comparator] Error: Require initialization first!" << endl;
+		std::cout << "[Comparator] Error: Require initialization first!" << std::endl;
 	} else {
 		/* Leakage power */
 		leakage = 0;
@@ -152,6 +152,6 @@ void Comparator::CalculatePower() {
 }
 
 void Comparator::PrintProperty() {
-	cout << "Comparator Properties:" << endl;
+	std::cout << "Comparator Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }

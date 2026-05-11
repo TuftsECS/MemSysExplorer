@@ -53,8 +53,8 @@ public:
 	void print();
 	void printAsCache(Result& tagBank, CacheAccessMode cacheAccessMode);
 	void reset();
-	void printToYamlFile(ofstream& outputFile);
-	void printAsCacheToYamlFile(Result& tagBank, CacheAccessMode cacheAccessMode, ofstream& outputFile);
+	void printToYamlFile(std::ofstream& outputFile);
+	void printAsCacheToYamlFile(Result& tagBank, CacheAccessMode cacheAccessMode, std::ofstream& outputFile);
 	YAML::Node toYamlNode();
 	YAML::Node toYamlNodeAsCache(Result& tagBank, CacheAccessMode cacheAccessMode);
 	void compareAndUpdate(Result& newResult);

@@ -38,6 +38,6 @@
 #include "Bank.h"
 
 void Bank::PrintProperty() {
-	cout << "Bank Properties:" << endl;
+	std::cout << "Bank Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }

@@ -43,7 +43,7 @@
 void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _outputCap, double _outputRes,
 		bool _inv, BufferDesignTarget _areaOptimizationLevel, double _minDriverCurrent) {
 	if (initialized)
-		cout << "[Output Driver] Warning: Already initialized!" << endl;
+		std::cout << "[Output Driver] Warning: Already initialized!" << std::endl;
 
 	logicEffort = _logicEffort;
 	inputCap = _inputCap;
@@ -72,7 +72,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 
 		if (optimalNumStage > MAX_INV_CHAIN_LEN) {/* Exceed maximum stages */
 			if (WARNING)
-				cout << "[WARNING] Exceed maximum inverter chain length!" << endl;
+				std::cout << "[WARNING] Exceed maximum inverter chain length!" << std::endl;
 			optimalNumStage = MAX_INV_CHAIN_LEN;
 		}
 
@@ -86,7 +86,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 
 		if (widthNMOS[optimalNumStage-1] > gInputParameter.maxNmosSize * gTech.featureSize) {
 			if (WARNING)
-				cout << "[WARNING] Exceed maximum NMOS size!" << endl;
+				std::cout << "[WARNING] Exceed maximum NMOS size!" << std::endl;
 			widthNMOS[optimalNumStage-1] = gInputParameter.maxNmosSize * gTech.featureSize;
 			/* re-Calculate the logic effort */
 			double capLastStage = CalculateGateCap((1 + gTech.pnSizeRatio) * gInputParameter.maxNmosSize * gTech.featureSize, gTech);
@@ -104,7 +104,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 				widthNMOS[i] = widthNMOS[i+1] / f;
 				if (widthNMOS[i] < MIN_NMOS_SIZE * gTech.featureSize) {
 					if (WARNING)
-						cout << "[WARNING] Exceed minimum NMOS size!" << endl;
+						std::cout << "[WARNING] Exceed minimum NMOS size!" << std::endl;
 					widthNMOS[i] = MIN_NMOS_SIZE * gTech.featureSize;
 				}
 				widthPMOS[i] = widthNMOS[i] * gTech.pnSizeRatio;
@@ -122,7 +122,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 
 		if (optimalNumStage > MAX_INV_CHAIN_LEN) {/* Exceed maximum stages */
 			if (WARNING)
-				cout << "[WARNING] Exceed maximum inverter chain length!" << endl;
+				std::cout << "[WARNING] Exceed maximum inverter chain length!" << std::endl;
 			optimalNumStage = MAX_INV_CHAIN_LEN;
 		}
 
@@ -137,7 +137,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 			widthNMOS[i] = widthNMOS[i+1] / f;
 			if (widthNMOS[i] < MIN_NMOS_SIZE * gTech.featureSize) {
 				if (WARNING)
-					cout << "[WARNING] Exceed minimum NMOS size!" << endl;
+					std::cout << "[WARNING] Exceed minimum NMOS size!" << std::endl;
 				widthNMOS[i] = MIN_NMOS_SIZE * gTech.featureSize;
 			}
 			widthPMOS[i] = widthNMOS[i] * gTech.pnSizeRatio;
@@ -161,7 +161,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 
 void OutputDriver::CalculateArea() {
 	if (!initialized) {
-		cout << "[Output Driver] Error: Require initialization first!" << endl;
+		std::cout << "[Output Driver] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		height = width = area = invalid_value;
 	} else {
@@ -181,7 +181,7 @@ void OutputDriver::CalculateArea() {
 
 void OutputDriver::CalculateRC() {
 	if (!initialized) {
-		cout << "[Output Driver] Error: Require initialization first!" << endl;
+		std::cout << "[Output Driver] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		;  // nothing to do if invalid
 	} else if (numStage == 0) {
@@ -195,7 +195,7 @@ void OutputDriver::CalculateRC() {
 
 void OutputDriver::CalculateLatency(double _rampInput) {
 	if (!initialized) {
-		cout << "[Output Driver] Error: Require initialization first!" << endl;
+		std::cout << "[Output Driver] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readLatency = writeLatency = invalid_value;
 	} else {
@@ -230,7 +230,7 @@ void OutputDriver::CalculateLatency(double _rampInput) {
 
 void OutputDriver::CalculatePower() {
 	if (!initialized) {
-		cout << "[Output Driver] Error: Require initialization first!" << endl;
+		std::cout << "[Output Driver] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readDynamicEnergy = writeDynamicEnergy = leakage = invalid_value;
 	} else {
@@ -254,7 +254,7 @@ void OutputDriver::CalculatePower() {
 }
 
 void OutputDriver::PrintProperty() {
-	cout << "Output Driver Properties:" << endl;
+	std::cout << "Output Driver Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
-	cout << "Number of inverter stage: " << numStage << endl;
+	std::cout << "Number of inverter stage: " << numStage << std::endl;
 }

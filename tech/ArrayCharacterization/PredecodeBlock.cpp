@@ -92,11 +92,11 @@ PredecodeBlock::PredecodeBlock(const PredecodeBlock& obj)
 
 void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _resLoad) {
 	if (initialized)
-		cout << "[Predecoder Block] Warning: Already initialized!" << endl;
+		std::cout << "[Predecoder Block] Warning: Already initialized!" << std::endl;
 
 	numAddressBit =_numAddressBit;
 	if (numAddressBit > 27 ) {
-		cout << "[Predecoder Block] Error: Invalid number of address bits" <<endl;
+		std::cout << "[Predecoder Block] Error: Invalid number of address bits" << std::endl;
 		exit(-1);
 	} else if (numAddressBit == 0) {
 		height = width = area = 0;
@@ -271,7 +271,7 @@ void PredecodeBlock::Initialize(int _numAddressBit, double _capLoad, double _res
 
 void PredecodeBlock::CalculateArea() {
 	if (!initialized) {
-		cout << "[Predecoder Block] Error: Require initialization first!" << endl;
+		std::cout << "[Predecoder Block] Error: Require initialization first!" << std::endl;
 	} else if (numAddressBit == 0) {
 		height = width = area = 0;
 	} else {
@@ -279,20 +279,20 @@ void PredecodeBlock::CalculateArea() {
 		hTemp = wTemp = 0;
 		if (basicDecoderA1 != nullptr) {
 			basicDecoderA1->CalculateArea();
-			wTemp = max(wTemp, basicDecoderA1->width);
+			wTemp = std::max(wTemp, basicDecoderA1->width);
 			hTemp += numBasicDecoderA1 * basicDecoderA1->height;
 			if (basicDecoderA2 != nullptr) {
 				basicDecoderA2->CalculateArea();
-				wTemp = max(wTemp, basicDecoderA2->width);
+				wTemp = std::max(wTemp, basicDecoderA2->width);
 				hTemp += numBasicDecoderA2 * basicDecoderA2->height;
 			}
 			if (basicDecoderB != nullptr) {
 				basicDecoderB->CalculateArea();
-				wTemp = max(wTemp, basicDecoderB->width);
+				wTemp = std::max(wTemp, basicDecoderB->width);
 				hTemp += numNandInputStage1B * basicDecoderB->height;
 				if (basicDecoderC != nullptr) {
 					basicDecoderC->CalculateArea();
-					wTemp = max(wTemp, basicDecoderC->width);
+					wTemp = std::max(wTemp, basicDecoderC->width);
 					hTemp += numNandInputStage1C * basicDecoderC->height;
 				}
 			}
@@ -302,33 +302,33 @@ void PredecodeBlock::CalculateArea() {
 		hTemp = wTemp = 0;
 		if (rowDecoderStage1A != nullptr) {
 			rowDecoderStage1A->CalculateArea();
-			wTemp = max(wTemp, rowDecoderStage1A->width);
+			wTemp = std::max(wTemp, rowDecoderStage1A->width);
 			hTemp += rowDecoderStage1A->height;
 			if (rowDecoderStage1B != nullptr) {
 				rowDecoderStage1B->CalculateArea();
-				wTemp = max(wTemp, rowDecoderStage1B->width);
+				wTemp = std::max(wTemp, rowDecoderStage1B->width);
 				hTemp += rowDecoderStage1B->height;
 				if (rowDecoderStage1C != nullptr) {
 					rowDecoderStage1C->CalculateArea();
-					wTemp = max(wTemp, rowDecoderStage1C->width);
+					wTemp = std::max(wTemp, rowDecoderStage1C->width);
 					hTemp += rowDecoderStage1C->height;
 				}
 			}
 			if (rowDecoderStage2 != nullptr) {
 				rowDecoderStage2->CalculateArea();
 				wTemp += rowDecoderStage2->width;
-				hTemp = max(hTemp, rowDecoderStage2->height);
+				hTemp = std::max(hTemp, rowDecoderStage2->height);
 			}
 		}
 		width += wTemp;
-		height = max(height, hTemp);
+		height = std::max(height, hTemp);
 		area = width * height;
 	}
 }
 
 void PredecodeBlock::CalculateRC() {
 	if (!initialized) {
-		cout << "[Predecoder Block] Error: Require initialization first!" << endl;
+		std::cout << "[Predecoder Block] Error: Require initialization first!" << std::endl;
 	} else if (numAddressBit > 0) {
 		if (basicDecoderA1 != nullptr) {
 			basicDecoderA1->CalculateRC();
@@ -347,7 +347,7 @@ void PredecodeBlock::CalculateRC() {
 
 void PredecodeBlock::CalculateLatency(double _rampInput) {
 	if (!initialized) {
-		cout << "[Predecoder Block] Error: Require initialization first!" << endl;
+		std::cout << "[Predecoder Block] Error: Require initialization first!" << std::endl;
 	} else if (numAddressBit == 0) {
 		readLatency = writeLatency = 0;
 		rampOutput = _rampInput;
@@ -373,8 +373,8 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 				}
 			}
 		}
-		rampOutput = max(rampOutput, maxRampOutput);
-		readLatency = max(readLatency, delayA1);
+		rampOutput = std::max(rampOutput, maxRampOutput);
+		readLatency = std::max(readLatency, delayA1);
 		maxRampOutput = 0;
 		if (basicDecoderA2 != nullptr) {
 			basicDecoderA2->CalculateLatency(rampInput);
@@ -388,8 +388,8 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 				maxRampOutput = rowDecoderStage2->rampOutput;
 			}
 		}
-		rampOutput = max(rampOutput, maxRampOutput);
-		readLatency = max(readLatency, delayA2);
+		rampOutput = std::max(rampOutput, maxRampOutput);
+		readLatency = std::max(readLatency, delayA2);
 		maxRampOutput = 0;
 		if (basicDecoderB !=nullptr) {
 			basicDecoderB->CalculateLatency(rampInput);
@@ -400,8 +400,8 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 			delayB += rowDecoderStage2->readLatency;
 			maxRampOutput = rowDecoderStage2->rampOutput;
 		}
-		rampOutput = max(rampOutput, maxRampOutput);
-		readLatency = max(readLatency, delayB);
+		rampOutput = std::max(rampOutput, maxRampOutput);
+		readLatency = std::max(readLatency, delayB);
 		maxRampOutput = 0;
 		if (basicDecoderC !=nullptr) {
 			basicDecoderC->CalculateLatency(rampInput);
@@ -412,8 +412,8 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 			delayC += rowDecoderStage2->readLatency;
 			maxRampOutput = rowDecoderStage2->rampOutput;
 		}
-		rampOutput = max(rampOutput, maxRampOutput);
-		readLatency = max(readLatency, delayC);
+		rampOutput = std::max(rampOutput, maxRampOutput);
+		readLatency = std::max(readLatency, delayC);
 		writeLatency = readLatency;
 	}
 }
@@ -421,7 +421,7 @@ void PredecodeBlock::CalculateLatency(double _rampInput) {
 
 void PredecodeBlock::CalculatePower() {
 	if (!initialized) {
-		cout << "[Predecoder Block] Error: Require initialization first!" << endl;
+		std::cout << "[Predecoder Block] Error: Require initialization first!" << std::endl;
 	} else if (numAddressBit == 0) {
 		leakage = readDynamicEnergy = writeDynamicEnergy = 0;
 	} else {
@@ -470,7 +470,7 @@ void PredecodeBlock::CalculatePower() {
 }
 
 void PredecodeBlock::PrintProperty() {
-	cout << "Predecoding Block Properties:" << endl;
+	std::cout << "Predecoding Block Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }
 

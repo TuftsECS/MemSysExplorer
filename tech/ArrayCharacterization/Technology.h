@@ -41,8 +41,6 @@
 #include <iostream>
 #include "typedef.h"
 
-using namespace std;
-
 class Technology {
 public:
 	/* Functions */

@@ -41,7 +41,7 @@
 
 void Precharger::Initialize(double _voltagePrecharge, int _numColumn, double _capBitline, double _resBitline){
 	if (initialized)
-		cout << "[Precharger] Warning: Already initialized!" << endl;
+		std::cout << "[Precharger] Warning: Already initialized!" << std::endl;
 
 	voltagePrecharge = _voltagePrecharge;
 	numColumn  = _numColumn;
@@ -67,7 +67,7 @@ void Precharger::Initialize(double _voltagePrecharge, int _numColumn, double _ca
 
 void Precharger::CalculateArea() {
 	if (!initialized) {
-		cout << "[Precharger] Error: Require initialization first!" << endl;
+		std::cout << "[Precharger] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculateArea();
 		double hBitlinePrechareger, wBitlinePrechareger;
@@ -89,7 +89,7 @@ void Precharger::CalculateArea() {
 
 void Precharger::CalculateRC() {
 	if (!initialized) {
-		cout << "[Precharger] Error: Require initialization first!" << endl;
+		std::cout << "[Precharger] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculateRC();
 		//more accurate RC model would include drain Capacitances of Precharger and Equalization PMOS transistors
@@ -98,7 +98,7 @@ void Precharger::CalculateRC() {
 
 void Precharger::CalculateLatency(double _rampInput){
 	if (!initialized) {
-		cout << "[Precharger] Error: Require initialization first!" << endl;
+		std::cout << "[Precharger] Error: Require initialization first!" << std::endl;
 	} else {
 		rampInput= _rampInput;
 		outputDriver.CalculateLatency(rampInput);
@@ -127,7 +127,7 @@ void Precharger::CalculateLatency(double _rampInput){
 
 void Precharger::CalculatePower() {
 	if (!initialized) {
-		cout << "[Precharger] Error: Require initialization first!" << endl;
+		std::cout << "[Precharger] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculatePower();
 		/* Leakage power */
@@ -146,6 +146,6 @@ void Precharger::CalculatePower() {
 }
 
 void Precharger::PrintProperty() {
-	cout << "Precharger Properties:" << endl;
+	std::cout << "Precharger Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }

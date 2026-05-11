@@ -56,7 +56,7 @@ void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterTy
 	isLowSwing = _isLowSwing;
 
 	if (wireRepeaterType != repeated_none && isLowSwing) {
-		cout << "[Wire] Error: Low Swing is not supported for repeated wires!" << endl;
+		std::cout << "[Wire] Error: Low Swing is not supported for repeated wires!" << std::endl;
 		exit(-1);
 	}
 
@@ -512,7 +512,7 @@ void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterTy
 
 void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* dynamicEnergy, double* leakagePower) {
 	if (!initialized) {
-		cout << "[Wire] Error: Require initialization first!" << endl;
+		std::cout << "[Wire] Error: Require initialization first!" << std::endl;
 	} else {
 		if (isLowSwing) {
 			/* When it is low-swing */
@@ -648,7 +648,7 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 					*(leakagePower) += senseAmp.leakage;
 
 			} else {
-				cout<<"Error: Low Swing Wires with Repeaters is not supported in this version!" <<endl;
+				std::cout<<"Error: Low Swing Wires with Repeaters is not supported in this version!" << std::endl;
 				exit(-1);
 			}
 		} else {
@@ -765,19 +765,19 @@ double Wire::getRepeatedWireUnitLeakage() {
 
 void Wire::PrintProperty() {
 	if (wireRepeaterType == repeated_none) {
-		cout << "Wire Type: passive (without repeaters)";
+		std::cout << "Wire Type: passive (without repeaters)";
 		if (isLowSwing) {
-			cout << " Low Swing";
+			std::cout << " Low Swing";
 		}
-		cout << endl;
-		cout << "Wire Resistance: " << resWirePerUnit / 1e6 << "ohm/um" << endl;
-		cout << "Wire Capacitance: " << capWirePerUnit / 1e6 << "F/um" << endl;
+		std::cout << std::endl;
+		std::cout << "Wire Resistance: " << resWirePerUnit / 1e6 << "ohm/um" << std::endl;
+		std::cout << "Wire Capacitance: " << capWirePerUnit / 1e6 << "F/um" << std::endl;
 	} else {
-		cout << "Wire type: active (with repeaters)" << endl;
-		cout << "Repeater Size: " << repeaterSize << endl;
-		cout << "Repeater Spacing: " << repeaterSpacing * 1e3 << "mm" <<endl;
-		cout << "Delay: " << getRepeatedWireUnitDelay() * 1e6 << "ns/mm" <<endl;
-		cout << "Dynamic Energy: " << getRepeatedWireUnitDynamicEnergy() * 1e6 << "nJ/mm" <<endl;
-	    cout << "Subtheshold Leakage Power: " << getRepeatedWireUnitLeakage() << "mW/mm" << endl;
+		std::cout << "Wire type: active (with repeaters)" << std::endl;
+		std::cout << "Repeater Size: " << repeaterSize << std::endl;
+		std::cout << "Repeater Spacing: " << repeaterSpacing * 1e3 << "mm" << std::endl;
+		std::cout << "Delay: " << getRepeatedWireUnitDelay() * 1e6 << "ns/mm" << std::endl;
+		std::cout << "Dynamic Energy: " << getRepeatedWireUnitDynamicEnergy() * 1e6 << "nJ/mm" << std::endl;
+	    std::cout << "Subtheshold Leakage Power: " << getRepeatedWireUnitLeakage() << "mW/mm" << std::endl;
 	}
 }

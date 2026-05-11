@@ -46,8 +46,6 @@
 #include "constant.h"
 #include "typedef.h"
 
-using namespace std;
-
 class MemCell {
 public:
 	/* Functions */

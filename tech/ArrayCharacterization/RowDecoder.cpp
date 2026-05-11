@@ -42,7 +42,7 @@
 void RowDecoder::Initialize(int _numRow, double _capLoad, double _resLoad,
 		bool _multipleRowPerSet, BufferDesignTarget _areaOptimizationLevel, double _minDriverCurrent) {
 	if (initialized)
-		cout << "[Row Decoder] Warning: Already initialized!" << endl;
+		std::cout << "[Row Decoder] Warning: Already initialized!" << std::endl;
 
 	numRow = _numRow;
 	capLoad = _capLoad;
@@ -95,7 +95,7 @@ void RowDecoder::Initialize(int _numRow, double _capLoad, double _resLoad,
 
 void RowDecoder::CalculateArea() {
 	if (!initialized) {
-		cout << "[Row Decoder Area] Error: Require initialization first!" << endl;
+		std::cout << "[Row Decoder Area] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculateArea();
 		if (numNandInput == 0) {	/* no circuit needed, use predecoder outputs directly */
@@ -114,7 +114,7 @@ void RowDecoder::CalculateArea() {
 
 void RowDecoder::CalculateRC() {
 	if (!initialized) {
-		cout << "[Row Decoder RC] Error: Require initialization first!" << endl;
+		std::cout << "[Row Decoder RC] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculateRC();
 		if (numNandInput == 0) {	/* no circuit needed, use predecoder outputs directly */
@@ -127,7 +127,7 @@ void RowDecoder::CalculateRC() {
 
 void RowDecoder::CalculateLatency(double _rampInput) {
 	if (!initialized) {
-		cout << "[Row Decoder Latency] Error: Require initialization first!" << endl;
+		std::cout << "[Row Decoder Latency] Error: Require initialization first!" << std::endl;
 	} else {
 		if (numNandInput == 0) {	/* no circuit needed, use predecoder outputs directly */
 			outputDriver.CalculateLatency(_rampInput);
@@ -160,7 +160,7 @@ void RowDecoder::CalculateLatency(double _rampInput) {
 
 void RowDecoder::CalculatePower() {
 	if (!initialized) {
-		cout << "[Row Decoder Power] Error: Require initialization first!" << endl;
+		std::cout << "[Row Decoder Power] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculatePower();
 		leakage = outputDriver.leakage;
@@ -187,6 +187,6 @@ void RowDecoder::CalculatePower() {
 }
 
 void RowDecoder::PrintProperty() {
-	cout << "Row Decoder Properties:" << endl;
+	std::cout << "Row Decoder Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }

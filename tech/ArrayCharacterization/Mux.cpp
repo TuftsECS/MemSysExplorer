@@ -41,7 +41,7 @@
 
 void Mux::Initialize(int _numInput, long long _numMux, double _capLoad, double _capInputNextStage, double _minDriverCurrent){
 	if (initialized)
-		cout << "[Mux] Warning: Already initialized!" << endl;
+		std::cout << "[Mux] Warning: Already initialized!" << std::endl;
 
 	numInput = _numInput;
 	numMux = _numMux;
@@ -70,7 +70,7 @@ void Mux::Initialize(int _numInput, long long _numMux, double _capLoad, double _
 
 void Mux::CalculateArea(){
 	if (!initialized) {
-		cout << "[Mux] Error: Require initialization first!" << endl;
+		std::cout << "[Mux] Error: Require initialization first!" << std::endl;
 	} else {
 		if ((numInput > 1) && (numMux > 0 )) {
 			double h,w;
@@ -86,7 +86,7 @@ void Mux::CalculateArea(){
 
 void Mux::CalculateRC() {
 	if (!initialized) {
-		cout << "[Mux] Error: Require initialization first!" << endl;
+		std::cout << "[Mux] Error: Require initialization first!" << std::endl;
 	} else {
 		if ((numInput > 1) && (numMux > 0 )) {
 			capNMOSPassTransistor = CalculateDrainCap(widthNMOSPassTransistor, NMOS, ((gTech.featureSize <= 14*1e-9)? 2:1)*gTech.featureSize*40, gTech);
@@ -102,7 +102,7 @@ void Mux::CalculateRC() {
 
 void Mux::CalculateLatency(double _rampInput) {  //rampInput is actually useless in Mux module
 	if (!initialized) {
-		cout << "[Mux] Error: Require initialization first!" << endl;
+		std::cout << "[Mux] Error: Require initialization first!" << std::endl;
 	} else {
 		if ((numInput > 1) && (numMux > 0 )) {
 			rampInput = _rampInput;
@@ -118,7 +118,7 @@ void Mux::CalculateLatency(double _rampInput) {  //rampInput is actually useless
 
 void Mux::CalculatePower() {
 	if (!initialized) {
-		cout << "[Mux] Error: Require initialization first!" << endl;
+		std::cout << "[Mux] Error: Require initialization first!" << std::endl;
 	} else {
 		if ((numInput > 1) && (numMux > 0 )) {
 			leakage = 0; //TO-DO
@@ -132,6 +132,6 @@ void Mux::CalculatePower() {
 }
 
 void Mux::PrintProperty() {
-	cout << "Mux Properties:" << endl;
+	std::cout << "Mux Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }

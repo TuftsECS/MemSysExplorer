@@ -41,7 +41,7 @@
 
 void SenseAmp::Initialize(long long _numColumn, bool _currentSense, double _senseVoltage, double _pitchSenseAmp, bool _mlc, double _numLvl, int _numF) {
 	if (initialized)
-		cout << "[Sense Amp] Warning: Already initialized!" << endl;
+		std::cout << "[Sense Amp] Warning: Already initialized!" << std::endl;
 
 	numColumn = _numColumn;
 	currentSense = _currentSense;
@@ -61,7 +61,7 @@ void SenseAmp::Initialize(long long _numColumn, bool _currentSense, double _sens
 
 void SenseAmp::CalculateArea() {
 	if (!initialized) {
-		cout << "[Sense Amp] Error: Require initialization first!" << endl;
+		std::cout << "[Sense Amp] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		height = width = area = invalid_value;
 	} else {
@@ -135,7 +135,7 @@ void SenseAmp::CalculateArea() {
 
 void SenseAmp::CalculateRC() {
 	if (!initialized) {
-		cout << "[Sense Amp] Error: Require initialization first!" << endl;
+		std::cout << "[Sense Amp] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readLatency = writeLatency = invalid_value;
 	} else {
@@ -167,7 +167,7 @@ void SenseAmp::CalculateRC() {
 
 void SenseAmp::CalculateLatency() {
 	if (!initialized) {
-		cout << "[Sense Amp] Error: Require initialization first!" << endl;
+		std::cout << "[Sense Amp] Error: Require initialization first!" << std::endl;
 	} else {
 		readLatency = writeLatency = 0;
 		
@@ -233,7 +233,7 @@ void SenseAmp::CalculateLatency() {
 
 void SenseAmp::CalculatePower() {
 	if (!initialized) {
-		cout << "[Sense Amp] Error: Require initialization first!" << endl;
+		std::cout << "[Sense Amp] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
 		readDynamicEnergy = writeDynamicEnergy = leakage = invalid_value;
 	} else {
@@ -294,6 +294,6 @@ void SenseAmp::CalculatePower() {
 }
 
 void SenseAmp::PrintProperty() {
-	cout << "Sense Amplifier Properties:" << endl;
+	std::cout << "Sense Amplifier Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }

@@ -183,7 +183,7 @@ void CalculateGateCapacitance(
 			heightDrainP = widthPMOS;
 		} else {	/* Folding */
 			if (maxWidthPMOS < 3 * tech.featureSize) {
-				cout << "Error: Unable to do PMOS folding because PMOS size limitation is less than 3F!" <<endl;
+				std::cout << "Error: Unable to do PMOS folding because PMOS size limitation is less than 3F!" << std::endl;
 				exit(-1);
 			}
 			numFoldedPMOS = (int)(ceil(widthPMOS / (maxWidthPMOS - 3 * tech.featureSize)));	/* 3F for folding overhead */
@@ -201,7 +201,7 @@ void CalculateGateCapacitance(
 			heightDrainN = widthNMOS;
 		} else {	/* Folding */
 			if (maxWidthNMOS < 3 * tech.featureSize) {
-				cout << "Error: Unable to do NMOS folding because NMOS size limitation is less than 3F!" <<endl;
+				std::cout << "Error: Unable to do NMOS folding because NMOS size limitation is less than 3F!" << std::endl;
 				exit(-1);
 			}
 			numFoldedNMOS = (int)(ceil(widthNMOS / (maxWidthNMOS - 3 * tech.featureSize)));	/* 3F for folding overhead */
@@ -286,7 +286,7 @@ double CalculateGateLeakage(
 		double temperature, Technology tech) {
 	int tempIndex = (int)temperature - 300;
 	if ((tempIndex > 100) || (tempIndex < 0)) {
-		cout<<"Error: Temperature is out of range"<<endl;
+		std::cout<<"Error: Temperature is out of range"<< std::endl;
 		exit(-1);
 	}
 	double* leakN = tech.currentOffNmos;
@@ -322,7 +322,7 @@ double CalculateOnResistance(double width, int type, double temperature, Technol
 	double r;
 	int tempIndex = (int)temperature - 300;
 	if ((tempIndex > 100) || (tempIndex < 0)) {
-		cout<<"Error: Temperature is out of range"<<endl;
+		std::cout<<"Error: Temperature is out of range"<< std::endl;
 		exit(-1);
 	}
 	if (type == NMOS)

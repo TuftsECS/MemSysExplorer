@@ -48,7 +48,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // Memory Cell Input File
         if (config["MemoryCellInputFile"]) {
-            fileMemCell = config["MemoryCellInputFile"].as<string>();
+            fileMemCell = config["MemoryCellInputFile"].as<std::string>();
         }
         
         // Process Technology
@@ -66,7 +66,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // Device Roadmap
         if (config["DeviceRoadmap"]) {
-            string roadmap = config["DeviceRoadmap"].as<string>();
+            std::string roadmap = config["DeviceRoadmap"].as<std::string>();
             if (roadmap == "HP")
                 deviceRoadmap = HP;
             else if (roadmap == "LOP")
@@ -76,13 +76,13 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             else if (roadmap == "CNT")
                 deviceRoadmap = CNT;
             else {
-                cout << "Invalid DeviceRoadmap (choose HP/LOP/CNT/IGZO)" << endl;
+                std::cout << "Invalid DeviceRoadmap (choose HP/LOP/CNT/IGZO)" << std::endl;
                 exit(-1);
             }
         }
         
         if (config["DeviceRoadmapW"]) {
-            string roadmap = config["DeviceRoadmapW"].as<string>();
+            std::string roadmap = config["DeviceRoadmapW"].as<std::string>();
             if (roadmap == "HP")
                 deviceRoadmapW = HP;
             else if (roadmap == "LOP")
@@ -92,7 +92,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             else if (roadmap == "CNT")
                 deviceRoadmapW = CNT;
             else {
-                cout << "Invalid DeviceRoadmapW (choose HP/LOP/CNT/IGZO)" << endl;
+                std::cout << "Invalid DeviceRoadmapW (choose HP/LOP/CNT/IGZO)" << std::endl;
                 exit(-1);
             }
         } else if (config["DeviceRoadmap"]) {
@@ -100,7 +100,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         }
         
         if (config["DeviceRoadmapR"]) {
-            string roadmap = config["DeviceRoadmapR"].as<string>();
+            std::string roadmap = config["DeviceRoadmapR"].as<std::string>();
             if (roadmap == "HP")
                 deviceRoadmapR = HP;
             else if (roadmap == "LOP")
@@ -110,7 +110,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             else if (roadmap == "CNT")
                 deviceRoadmapR = CNT;
             else {
-                cout << "Invalid DeviceRoadmapR (choose HP/LOP/CNT/IGZO)" << endl;
+                std::cout << "Invalid DeviceRoadmapR (choose HP/LOP/CNT/IGZO)" << std::endl;
                 exit(-1);
             }
         } else if (config["DeviceRoadmap"]) {
@@ -119,7 +119,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // Design Configuration
         if (config["DesignTarget"]) {
-            string target = config["DesignTarget"].as<string>();
+            std::string target = config["DesignTarget"].as<std::string>();
             if (target == "cache")
                 designTarget = cache;
             else if (target == "RAM") {
@@ -134,7 +134,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         }
         
         if (config["CacheAccessMode"]) {
-            string mode = config["CacheAccessMode"].as<string>();
+            std::string mode = config["CacheAccessMode"].as<std::string>();
             if (mode == "Sequential")
                 cacheAccessMode = sequential_access_mode;
             else if (mode == "Fast")
@@ -148,7 +148,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // Optimization
         if (config["OptimizationTarget"]) {
-            string target = config["OptimizationTarget"].as<string>();
+            std::string target = config["OptimizationTarget"].as<std::string>();
             if (target == "ReadLatency")
                 optimizationTarget = read_latency_optimized;
             else if (target == "WriteLatency")
@@ -170,13 +170,13 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         }
         
         if (config["OutputFilePrefix"])
-            outputFilePrefix = config["OutputFilePrefix"].as<string>();
+            outputFilePrefix = config["OutputFilePrefix"].as<std::string>();
         
         if (config["OutputDirectory"])
-            outputDirectory = config["OutputDirectory"].as<string>();
+            outputDirectory = config["OutputDirectory"].as<std::string>();
         
         if (config["EnablePruning"]) {
-            string enable = config["EnablePruning"].as<string>();
+            std::string enable = config["EnablePruning"].as<std::string>();
             isPruningEnabled = (enable == "Yes" || enable == "yes" || enable == "true");
         }
         
@@ -185,7 +185,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             if (config["Capacity"].IsMap()) {
                 // Nested format
                 long cap = config["Capacity"]["Value"].as<long>();
-                string unit = config["Capacity"]["Unit"].as<string>();
+                std::string unit = config["Capacity"]["Unit"].as<std::string>();
                 if (unit == "B")
                     capacity = cap;
                 else if (unit == "KB")
@@ -213,7 +213,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         if (config["LocalWire"]) {
             YAML::Node localWire = config["LocalWire"];
             if (localWire["Type"]) {
-                string type = localWire["Type"].as<string>();
+                std::string type = localWire["Type"].as<std::string>();
                 if (type == "LocalAggressive") {
                     minLocalWireType = local_aggressive;
                     maxLocalWireType = local_aggressive;
@@ -239,7 +239,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             }
             
             if (localWire["RepeaterType"]) {
-                string type = localWire["RepeaterType"].as<string>();
+                std::string type = localWire["RepeaterType"].as<std::string>();
                 if (type == "RepeatedOpt") {
                     minLocalWireRepeaterType = repeated_opt;
                     maxLocalWireRepeaterType = repeated_opt;
@@ -268,7 +268,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             }
             
             if (localWire["UseLowSwing"]) {
-                string use = localWire["UseLowSwing"].as<string>();
+                std::string use = localWire["UseLowSwing"].as<std::string>();
                 bool useLowSwing = (use == "Yes" || use == "yes" || use == "true");
                 minIsLocalWireLowSwing = useLowSwing;
                 maxIsLocalWireLowSwing = useLowSwing;
@@ -277,7 +277,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // Also support flat local wire fields
         if (config["LocalWireType"]) {
-            string type = config["LocalWireType"].as<string>();
+            std::string type = config["LocalWireType"].as<std::string>();
             if (type == "LocalAggressive") {
                 minLocalWireType = local_aggressive;
                 maxLocalWireType = local_aggressive;
@@ -303,7 +303,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         }
         
         if (config["LocalWireRepeaterType"]) {
-            string type = config["LocalWireRepeaterType"].as<string>();
+            std::string type = config["LocalWireRepeaterType"].as<std::string>();
             if (type == "RepeatedOpt") {
                 minLocalWireRepeaterType = repeated_opt;
                 maxLocalWireRepeaterType = repeated_opt;
@@ -332,7 +332,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         }
         
         if (config["LocalWireUseLowSwing"]) {
-            string use = config["LocalWireUseLowSwing"].as<string>();
+            std::string use = config["LocalWireUseLowSwing"].as<std::string>();
             bool useLowSwing = (use == "Yes" || use == "yes" || use == "true");
             minIsLocalWireLowSwing = useLowSwing;
             maxIsLocalWireLowSwing = useLowSwing;
@@ -342,7 +342,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         if (config["GlobalWire"]) {
             YAML::Node globalWire = config["GlobalWire"];
             if (globalWire["Type"]) {
-                string type = globalWire["Type"].as<string>();
+                std::string type = globalWire["Type"].as<std::string>();
                 if (type == "LocalAggressive") {
                     minGlobalWireType = local_aggressive;
                     maxGlobalWireType = local_aggressive;
@@ -368,7 +368,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             }
             
             if (globalWire["RepeaterType"]) {
-                string type = globalWire["RepeaterType"].as<string>();
+                std::string type = globalWire["RepeaterType"].as<std::string>();
                 if (type == "RepeatedOpt") {
                     minGlobalWireRepeaterType = repeated_opt;
                     maxGlobalWireRepeaterType = repeated_opt;
@@ -397,7 +397,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             }
             
             if (globalWire["UseLowSwing"]) {
-                string use = globalWire["UseLowSwing"].as<string>();
+                std::string use = globalWire["UseLowSwing"].as<std::string>();
                 bool useLowSwing = (use == "Yes" || use == "yes" || use == "true");
                 minIsGlobalWireLowSwing = useLowSwing;
                 maxIsGlobalWireLowSwing = useLowSwing;
@@ -406,7 +406,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // Also support flat global wire fields
         if (config["GlobalWireType"]) {
-            string type = config["GlobalWireType"].as<string>();
+            std::string type = config["GlobalWireType"].as<std::string>();
             if (type == "LocalAggressive") {
                 minGlobalWireType = local_aggressive;
                 maxGlobalWireType = local_aggressive;
@@ -432,7 +432,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         }
         
         if (config["GlobalWireRepeaterType"]) {
-            string type = config["GlobalWireRepeaterType"].as<string>();
+            std::string type = config["GlobalWireRepeaterType"].as<std::string>();
             if (type == "RepeatedOpt") {
                 minGlobalWireRepeaterType = repeated_opt;
                 maxGlobalWireRepeaterType = repeated_opt;
@@ -461,7 +461,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         }
         
         if (config["GlobalWireUseLowSwing"]) {
-            string use = config["GlobalWireUseLowSwing"].as<string>();
+            std::string use = config["GlobalWireUseLowSwing"].as<std::string>();
             bool useLowSwing = (use == "Yes" || use == "yes" || use == "true");
             minIsGlobalWireLowSwing = useLowSwing;
             maxIsGlobalWireLowSwing = useLowSwing;
@@ -469,13 +469,13 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // Routing
         if (config["Routing"]) {
-            string routing = config["Routing"].as<string>();
+            std::string routing = config["Routing"].as<std::string>();
             routingMode = (routing == "H-tree") ? h_tree : non_h_tree;
         }
         
         if (config["InternalSensing"]) {
             if (config["InternalSensing"].IsScalar()) {
-                string sensing = config["InternalSensing"].as<string>();
+                std::string sensing = config["InternalSensing"].as<std::string>();
                 internalSensing = (sensing == "true" || sensing == "True" || sensing == "yes" || sensing == "Yes");
             } else {
                 internalSensing = config["InternalSensing"].as<bool>();
@@ -494,7 +494,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             maxNmosSize = config["MaxNmosSize"].as<double>();
         
         if (config["WriteScheme"]) {
-            string scheme = config["WriteScheme"].as<string>();
+            std::string scheme = config["WriteScheme"].as<std::string>();
             if (scheme == "SetBeforeReset")
                 writeScheme = set_before_reset;
             else if (scheme == "ResetBeforeSet")
@@ -511,7 +511,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // Buffer Design Optimization
         if (config["BufferDesignOptimization"]) {
-            string opt = config["BufferDesignOptimization"].as<string>();
+            std::string opt = config["BufferDesignOptimization"].as<std::string>();
             if (opt == "latency") {
                 minAreaOptimizationLevel = 0;
                 maxAreaOptimizationLevel = 0;
@@ -572,7 +572,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         
         // CACTI Assumption
         if (config["UseCactiAssumption"]) {
-            string use = config["UseCactiAssumption"].as<string>();
+            std::string use = config["UseCactiAssumption"].as<std::string>();
             if (use == "Yes" || use == "yes" || use == "true") {
                 useCactiAssumption = true;
                 minNumActiveMatPerRow = maxNumColumnMat;
@@ -664,80 +664,80 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         }
         
     } catch (const YAML::Exception& e) {
-        cout << "Error parsing YAML file: " << e.what() << endl;
+        std::cout << "Error parsing YAML file: " << e.what() << std::endl;
         exit(-1);
     } catch (const std::exception& e) {
-        cout << "Error reading file: " << e.what() << endl;
+        std::cout << "Error reading file: " << e.what() << std::endl;
         exit(-1);
     }
 }
 
 void InputParameter::PrintInputParameter() {
-	cout << endl << "====================" << endl << "DESIGN SPECIFICATION" << endl << "====================" << endl;
-	cout << "Design Target: ";
+	std::cout << std::endl << "====================" << std::endl << "DESIGN SPECIFICATION" << std::endl << "====================" << std::endl;
+	std::cout << "Design Target: ";
 	switch (designTarget) {
 	case cache:
-		cout << "Cache" << endl;
+		std::cout << "Cache" << std::endl;
 		break;
 	case RAM_chip:
-		cout << "Random Access Memory" << endl;
+		std::cout << "Random Access Memory" << std::endl;
 		break;
 	default:	/* CAM */
-		cout << "Content Addressable Memory" << endl;
+		std::cout << "Content Addressable Memory" << std::endl;
 	}
 
-	cout << "Capacity   : ";
+	std::cout << "Capacity   : ";
 	if (capacity < 1024 * 1024)
-		cout << capacity / 1024 << "KB" << endl;
+		std::cout << capacity / 1024 << "KB" << std::endl;
 	else if (capacity < 1024 * 1024 * 1024)
-		cout << capacity / 1024 / 1024 << "MB" << endl;
+		std::cout << capacity / 1024 / 1024 << "MB" << std::endl;
 	else
-		cout << capacity / 1024 / 1024 / 1024 << "GB" << endl;
+		std::cout << capacity / 1024 / 1024 / 1024 << "GB" << std::endl;
 
 	if (designTarget == cache) {
-		cout << "Cache Line Size: " << wordWidth / 8 << "Bytes" << endl;
-		cout << "Cache Associativity: " << associativity << " Ways" << endl;
+		std::cout << "Cache Line Size: " << wordWidth / 8 << "Bytes" << std::endl;
+		std::cout << "Cache Associativity: " << associativity << " Ways" << std::endl;
 	} else {
-		cout << "Data Width : " << wordWidth << "Bits";
+		std::cout << "Data Width : " << wordWidth << "Bits";
 		if (wordWidth % 8 == 0)
-			cout << " (" << wordWidth / 8 << "Bytes)" << endl;
+			std::cout << " (" << wordWidth / 8 << "Bytes)" << std::endl;
 		else
-			cout << endl;
+			std::cout << std::endl;
 	}
 	if (designTarget == RAM_chip && (gCell.memCellType == SLCNAND || gCell.memCellType == MLCNAND)) {
-		cout << "Page Size  : " << pageSize / 8 << "Bytes" << endl;
-		cout << "Block Size : " << flashBlockSize / 8 / 1024 << "KB" << endl;
+		std::cout << "Page Size  : " << pageSize / 8 << "Bytes" << std::endl;
+		std::cout << "Block Size : " << flashBlockSize / 8 / 1024 << "KB" << std::endl;
 	}
 	// TO-DO: tedious work here!!!
 
 	if (optimizationTarget == full_exploration) {
-		cout << endl << "Full design space exploration ... might take hours" << endl;
+		std::cout << std::endl << "Full design space exploration ... might take hours" << std::endl;
 	} else {
-		cout << endl << "Searching for the best solution that is optimized for ";
+		std::cout << std::endl << "Searching for the best solution that is optimized for ";
 		switch (optimizationTarget) {
 		case read_latency_optimized:
-			cout << "read latency ..." << endl;
+			std::cout << "read latency ..." << std::endl;
 			break;
 		case write_latency_optimized:
-			cout << "write latency ..." << endl;
+			std::cout << "write latency ..." << std::endl;
 			break;
 		case read_energy_optimized:
-			cout << "read energy ..." << endl;
+			std::cout << "read energy ..." << std::endl;
 			break;
 		case write_energy_optimized:
-			cout << "write energy ..." << endl;
+			std::cout << "write energy ..." << std::endl;
 			break;
 		case read_edp_optimized:
-			cout << "read energy-delay-product ..." << endl;
+			std::cout << "read energy-delay-product ..." << std::endl;
 			break;
 		case write_edp_optimized:
-			cout << "write energy-delay-product ..." << endl;
+			std::cout << "write energy-delay-product ..." << std::endl;
 			break;
 		case leakage_optimized:
-			cout << "leakage power ..." << endl;
+			std::cout << "leakage power ..." << std::endl;
 			break;
 		default:	/* area */
-			cout << "area ..." << endl;
+			std::cout << "area ..." << std::endl;
 		}
 	}
 }

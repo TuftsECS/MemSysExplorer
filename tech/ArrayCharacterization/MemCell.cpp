@@ -42,14 +42,14 @@
 #include "yaml-cpp/yaml.h"
 #include <math.h>
 
-void MemCell::ReadCellFromFile(const string& inputFile)
+void MemCell::ReadCellFromFile(const std::string& inputFile)
 {
     try {
         YAML::Node config = YAML::LoadFile(inputFile);
         
         // Basic Cell Properties
         if (config["MemCellType"]) {
-            string cellType = config["MemCellType"].as<string>();
+            std::string cellType = config["MemCellType"].as<std::string>();
             if (cellType == "SRAM")
                 memCellType = SRAM;
             else if (cellType == "DRAM")
@@ -154,7 +154,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         if (config["Read"]) {
             YAML::Node read = config["Read"];
             if (read["Mode"]) {
-                string mode = read["Mode"].as<string>();
+                std::string mode = read["Mode"].as<std::string>();
                 readMode = (mode == "voltage");
             }
             if (read["Voltage_V"])
@@ -178,7 +178,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         if (config["Reset"]) {
             YAML::Node reset = config["Reset"];
             if (reset["Mode"]) {
-                string mode = reset["Mode"].as<string>();
+                std::string mode = reset["Mode"].as<std::string>();
                 resetMode = (mode == "voltage");
             }
             if (reset["Voltage_V"])
@@ -195,7 +195,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         if (config["Set"]) {
             YAML::Node set = config["Set"];
             if (set["Mode"]) {
-                string mode = set["Mode"].as<string>();
+                std::string mode = set["Mode"].as<std::string>();
                 setMode = (mode == "voltage");
             }
             if (set["Voltage_V"])
@@ -212,7 +212,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         if (config["Access"]) {
             YAML::Node access = config["Access"];
             if (access["Type"]) {
-                string type = access["Type"].as<string>();
+                std::string type = access["Type"].as<std::string>();
                 if (type == "CMOS")
                     accessType = CMOS_access;
                 else if (type == "BJT")
@@ -224,13 +224,13 @@ void MemCell::ReadCellFromFile(const string& inputFile)
             }
             if (access["CMOSWidth_F"]) {
                 if (accessType != CMOS_access)
-                    cout << "Warning: CMOS width ignored (not CMOS-accessed)" << endl;
+                    std::cout << "Warning: CMOS width ignored (not CMOS-accessed)" << std::endl;
                 else
                     widthAccessCMOS = access["CMOSWidth_F"].as<double>();
             }
             if (access["CMOSWidthR_F"]) {
                 if (accessType != CMOS_access)
-                    cout << "Warning: CMOS width R ignored (not CMOS-accessed)" << endl;
+                    std::cout << "Warning: CMOS width R ignored (not CMOS-accessed)" << std::endl;
                 else
                     widthAccessCMOSR = access["CMOSWidthR_F"].as<double>();
             }
@@ -242,7 +242,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         
         // Also support flat access fields
         if (config["AccessType"]) {
-            string type = config["AccessType"].as<string>();
+            std::string type = config["AccessType"].as<std::string>();
             if (type == "CMOS")
                 accessType = CMOS_access;
             else if (type == "BJT")
@@ -254,13 +254,13 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         }
         if (config["AccessCMOSWidth_F"]) {
             if (accessType != CMOS_access)
-                cout << "Warning: CMOS width ignored (not CMOS-accessed)" << endl;
+                std::cout << "Warning: CMOS width ignored (not CMOS-accessed)" << std::endl;
             else
                 widthAccessCMOS = config["AccessCMOSWidth_F"].as<double>();
         }
         if (config["AccessCMOSWidthR_F"]) {
             if (accessType != CMOS_access)
-                cout << "Warning: CMOS width R ignored (not CMOS-accessed)" << endl;
+                std::cout << "Warning: CMOS width R ignored (not CMOS-accessed)" << std::endl;
             else
                 widthAccessCMOSR = config["AccessCMOSWidthR_F"].as<double>();
         }
@@ -278,7 +278,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         if (config["DRAMCellCapacitance_F"]) {
             if (memCellType != DRAM && memCellType != eDRAM && 
                 memCellType != eDRAM3T && memCellType != eDRAM3T333)
-                cout << "Warning: DRAM capacitance ignored (not DRAM)" << endl;
+                std::cout << "Warning: DRAM capacitance ignored (not DRAM)" << std::endl;
             else
                 capDRAMCell = config["DRAMCellCapacitance_F"].as<double>();
         }
@@ -286,14 +286,14 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         // SRAM specific
         if (config["SRAMCellNMOSWidth_F"]) {
             if (memCellType != SRAM)
-                cout << "Warning: SRAM NMOS width ignored (not SRAM)" << endl;
+                std::cout << "Warning: SRAM NMOS width ignored (not SRAM)" << std::endl;
             else
                 widthSRAMCellNMOS = config["SRAMCellNMOSWidth_F"].as<double>();
         }
         
         if (config["SRAMCellPMOSWidth_F"]) {
             if (memCellType != SRAM)
-                cout << "Warning: SRAM PMOS width ignored (not SRAM)" << endl;
+                std::cout << "Warning: SRAM PMOS width ignored (not SRAM)" << std::endl;
             else
                 widthSRAMCellPMOS = config["SRAMCellPMOSWidth_F"].as<double>();
         }
@@ -302,7 +302,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         if (config["Flash"]) {
             YAML::Node flash = config["Flash"];
             if (memCellType != SLCNAND && memCellType != MLCNAND) {
-                cout << "Warning: Flash parameters ignored (not Flash)" << endl;
+                std::cout << "Warning: Flash parameters ignored (not Flash)" << std::endl;
             } else {
                 if (flash["EraseVoltage_V"])
                     flashEraseVoltage = flash["EraseVoltage_V"].as<double>();
@@ -322,37 +322,37 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         // Also support flat flash fields
         if (config["FlashEraseVoltage_V"]) {
             if (memCellType != SLCNAND && memCellType != MLCNAND)
-                cout << "Warning: Flash erase voltage ignored (not Flash)" << endl;
+                std::cout << "Warning: Flash erase voltage ignored (not Flash)" << std::endl;
             else
                 flashEraseVoltage = config["FlashEraseVoltage_V"].as<double>();
         }
         if (config["FlashProgramVoltage_V"]) {
             if (memCellType != SLCNAND && memCellType != MLCNAND)
-                cout << "Warning: Flash program voltage ignored (not Flash)" << endl;
+                std::cout << "Warning: Flash program voltage ignored (not Flash)" << std::endl;
             else
                 flashProgramVoltage = config["FlashProgramVoltage_V"].as<double>();
         }
         if (config["FlashPassVoltage_V"]) {
             if (memCellType != SLCNAND && memCellType != MLCNAND)
-                cout << "Warning: Flash pass voltage ignored (not Flash)" << endl;
+                std::cout << "Warning: Flash pass voltage ignored (not Flash)" << std::endl;
             else
                 flashPassVoltage = config["FlashPassVoltage_V"].as<double>();
         }
         if (config["FlashEraseTime_ms"]) {
             if (memCellType != SLCNAND && memCellType != MLCNAND)
-                cout << "Warning: Flash erase time ignored (not Flash)" << endl;
+                std::cout << "Warning: Flash erase time ignored (not Flash)" << std::endl;
             else
                 flashEraseTime = config["FlashEraseTime_ms"].as<double>() / 1e3;
         }
         if (config["FlashProgramTime_us"]) {
             if (memCellType != SLCNAND && memCellType != MLCNAND)
-                cout << "Warning: Flash program time ignored (not Flash)" << endl;
+                std::cout << "Warning: Flash program time ignored (not Flash)" << std::endl;
             else
                 flashProgramTime = config["FlashProgramTime_us"].as<double>() / 1e6;
         }
         if (config["GateCouplingRatio"]) {
             if (memCellType != SLCNAND && memCellType != MLCNAND)
-                cout << "Warning: Gate coupling ratio ignored (not Flash)" << endl;
+                std::cout << "Warning: Gate coupling ratio ignored (not Flash)" << std::endl;
             else
                 gateCouplingRatio = config["GateCouplingRatio"].as<double>();
         }
@@ -361,7 +361,7 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         if (config["RetentionTime_us"]) {
             if (memCellType != DRAM && memCellType != eDRAM && 
                 memCellType != eDRAM3T && memCellType != eDRAM3T333)
-                cout << "Warning: Retention time ignored (not DRAM)" << endl;
+                std::cout << "Warning: Retention time ignored (not DRAM)" << std::endl;
             else
                 retentionTime = config["RetentionTime_us"].as<double>() / 1e6;
         }
@@ -369,23 +369,23 @@ void MemCell::ReadCellFromFile(const string& inputFile)
         // MLC specific
         if (config["InputFingers"]) {
             if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM)
-                cout << "Warning: InputFingers used only for MLC SA" << endl;
+                std::cout << "Warning: InputFingers used only for MLC SA" << std::endl;
             else
                 nFingers = config["InputFingers"].as<int>();
         }
         
         if (config["CellLevels"]) {
             if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM)
-                cout << "Warning: CellLevels used only for MLC" << endl;
+                std::cout << "Warning: CellLevels used only for MLC" << std::endl;
             else
                 nLvl = config["CellLevels"].as<double>();
         }
         
     } catch (const YAML::Exception& e) {
-        cout << "Error parsing YAML file: " << e.what() << endl;
+        std::cout << "Error parsing YAML file: " << e.what() << std::endl;
         exit(-1);
     } catch (const std::exception& e) {
-        cout << "Error reading file: " << e.what() << endl;
+        std::cout << "Error reading file: " << e.what() << std::endl;
         exit(-1);
     }
 }
@@ -490,14 +490,14 @@ double MemCell::GetMemristance(double _relativeReadVoltage) { /* Get the LRS res
 		y3 = (y2 - y1) / (x2 -x1) * x3 + (x2 * y1 - x1 * y2) / (x2 - x1);  //insertion
 		return x3 / pow(2, y3);
 	} else {  // not memristor, can't call the function
-		cout <<"Warning[MemCell] : Try to get memristance from a non-memristor memory cell" << endl;
+		std::cout <<"Warning[MemCell] : Try to get memristance from a non-memristor memory cell" << std::endl;
 		return -1;
 	}
 }
 
 void MemCell::CalculateWriteEnergy() {
 	if (resetEnergy == 0) {
-                cout << " Warning: over-writing reset energy" << endl;
+                std::cout << " Warning: over-writing reset energy" << std::endl;
 		if (resetMode) {
 			if (memCellType == memristor || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM)
 				if (accessType == none_access)
@@ -532,7 +532,7 @@ void MemCell::CalculateWriteEnergy() {
 		}
 	}
 	if (setEnergy == 0) {
-                cout << " Warning: over-writing set energy" << endl;
+                std::cout << " Warning: over-writing set energy" << std::endl;
 		if (setMode) {
 			if (memCellType == memristor || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM)
 				if (accessType == none_access)
@@ -594,156 +594,156 @@ void MemCell::PrintCell()
 {
 	switch (memCellType) {
 	case SRAM:
-		cout << "Memory Cell: SRAM" << endl;
+		std::cout << "Memory Cell: SRAM" << std::endl;
 		break;
 	case DRAM:
-		cout << "Memory Cell: DRAM" << endl;
+		std::cout << "Memory Cell: DRAM" << std::endl;
 		break;
 	case eDRAM:
-		cout << "Memory Cell: Embedded DRAM" << endl;
+		std::cout << "Memory Cell: Embedded DRAM" << std::endl;
 		break;
 	case eDRAM3T:
-		cout << "Memory Cell: 3T Embedded DRAM" << endl;
+		std::cout << "Memory Cell: 3T Embedded DRAM" << std::endl;
 		break;
 	case eDRAM3T333:
-		cout << "Memory Cell: 333 Embedded DRAM" << endl;
+		std::cout << "Memory Cell: 333 Embedded DRAM" << std::endl;
 		break;
 	case MRAM:
-		cout << "Memory Cell: MRAM (Magnetoresistive)" << endl;
+		std::cout << "Memory Cell: MRAM (Magnetoresistive)" << std::endl;
 		break;
 	case PCRAM:
-		cout << "Memory Cell: PCRAM (Phase-Change)" << endl;
+		std::cout << "Memory Cell: PCRAM (Phase-Change)" << std::endl;
 		break;
 	case memristor:
-		cout << "Memory Cell: RRAM (Memristor)" << endl;
+		std::cout << "Memory Cell: RRAM (Memristor)" << std::endl;
 		break;
 	case FBRAM:
-		cout << "Memory Cell: FBRAM (Floating Body)" <<endl;
+		std::cout << "Memory Cell: FBRAM (Floating Body)" << std::endl;
 		break;
 	case SLCNAND:
-		cout << "Memory Cell: Single-Level Cell NAND Flash" << endl;
+		std::cout << "Memory Cell: Single-Level Cell NAND Flash" << std::endl;
 		break;
 	case MLCNAND:
-		cout << "Memory Cell: Multi-Level Cell NAND Flash" << endl;
+		std::cout << "Memory Cell: Multi-Level Cell NAND Flash" << std::endl;
 		break;
 	case CTT:
-		cout << "Memory Cell: Single-Level Cell CTT" << endl;
+		std::cout << "Memory Cell: Single-Level Cell CTT" << std::endl;
 		break;
 	case MLCCTT:
-		cout << "Memory Cell: Multi-Level Cell CTT" << endl;
+		std::cout << "Memory Cell: Multi-Level Cell CTT" << std::endl;
 		break;
 	case FeFET:
-		cout << "Memory Cell: Single-Level Cell FeFET" << endl;
+		std::cout << "Memory Cell: Single-Level Cell FeFET" << std::endl;
 		break;
 	case MLCFeFET:
-		cout << "Memory Cell: Multi-Level Cell FeFET" << endl;
+		std::cout << "Memory Cell: Multi-Level Cell FeFET" << std::endl;
 		break;
 	case MLCRRAM:
-		cout << "Memory Cell: Multi-Level Cell RRAM (Memristor)" << endl;
+		std::cout << "Memory Cell: Multi-Level Cell RRAM (Memristor)" << std::endl;
 		break;
 	default:
-		cout << "Memory Cell: Unknown" << endl;
+		std::cout << "Memory Cell: Unknown" << std::endl;
 	}
-	cout << "Cell Area (F^2)    : " << area << " (" << heightInFeatureSize << "Fx" << widthInFeatureSize << "F)" << endl;
-	cout << "Cell Area (um^2)    : " << area/1000000.0*gTech.featureSizeInNano*gTech.featureSizeInNano << " (" << heightInFeatureSize*gTech.featureSizeInNano << "nm x" << widthInFeatureSize*gTech.featureSizeInNano << "nm y)" << endl;
-	cout << "Cell Aspect Ratio  : " << aspectRatio << endl;
+	std::cout << "Cell Area (F^2)    : " << area << " (" << heightInFeatureSize << "Fx" << widthInFeatureSize << "F)" << std::endl;
+	std::cout << "Cell Area (um^2)    : " << area/1000000.0*gTech.featureSizeInNano*gTech.featureSizeInNano << " (" << heightInFeatureSize*gTech.featureSizeInNano << "nm x" << widthInFeatureSize*gTech.featureSizeInNano << "nm y)" << std::endl;
+	std::cout << "Cell Aspect Ratio  : " << aspectRatio << std::endl;
 
 	if (memCellType == PCRAM || memCellType == MRAM || memCellType == memristor || memCellType == FBRAM || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM) {
 		if (resistanceOn < 1e3 )
-			cout << "Cell Turned-On Resistance : " << resistanceOn << "ohm" << endl;
+			std::cout << "Cell Turned-On Resistance : " << resistanceOn << "ohm" << std::endl;
 		else if (resistanceOn < 1e6)
-			cout << "Cell Turned-On Resistance : " << resistanceOn / 1e3 << "Kohm" << endl;
+			std::cout << "Cell Turned-On Resistance : " << resistanceOn / 1e3 << "Kohm" << std::endl;
 		else
-			cout << "Cell Turned-On Resistance : " << resistanceOn / 1e6 << "Mohm" << endl;
+			std::cout << "Cell Turned-On Resistance : " << resistanceOn / 1e6 << "Mohm" << std::endl;
 		if (resistanceOff < 1e3 )
-			cout << "Cell Turned-Off Resistance: "<< resistanceOff << "ohm" << endl;
+			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff << "ohm" << std::endl;
 		else if (resistanceOff < 1e6)
-			cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e3 << "Kohm" << endl;
+			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e3 << "Kohm" << std::endl;
 		else
-			cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e6 << "Mohm" << endl;
+			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e6 << "Mohm" << std::endl;
 
 		if (readMode) {
-			cout << "Read Mode: Voltage-Sensing" << endl;
+			std::cout << "Read Mode: Voltage-Sensing" << std::endl;
 			if (readCurrent > 0)
-				cout << "  - Read Current: " << readCurrent * 1e6 << "uA" << endl;
+				std::cout << "  - Read Current: " << readCurrent * 1e6 << "uA" << std::endl;
 			if (readVoltage > 0)
-				cout << "  - Read Voltage: " << readVoltage << "V" << endl;
+				std::cout << "  - Read Voltage: " << readVoltage << "V" << std::endl;
 		} else {
-			cout << "Read Mode: Current-Sensing" << endl;
+			std::cout << "Read Mode: Current-Sensing" << std::endl;
 			if (readCurrent > 0)
-				cout << "  - Read Current: " << readCurrent * 1e6 << "uA" << endl;
+				std::cout << "  - Read Current: " << readCurrent * 1e6 << "uA" << std::endl;
 			if (readVoltage > 0)
-				cout << "  - Read Voltage: " << readVoltage << "V" << endl;
+				std::cout << "  - Read Voltage: " << readVoltage << "V" << std::endl;
 		}
 
 		if (resetMode) {
-			cout << "Reset Mode: Voltage" << endl;
-			cout << "  - Reset Voltage: " << resetVoltage << "V" << endl;
+			std::cout << "Reset Mode: Voltage" << std::endl;
+			std::cout << "  - Reset Voltage: " << resetVoltage << "V" << std::endl;
 		} else {
-			cout << "Reset Mode: Current" << endl;
-			cout << "  - Reset Current: " << resetCurrent * 1e6 << "uA" << endl;
+			std::cout << "Reset Mode: Current" << std::endl;
+			std::cout << "  - Reset Current: " << resetCurrent * 1e6 << "uA" << std::endl;
 		}
-		cout << "  - Reset Pulse: " << TO_SECOND(resetPulse) << endl;
+		std::cout << "  - Reset Pulse: " << TO_SECOND(resetPulse) << std::endl;
 
 		if (setMode) {
-			cout << "Set Mode: Voltage" << endl;
-			cout << "  - Set Voltage: " << setVoltage << "V" << endl;
+			std::cout << "Set Mode: Voltage" << std::endl;
+			std::cout << "  - Set Voltage: " << setVoltage << "V" << std::endl;
 		} else {
-			cout << "Set Mode: Current" << endl;
-			cout << "  - Set Current: " << setCurrent * 1e6 << "uA" << endl;
+			std::cout << "Set Mode: Current" << std::endl;
+			std::cout << "  - Set Current: " << setCurrent * 1e6 << "uA" << std::endl;
 		}
-		cout << "  - Set Pulse: " << TO_SECOND(setPulse) << endl;
+		std::cout << "  - Set Pulse: " << TO_SECOND(setPulse) << std::endl;
 
 		switch (accessType) {
 		case CMOS_access:
-			cout << "Access Type: CMOS" << endl;
+			std::cout << "Access Type: CMOS" << std::endl;
 			break;
 		case BJT_access:
-			cout << "Access Type: BJT" << endl;
+			std::cout << "Access Type: BJT" << std::endl;
 			break;
 		case diode_access:
-			cout << "Access Type: Diode" << endl;
+			std::cout << "Access Type: Diode" << std::endl;
 			break;
 		default:
-			cout << "Access Type: None Access Device" << endl;
+			std::cout << "Access Type: None Access Device" << std::endl;
 		}
 	} else if (memCellType == SRAM) {
-		cout << "SRAM Cell Access Transistor Width: " << widthAccessCMOS << "F" << endl;
-		cout << "SRAM Cell NMOS Width: " << widthSRAMCellNMOS << "F" << endl;
-		cout << "SRAM Cell PMOS Width: " << widthSRAMCellPMOS << "F" << endl;
-		cout << "SRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << endl;
-		cout << "SRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << endl;
-		cout << "SRAM Cell VDD: " << gTech.vdd << "V" << endl;
-		cout << "Temperature: " << gCell.temperature << "K" << endl;
+		std::cout << "SRAM Cell Access Transistor Width: " << widthAccessCMOS << "F" << std::endl;
+		std::cout << "SRAM Cell NMOS Width: " << widthSRAMCellNMOS << "F" << std::endl;
+		std::cout << "SRAM Cell PMOS Width: " << widthSRAMCellPMOS << "F" << std::endl;
+		std::cout << "SRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << std::endl;
+		std::cout << "SRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << std::endl;
+		std::cout << "SRAM Cell VDD: " << gTech.vdd << "V" << std::endl;
+		std::cout << "Temperature: " << gCell.temperature << "K" << std::endl;
 	} else if (memCellType == DRAM || memCellType == eDRAM) {
-		cout << "DRAM Cell Access Transistor Width: " << widthAccessCMOS << "F" << endl;
-		cout << "DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << endl;
-		cout << "DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << endl;
-		cout << "DRAM Cell VDD: " << gTech.vdd << "V" << endl;
-		cout << "DRAM Cell WL_SWING: " << gTech.vpp << "V" << endl;
-		cout << "Temperature: " << gCell.temperature << "K" << endl;
+		std::cout << "DRAM Cell Access Transistor Width: " << widthAccessCMOS << "F" << std::endl;
+		std::cout << "DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << std::endl;
+		std::cout << "DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << std::endl;
+		std::cout << "DRAM Cell VDD: " << gTech.vdd << "V" << std::endl;
+		std::cout << "DRAM Cell WL_SWING: " << gTech.vpp << "V" << std::endl;
+		std::cout << "Temperature: " << gCell.temperature << "K" << std::endl;
 	} else if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
-		cout << "3T DRAM Cell Write Access Transistor Width: " << widthAccessCMOS << "F" << endl;
-		cout << "3T DRAM Cell Read Access Transistor Width: " << widthAccessCMOSR << "F" << endl;
-		cout << "3T DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << endl;
-		cout << "3T DRAM Cell Write Access Roadmap: " << gTechW.deviceRoadmap << endl;
-		cout << "3T DRAM Cell Read Access Roadmap: " << gTechR.deviceRoadmap << endl;
-		cout << "3T DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << endl;
-		cout << "3T DRAM Cell Write Access Node: " << gTechW.featureSizeInNano << "nm" << endl;
-		cout << "3T DRAM Cell Read Access Node: " << gTechR.featureSizeInNano << "nm" << endl;
-		cout << "3T DRAM Cell VDD: " << gTech.vdd << "V" << endl;
-		cout << "3T DRAM Cell WWL_SWING: " << gTechW.vpp << "V" << endl;
-		cout << "Temperature: " << gCell.temperature << "K" << endl;
+		std::cout << "3T DRAM Cell Write Access Transistor Width: " << widthAccessCMOS << "F" << std::endl;
+		std::cout << "3T DRAM Cell Read Access Transistor Width: " << widthAccessCMOSR << "F" << std::endl;
+		std::cout << "3T DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << std::endl;
+		std::cout << "3T DRAM Cell Write Access Roadmap: " << gTechW.deviceRoadmap << std::endl;
+		std::cout << "3T DRAM Cell Read Access Roadmap: " << gTechR.deviceRoadmap << std::endl;
+		std::cout << "3T DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << std::endl;
+		std::cout << "3T DRAM Cell Write Access Node: " << gTechW.featureSizeInNano << "nm" << std::endl;
+		std::cout << "3T DRAM Cell Read Access Node: " << gTechR.featureSizeInNano << "nm" << std::endl;
+		std::cout << "3T DRAM Cell VDD: " << gTech.vdd << "V" << std::endl;
+		std::cout << "3T DRAM Cell WWL_SWING: " << gTechW.vpp << "V" << std::endl;
+		std::cout << "Temperature: " << gCell.temperature << "K" << std::endl;
 	} else if (memCellType == SLCNAND) {
-		cout << "Pass Voltage       : " << flashPassVoltage << "V" << endl;
-		cout << "Programming Voltage: " << flashProgramVoltage << "V" << endl;
-		cout << "Erase Voltage      : " << flashEraseVoltage << "V" << endl;
-		cout << "Programming Time   : " << TO_SECOND(flashProgramTime) << endl;
-		cout << "Erase Time         : " << TO_SECOND(flashEraseTime) << endl;
-		cout << "Gate Coupling Ratio: " << gateCouplingRatio << endl;
+		std::cout << "Pass Voltage       : " << flashPassVoltage << "V" << std::endl;
+		std::cout << "Programming Voltage: " << flashProgramVoltage << "V" << std::endl;
+		std::cout << "Erase Voltage      : " << flashEraseVoltage << "V" << std::endl;
+		std::cout << "Programming Time   : " << TO_SECOND(flashProgramTime) << std::endl;
+		std::cout << "Erase Time         : " << TO_SECOND(flashEraseTime) << std::endl;
+		std::cout << "Gate Coupling Ratio: " << gateCouplingRatio << std::endl;
 	} 
 	if (memCellType == MLCCTT || memCellType == MLCFeFET || memCellType == MLCRRAM) {
-			cout << "Number of Input Fingers: " << nFingers << endl;
-			cout << "Number of Levels per Cell: " << nLvl << endl;
+			std::cout << "Number of Input Fingers: " << nFingers << std::endl;
+			std::cout << "Number of Levels per Cell: " << nLvl << std::endl;
 	}
 }

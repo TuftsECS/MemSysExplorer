@@ -41,7 +41,7 @@
 
 void BasicDecoder::Initialize(int _numAddressBit, double _capLoad, double _resLoad){
 	/*if (initialized)
-			cout << "Warning: Already initialized!" << endl;*/
+			std::cout << "Warning: Already initialized!" << std::endl;*/
 	/* might be re-initialized by predecodeblock */
 	if (_numAddressBit == 1) {
 		numNandInput = 0;
@@ -81,7 +81,7 @@ void BasicDecoder::Initialize(int _numAddressBit, double _capLoad, double _resLo
 
 void BasicDecoder::CalculateArea() {
 	if (!initialized) {
-		cout << "[Basic Decoder] Error: Require initialization first!" << endl;
+		std::cout << "[Basic Decoder] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculateArea();
 		if (numNandInput == 0){
@@ -101,7 +101,7 @@ void BasicDecoder::CalculateArea() {
 
 void BasicDecoder::CalculateRC() {
 	if (!initialized) {
-		cout << "[Basic Decoder] Error: Require initialization first!" << endl;
+		std::cout << "[Basic Decoder] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculateRC();
 		if (numNandInput > 0) {
@@ -112,7 +112,7 @@ void BasicDecoder::CalculateRC() {
 
 void BasicDecoder::CalculateLatency(double _rampInput) {
 	if (!initialized) {
-		cout << "[Basic Decoder] Error: Require initialization first!" << endl;
+		std::cout << "[Basic Decoder] Error: Require initialization first!" << std::endl;
 	} else {
 		rampInput = _rampInput;
         if (numNandInput == 0) {
@@ -144,7 +144,7 @@ void BasicDecoder::CalculateLatency(double _rampInput) {
 
 void BasicDecoder::CalculatePower() {
 	if (!initialized) {
-		cout << "[Basic Decoder] Error: Require initialization first!" << endl;
+		std::cout << "[Basic Decoder] Error: Require initialization first!" << std::endl;
 	} else {
 		outputDriver.CalculatePower();
 		double capLoad;
@@ -173,6 +173,6 @@ void BasicDecoder::CalculatePower() {
 }
 
 void BasicDecoder::PrintProperty() {
-	cout << numNandInput << " to " << numNandGate << " Decoder Properties:" << endl;
+	std::cout << numNandInput << " to " << numNandGate << " Decoder Properties:" << std::endl;
 	FunctionUnit::PrintProperty();
 }

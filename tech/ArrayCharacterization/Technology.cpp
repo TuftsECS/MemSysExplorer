@@ -41,7 +41,7 @@
 
 void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap, bool _is_FeFET) {
 	if (initialized)
-		cout << "Warning: Already initialized!" << endl;
+		std::cout << "Warning: Already initialized!" << std::endl;
 
 
 	// based on neurosim
@@ -359,7 +359,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			currentOffPmos[100]= 903.80e-6;
 			pnSizeRatio = currentOnNmos[0]/currentOnPmos[0];
 		} else {
-            cout << "Unknown device roadmap!" << endl;
+            std::cout << "Unknown device roadmap!" << std::endl;
             exit(1);
 		}
 	} else if (_featureSizeInNano >= 90) {
@@ -486,7 +486,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			currentOffPmos[100]= 946.40e-6;
 			pnSizeRatio = currentOnNmos[0]/currentOnPmos[0];
 		} else {
-            cout << "Unknown device roadmap!" << endl;
+            std::cout << "Unknown device roadmap!" << std::endl;
             exit(1);
 		}
 	} else if (_featureSizeInNano >= 65) {
@@ -665,7 +665,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 				currentOffPmos[i] = 0.0;
 			}
 		} else {
-            cout << "Unknown device roadmap!" << endl;
+            std::cout << "Unknown device roadmap!" << std::endl;
             exit(1);
 		}
 	} else if (_featureSizeInNano >= 45) {
@@ -842,7 +842,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 				currentOffPmos[i] = 0.0;
 			}
 		} else {
-            cout << "Unknown device roadmap!" << endl;
+            std::cout << "Unknown device roadmap!" << std::endl;
             exit(1);
 		}
 	} else if (_featureSizeInNano >= 32) {	/* TO-DO: actually 36nm */
@@ -1033,7 +1033,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			currentOffPmos[90]  = currentOffNmos[90];
 			currentOffPmos[100] = currentOffNmos[100];
 		} else {
-            cout << "Unknown device roadmap!" << endl;
+            std::cout << "Unknown device roadmap!" << std::endl;
             exit(1);
 		}
 	} else if (_featureSizeInNano >= 22) {
@@ -1222,13 +1222,13 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			currentOffPmos[90]  = currentOffNmos[90];
 			currentOffPmos[100] = currentOffNmos[100];
 		} else {
-            cout << "Unknown device roadmap!" << endl;
+            std::cout << "Unknown device roadmap!" << std::endl;
             exit(1);
         }
 	} else if (featureSizeInNano >= 14) {
 		if (deviceRoadmap != LOP) {
 			
-			cout<<"Only LOP for 14 nm and beyond is supported"<<endl;
+			std::cout<<"Only LOP for 14 nm and beyond is supported"<< std::endl;
 			exit(-1);
 
 		} else if (_deviceRoadmap == LOP){
@@ -1302,7 +1302,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	} else if (featureSizeInNano >= 10) {
 		if (deviceRoadmap != LOP) {
 
-			cout<<"Only LOP for 14 nm and beyond is supported"<<endl;
+			std::cout<<"Only LOP for 14 nm and beyond is supported"<< std::endl;
 			exit(-1);
 
 		} else if (_deviceRoadmap == LOP) {
@@ -1377,7 +1377,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	} else if (featureSizeInNano >= 7) {
 		if (deviceRoadmap != LOP) {
 
-			cout<<"Only LOP for 14 nm and beyond is supported"<<endl;
+			std::cout<<"Only LOP for 14 nm and beyond is supported"<< std::endl;
 			exit(-1);
 
 		} else if (_deviceRoadmap == LOP){
@@ -1455,7 +1455,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	else if (featureSizeInNano >= 5) {
 		if (deviceRoadmap != LOP) {
 
-			cout<<"Only LOP for 14 nm and beyond is supported"<<endl;
+			std::cout<<"Only LOP for 14 nm and beyond is supported"<< std::endl;
 			exit(-1);
 
 		} else if (_deviceRoadmap == LOP){
@@ -1532,7 +1532,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	} else if (featureSizeInNano >= 3) {
 		if (deviceRoadmap != LOP) {
 
-			cout<<"Only LOP for 14 nm and beyond is supported"<<endl;
+			std::cout<<"Only LOP for 14 nm and beyond is supported"<< std::endl;
 			exit(-1);
 
 		} else if (_deviceRoadmap == LOP){
@@ -1608,7 +1608,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	else if (featureSizeInNano >= 2) {
 		if (deviceRoadmap != LOP) {
 
-			cout<<"Only LOP for 14 nm and beyond is supported"<<endl;
+			std::cout<<"Only LOP for 14 nm and beyond is supported"<< std::endl;
 			exit(-1);
 
 		} else if (_deviceRoadmap == LOP){ // 2 nm
@@ -1689,7 +1689,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	else if (featureSizeInNano >= 1) {
 		if (deviceRoadmap != LOP) {
 
-			cout<<"Only LOP for 14 nm and beyond is supported"<<endl;
+			std::cout<<"Only LOP for 14 nm and beyond is supported"<< std::endl;
 			exit(-1);
 
 		} else if (_deviceRoadmap == LOP) {
@@ -1768,12 +1768,12 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	}
 	else 
 	{
-            cout << "Unknown device roadmap!" << endl;
+            std::cout << "Unknown device roadmap!" << std::endl;
             exit(1);
     }
         // If FeFET, we scale ideal gate capacitance by standard factor across all tech nodes
         if (is_FeFET == true){
-	    	//cout << "Modify capIdealGate for FeFET:" << endl;
+	    	//cout << "Modify capIdealGate for FeFET:" << std::endl;
             capIdealGateFeFET = capIdealGate * 1.73;
         }
 
@@ -1843,8 +1843,8 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	initialized = true;
 }
 void Technology::PrintProperty() {
-	cout << "Fabrication Process Technology Node:" << endl;
-	cout << "TO-DO" << endl;
+	std::cout << "Fabrication Process Technology Node:" << std::endl;
+	std::cout << "TO-DO" << std::endl;
 }
 
 void Technology::InterpolateWith(Technology rhs, double _alpha) {
