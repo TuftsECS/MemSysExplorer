@@ -93,7 +93,7 @@ private:
 	std::unique_ptr<BasicDecoder> basicDecoderA2;
 	std::unique_ptr<BasicDecoder> basicDecoderB;
 	std::unique_ptr<BasicDecoder> basicDecoderC;
-	/* TO-DO: Predecoder so far does not take OptPriority input because the output driver is already quite fixed in this module */
+	/* TO-DO: Predecoder so far does not take BufferDesignTarget input because the output driver is already quite fixed in this module */
 };
 
 #endif /* MSE_PREDECODEBLOCK_H */

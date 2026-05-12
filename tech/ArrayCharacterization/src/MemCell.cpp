@@ -39,8 +39,7 @@
 #include "formula.hpp"
 #include "global.hpp"
 #include "macros.hpp"
-
-#include "yaml-cpp/yaml.h"
+#include "enuminfo.hpp"
 
 #include <math.h>
 
@@ -50,50 +49,11 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         YAML::Node config = YAML::LoadFile(inputFile);
         
         // Basic Cell Properties
-        if (config["MemCellType"]) {
-            std::string cellType = config["MemCellType"].as<std::string>();
-            if (cellType == "SRAM")
-                memCellType = SRAM;
-            else if (cellType == "DRAM")
-                memCellType = DRAM;
-            else if (cellType == "eDRAM")
-                memCellType = eDRAM;
-            else if (cellType == "eDRAM3T")
-                memCellType = eDRAM3T;
-            else if (cellType == "eDRAM3T333")
-                memCellType = eDRAM3T333;
-            else if (cellType == "MRAM")
-                memCellType = MRAM;
-            else if (cellType == "PCRAM")
-                memCellType = PCRAM;
-            else if (cellType == "FBRAM")
-                memCellType = FBRAM;
-            else if (cellType == "memristor")
-                memCellType = memristor;
-            else if (cellType == "CTT")
-                memCellType = CTT;
-            else if (cellType == "MLCCTT")
-                memCellType = MLCCTT;
-            else if (cellType == "FeFET")
-                memCellType = FeFET;
-            else if (cellType == "MLCFeFET")
-                memCellType = MLCFeFET;
-            else if (cellType == "MLCRRAM")
-                memCellType = MLCRRAM;
-            else if (cellType == "SLCNAND")
-                memCellType = SLCNAND;
-            else
-                memCellType = MLCNAND;
-        }
+        yamlValueFromNode(memCellType, config, "MemCellType");
         
-        if (config["ProcessNode"])
-            processNode = config["ProcessNode"].as<int>();
-            
-        if (config["CellArea_F2"])
-            area = config["CellArea_F2"].as<double>();
-            
-        if (config["CellAspectRatio"]) {
-            aspectRatio = config["CellAspectRatio"].as<double>();
+        yamlValueFromNode(processNode, config, "ProcessNode");
+        yamlValueFromNode(area, config, "CellArea_F2");
+        if (yamlValueFromNode(aspectRatio, config, "CellAspectRatio")) {
             heightInFeatureSize = sqrt(area * aspectRatio);
             widthInFeatureSize = sqrt(area / aspectRatio);
         }
@@ -101,203 +61,169 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         // Resistance Values
         if (config["Resistance"]) {
             YAML::Node resist = config["Resistance"];
-            if (resist["OnAtSetVoltage_ohm"])
-                resistanceOnAtSetVoltage = resist["OnAtSetVoltage_ohm"].as<double>();
-            if (resist["OffAtSetVoltage_ohm"])
-                resistanceOffAtSetVoltage = resist["OffAtSetVoltage_ohm"].as<double>();
-            if (resist["OnAtResetVoltage_ohm"])
-                resistanceOnAtResetVoltage = resist["OnAtResetVoltage_ohm"].as<double>();
-            if (resist["OffAtResetVoltage_ohm"])
-                resistanceOffAtResetVoltage = resist["OffAtResetVoltage_ohm"].as<double>();
-            if (resist["OnAtReadVoltage_ohm"]) {
-                resistanceOnAtReadVoltage = resist["OnAtReadVoltage_ohm"].as<double>();
-                resistanceOn = resistanceOnAtReadVoltage;
-            }
-            if (resist["OffAtReadVoltage_ohm"]) {
-                resistanceOffAtReadVoltage = resist["OffAtReadVoltage_ohm"].as<double>();
-                resistanceOff = resistanceOffAtReadVoltage;
-            }
-            if (resist["OnAtHalfReadVoltage_ohm"])
-                resistanceOnAtHalfReadVoltage = resist["OnAtHalfReadVoltage_ohm"].as<double>();
-            if (resist["OffAtHalfReadVoltage_ohm"])
-                resistanceOffAtHalfReadVoltage = resist["OffAtHalfReadVoltage_ohm"].as<double>();
-            if (resist["OnAtHalfResetVoltage_ohm"])
-                resistanceOnAtHalfResetVoltage = resist["OnAtHalfResetVoltage_ohm"].as<double>();
+            yamlValueFromNode(resistanceOnAtSetVoltage, resist, "OnAtSetVoltage_ohm");
+            yamlValueFromNode(resistanceOffAtSetVoltage, resist, "OffAtSetVoltage_ohm");
+            yamlValueFromNode(resistanceOnAtResetVoltage, resist, "OnAtResetVoltage_ohm");
+            yamlValueFromNode(resistanceOffAtResetVoltage, resist, "OffAtResetVoltage_ohm");
+            yamlValueFromNode(resistanceOnAtReadVoltage, resist, "OnAtReadVoltage_ohm");
+            yamlValueFromNode(resistanceOn, resist, "OnAtReadVoltage_ohm");
+            yamlValueFromNode(resistanceOffAtReadVoltage, resist, "OffAtReadVoltage_ohm");
+            yamlValueFromNode(resistanceOff, resist, "OffAtReadVoltage_ohm");
+            yamlValueFromNode(resistanceOnAtHalfReadVoltage, resist, "OnAtHalfReadVoltage_ohm");
+            yamlValueFromNode(resistanceOffAtHalfReadVoltage, resist, "OffAtHalfReadVoltage_ohm");
+            yamlValueFromNode(resistanceOnAtHalfResetVoltage, resist, "OnAtHalfResetVoltage_ohm");
         }
         
         // Also support flat resistance fields (backwards compatibility)
-        if (config["ResistanceOn_ohm"])
-            resistanceOn = config["ResistanceOn_ohm"].as<double>();
-        if (config["ResistanceOff_ohm"])
-            resistanceOff = config["ResistanceOff_ohm"].as<double>();
+        yamlValueFromNode(resistanceOn, config, "ResistanceOn_ohm");
+        yamlValueFromNode(resistanceOff, config, "ResistanceOff_ohm");
         
         // Capacitance
         if (config["Capacitance"]) {
             YAML::Node cap = config["Capacitance"];
-            if (cap["On_F"])
-                capacitanceOn = cap["On_F"].as<double>();
-            if (cap["Off_F"])
-                capacitanceOff = cap["Off_F"].as<double>();
+            yamlValueFromNode(capacitanceOn, cap, "On_F");
+            yamlValueFromNode(capacitanceOff, cap, "Off_F");
         }
         
         // Also support flat capacitance fields
-        if (config["CapacitanceOn_F"])
-            capacitanceOn = config["CapacitanceOn_F"].as<double>();
-        if (config["CapacitanceOff_F"])
-            capacitanceOff = config["CapacitanceOff_F"].as<double>();
+        yamlValueFromNode(capacitanceOn, config, "CapacitanceOn_F");
+        yamlValueFromNode(capacitanceOff, config, "CapacitanceOff_F");
         
-        if (config["GateOxThicknessFactor"])
-            gateOxThicknessFactor = config["GateOxThicknessFactor"].as<double>();
+        yamlValueFromNode(gateOxThicknessFactor, config, "GateOxThicknessFactor");
             
-        if (config["SOIDeviceWidth_F"])
-            widthSOIDevice = config["SOIDeviceWidth_F"].as<double>();
+        yamlValueFromNode(widthSOIDevice, config, "SOIDeviceWidth_F");
         
         // Read Operation
         if (config["Read"]) {
             YAML::Node read = config["Read"];
-            if (read["Mode"]) {
-                std::string mode = read["Mode"].as<std::string>();
+            std::string mode;
+            if (yamlValueFromNode(mode, read, "Mode")) {
                 readMode = (mode == "voltage");
             }
-            if (read["Voltage_V"])
-                readVoltage = read["Voltage_V"].as<double>();
-            if (read["Current_uA"])
-                readCurrent = read["Current_uA"].as<double>() / 1e6;
-            if (read["Power_uW"])
-                readPower = read["Power_uW"].as<double>() / 1e6;
+            yamlValueFromNode(readVoltage, read, "Voltage_V");
+            if (yamlValueFromNode(readCurrent, read, "Current_uA")) {
+                readCurrent /= 1e6;
+            }
+            if (yamlValueFromNode(readPower, read, "Power_uW")) {
+                readPower /= 1e6;
+            }
         }
         
-        if (config["WordlineBoostRatio"])
-            wordlineBoostRatio = config["WordlineBoostRatio"].as<double>();
-            
-        if (config["MinSenseVoltage_mV"])
-            minSenseVoltage = config["MinSenseVoltage_mV"].as<double>() / 1e3;
-            
-        if (config["MaxStorageNodeDrop_V"])
-            maxStorageNodeDrop = config["MaxStorageNodeDrop_V"].as<double>();
+        yamlValueFromNode(wordlineBoostRatio, config, "WordlineBoostRatio");
+        yamlValueFromNode(minSenseVoltage, config, "MinSenseVoltage_mV");
+        yamlValueFromNode(maxStorageNodeDrop, config, "MaxStorageNodeDrop_V");
         
         // Reset Operation
         if (config["Reset"]) {
             YAML::Node reset = config["Reset"];
-            if (reset["Mode"]) {
-                std::string mode = reset["Mode"].as<std::string>();
+            std::string mode;
+            if (yamlValueFromNode(mode, reset, "Mode")) {
                 resetMode = (mode == "voltage");
             }
-            if (reset["Voltage_V"])
-                resetVoltage = reset["Voltage_V"].as<double>();
-            if (reset["Current_uA"])
-                resetCurrent = reset["Current_uA"].as<double>() / 1e6;
-            if (reset["Pulse_ns"])
-                resetPulse = reset["Pulse_ns"].as<double>() / 1e9;
-            if (reset["Energy_pJ"])
-                resetEnergy = reset["Energy_pJ"].as<double>() / 1e12;
+            yamlValueFromNode(resetVoltage, reset, "Voltage_V");
+            if (yamlValueFromNode(resetCurrent, reset, "Current_uA")) {
+                resetCurrent /= 1e6;
+            }
+            if (yamlValueFromNode(resetPulse, reset, "Pulse_ns")) {
+                resetPulse /= 1e9;
+            }
+            if (yamlValueFromNode(resetEnergy, reset, "Energy_pJ")) {
+                resetEnergy /= 1e12;
+            }
         }
         
         // Set Operation
         if (config["Set"]) {
             YAML::Node set = config["Set"];
-            if (set["Mode"]) {
-                std::string mode = set["Mode"].as<std::string>();
+            std::string mode;
+            if (yamlValueFromNode(mode, set, "Mode")) {
                 setMode = (mode == "voltage");
             }
-            if (set["Voltage_V"])
-                setVoltage = set["Voltage_V"].as<double>();
-            if (set["Current_uA"])
-                setCurrent = set["Current_uA"].as<double>() / 1e6;
-            if (set["Pulse_ns"])
-                setPulse = set["Pulse_ns"].as<double>() / 1e9;
-            if (set["Energy_pJ"])
-                setEnergy = set["Energy_pJ"].as<double>() / 1e12;
+            yamlValueFromNode(setVoltage, set, "Voltage_V");
+            if (yamlValueFromNode(setCurrent, set, "Current_uA")) {
+                setCurrent /= 1e6;
+            }
+            if (yamlValueFromNode(setPulse, set, "Pulse_ns")) {
+                setPulse /= 1e9;
+            }
+            if (yamlValueFromNode(setEnergy, set, "Energy_pJ")) {
+                setEnergy /= 1e12;
+            }
         }
         
         // Access Device
         if (config["Access"]) {
             YAML::Node access = config["Access"];
-            if (access["Type"]) {
-                std::string type = access["Type"].as<std::string>();
-                if (type == "CMOS")
-                    accessType = CMOS_access;
-                else if (type == "BJT")
-                    accessType = BJT_access;
-                else if (type == "diode")
-                    accessType = diode_access;
-                else
-                    accessType = none_access;
-            }
+            yamlValueFromNode(accessType, access, "Type");
             if (access["CMOSWidth_F"]) {
-                if (accessType != CMOS_access)
+                if (accessType != CMOS_access) {
                     std::cout << "Warning: CMOS width ignored (not CMOS-accessed)" << std::endl;
-                else
-                    widthAccessCMOS = access["CMOSWidth_F"].as<double>();
+                } else {
+                    yamlValueFromNode(widthAccessCMOS, access, "CMOSWidth_F");
+                }
             }
             if (access["CMOSWidthR_F"]) {
-                if (accessType != CMOS_access)
+                if (accessType != CMOS_access) {
                     std::cout << "Warning: CMOS width R ignored (not CMOS-accessed)" << std::endl;
-                else
-                    widthAccessCMOSR = access["CMOSWidthR_F"].as<double>();
+                } else {
+                    yamlValueFromNode(widthAccessCMOSR, access, "CMOSWidthR_F");
+                }
             }
-            if (access["VoltageDropAccessDevice_V"])
-                voltageDropAccessDevice = access["VoltageDropAccessDevice_V"].as<double>();
-            if (access["LeakageCurrentAccessDevice_uA"])
-                leakageCurrentAccessDevice = access["LeakageCurrentAccessDevice_uA"].as<double>() / 1e6;
+            yamlValueFromNode(voltageDropAccessDevice, access, "VoltageDropAccessDevice_V");
+            if (yamlValueFromNode(leakageCurrentAccessDevice, access, "LeakageCurrentAccessDevice_uA")) {
+                leakageCurrentAccessDevice /= 1e6;
+            }
         }
         
         // Also support flat access fields
-        if (config["AccessType"]) {
-            std::string type = config["AccessType"].as<std::string>();
-            if (type == "CMOS")
-                accessType = CMOS_access;
-            else if (type == "BJT")
-                accessType = BJT_access;
-            else if (type == "diode")
-                accessType = diode_access;
-            else
-                accessType = none_access;
-        }
+        yamlValueFromNode(accessType, config, "AccessType");
         if (config["AccessCMOSWidth_F"]) {
-            if (accessType != CMOS_access)
+            if (accessType != CMOS_access) {
                 std::cout << "Warning: CMOS width ignored (not CMOS-accessed)" << std::endl;
-            else
-                widthAccessCMOS = config["AccessCMOSWidth_F"].as<double>();
+            } else {
+                yamlValueFromNode(widthAccessCMOS, config, "AccessCMOSWidth_F");
+            }
         }
         if (config["AccessCMOSWidthR_F"]) {
-            if (accessType != CMOS_access)
+            if (accessType != CMOS_access) {
                 std::cout << "Warning: CMOS width R ignored (not CMOS-accessed)" << std::endl;
-            else
-                widthAccessCMOSR = config["AccessCMOSWidthR_F"].as<double>();
+            } else {
+                yamlValueFromNode(widthAccessCMOSR, config, "AccessCMOSWidthR_F");
+            }
         }
-        if (config["VoltageDropAccessDevice_V"])
-            voltageDropAccessDevice = config["VoltageDropAccessDevice_V"].as<double>();
-        if (config["LeakageCurrentAccessDevice_uA"])
-            leakageCurrentAccessDevice = config["LeakageCurrentAccessDevice_uA"].as<double>() / 1e6;
+        yamlValueFromNode(voltageDropAccessDevice, config, "VoltageDropAccessDevice_V");
+        if (yamlValueFromNode(leakageCurrentAccessDevice, config, "LeakageCurrentAccessDevice_uA")) {
+            leakageCurrentAccessDevice /= 1e6;
+        }
         
         // Additional Properties
-        if (config["ReadFloating"]) {
-            readFloating = config["ReadFloating"].as<bool>();
-        }
+        yamlValueFromNode(readFloating, config, "ReadFloating");
         
         // DRAM specific
         if (config["DRAMCellCapacitance_F"]) {
             if (memCellType != DRAM && memCellType != eDRAM && 
-                memCellType != eDRAM3T && memCellType != eDRAM3T333)
+                memCellType != eDRAM3T && memCellType != eDRAM3T333) {
                 std::cout << "Warning: DRAM capacitance ignored (not DRAM)" << std::endl;
-            else
-                capDRAMCell = config["DRAMCellCapacitance_F"].as<double>();
+            } else {
+                yamlValueFromNode(capDRAMCell, config, "DRAMCellCapacitance_F");
+            }
         }
         
         // SRAM specific
         if (config["SRAMCellNMOSWidth_F"]) {
-            if (memCellType != SRAM)
+            if (memCellType != SRAM) {
                 std::cout << "Warning: SRAM NMOS width ignored (not SRAM)" << std::endl;
-            else
-                widthSRAMCellNMOS = config["SRAMCellNMOSWidth_F"].as<double>();
+            } else {
+                yamlValueFromNode(widthSRAMCellNMOS, config, "SRAMCellNMOSWidth_F");
+            }
         }
         
         if (config["SRAMCellPMOSWidth_F"]) {
-            if (memCellType != SRAM)
+            if (memCellType != SRAM) {
                 std::cout << "Warning: SRAM PMOS width ignored (not SRAM)" << std::endl;
-            else
-                widthSRAMCellPMOS = config["SRAMCellPMOSWidth_F"].as<double>();
+            } else {
+                yamlValueFromNode(widthSRAMCellPMOS, config, "SRAMCellPMOSWidth_F");
+            }
         }
         
         // Flash specific
@@ -306,89 +232,102 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
             if (memCellType != SLCNAND && memCellType != MLCNAND) {
                 std::cout << "Warning: Flash parameters ignored (not Flash)" << std::endl;
             } else {
-                if (flash["EraseVoltage_V"])
-                    flashEraseVoltage = flash["EraseVoltage_V"].as<double>();
-                if (flash["ProgramVoltage_V"])
-                    flashProgramVoltage = flash["ProgramVoltage_V"].as<double>();
-                if (flash["PassVoltage_V"])
-                    flashPassVoltage = flash["PassVoltage_V"].as<double>();
-                if (flash["EraseTime_ms"])
-                    flashEraseTime = flash["EraseTime_ms"].as<double>() / 1e3;
-                if (flash["ProgramTime_us"])
-                    flashProgramTime = flash["ProgramTime_us"].as<double>() / 1e6;
-                if (flash["GateCouplingRatio"])
-                    gateCouplingRatio = flash["GateCouplingRatio"].as<double>();
+                yamlValueFromNode(flashEraseVoltage, flash, "EraseVoltage_V");
+                yamlValueFromNode(flashProgramVoltage, flash, "ProgramVoltage_V");
+                yamlValueFromNode(flashPassVoltage, flash, "PassVoltage_V");
+                if (yamlValueFromNode(flashEraseTime, flash, "EraseTime_ms")) {
+                    flashEraseTime /= 1e3;
+                }
+                if (yamlValueFromNode(flashProgramTime, flash, "ProgramTime_us")) {
+                    flashProgramTime /= 1e6;
+                }
+                yamlValueFromNode(gateCouplingRatio, flash, "GateCouplingRatio");
             }
         }
         
         // Also support flat flash fields
         if (config["FlashEraseVoltage_V"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND)
+            if (memCellType != SLCNAND && memCellType != MLCNAND) {
                 std::cout << "Warning: Flash erase voltage ignored (not Flash)" << std::endl;
-            else
-                flashEraseVoltage = config["FlashEraseVoltage_V"].as<double>();
+            } else {
+                yamlValueFromNode(flashEraseVoltage, config, "FlashEraseVoltage_V");
+            }
         }
         if (config["FlashProgramVoltage_V"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND)
+            if (memCellType != SLCNAND && memCellType != MLCNAND) {
                 std::cout << "Warning: Flash program voltage ignored (not Flash)" << std::endl;
-            else
-                flashProgramVoltage = config["FlashProgramVoltage_V"].as<double>();
+            } else {
+                yamlValueFromNode(flashProgramVoltage, config, "FlashProgramVoltage_V");
+            }
         }
         if (config["FlashPassVoltage_V"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND)
+            if (memCellType != SLCNAND && memCellType != MLCNAND) {
                 std::cout << "Warning: Flash pass voltage ignored (not Flash)" << std::endl;
-            else
-                flashPassVoltage = config["FlashPassVoltage_V"].as<double>();
+            } else {
+                yamlValueFromNode(flashPassVoltage, config, "FlashPassVoltage_V");
+            }
         }
         if (config["FlashEraseTime_ms"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND)
+            if (memCellType != SLCNAND && memCellType != MLCNAND) {
                 std::cout << "Warning: Flash erase time ignored (not Flash)" << std::endl;
-            else
-                flashEraseTime = config["FlashEraseTime_ms"].as<double>() / 1e3;
+            } else {
+                if (yamlValueFromNode(flashEraseTime, config, "FlashEraseTime_ms")) {
+                    flashEraseTime /= 1e3;
+                }
+            }
         }
         if (config["FlashProgramTime_us"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND)
+            if (memCellType != SLCNAND && memCellType != MLCNAND) {
                 std::cout << "Warning: Flash program time ignored (not Flash)" << std::endl;
-            else
-                flashProgramTime = config["FlashProgramTime_us"].as<double>() / 1e6;
+            } else {
+                if (yamlValueFromNode(flashProgramTime, config, "FlashProgramTime_us")) {
+                    flashProgramTime /= 1e6;
+                }
+            }
         }
         if (config["GateCouplingRatio"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND)
+            if (memCellType != SLCNAND && memCellType != MLCNAND) {
                 std::cout << "Warning: Gate coupling ratio ignored (not Flash)" << std::endl;
-            else
-                gateCouplingRatio = config["GateCouplingRatio"].as<double>();
+            } else {
+                yamlValueFromNode(gateCouplingRatio, config, "GateCouplingRatio");
+            }
         }
         
         // Retention time
         if (config["RetentionTime_us"]) {
             if (memCellType != DRAM && memCellType != eDRAM && 
-                memCellType != eDRAM3T && memCellType != eDRAM3T333)
+                memCellType != eDRAM3T && memCellType != eDRAM3T333) {
                 std::cout << "Warning: Retention time ignored (not DRAM)" << std::endl;
-            else
-                retentionTime = config["RetentionTime_us"].as<double>() / 1e6;
+            } else {
+                if (yamlValueFromNode(retentionTime, config, "RetentionTime_us")) {
+                    retentionTime /= 1e6;
+                }
+            }
         }
         
         // MLC specific
         if (config["InputFingers"]) {
-            if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM)
+            if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM) {
                 std::cout << "Warning: InputFingers used only for MLC SA" << std::endl;
-            else
-                nFingers = config["InputFingers"].as<int>();
+            } else {
+                yamlValueFromNode(nFingers, config, "InputFingers");
+            }
         }
         
         if (config["CellLevels"]) {
-            if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM)
+            if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM) {
                 std::cout << "Warning: CellLevels used only for MLC" << std::endl;
-            else
-                nLvl = config["CellLevels"].as<double>();
+            } else {
+                yamlValueFromNode(nLvl, config, "CellLevels");
+            }
         }
         
     } catch (const YAML::Exception& e) {
         std::cout << "Error parsing YAML file: " << e.what() << std::endl;
-        exit(-1);
+        exit(EXIT_FAILURE);
     } catch (const std::exception& e) {
         std::cout << "Error reading file: " << e.what() << std::endl;
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -592,160 +531,103 @@ double MemCell::CalculateReadPower() { /* TO-DO consider charge pumped read volt
 	return -1.0;
 }
 
-void MemCell::PrintCell()
-{
-	switch (memCellType) {
-	case SRAM:
-		std::cout << "Memory Cell: SRAM" << std::endl;
-		break;
-	case DRAM:
-		std::cout << "Memory Cell: DRAM" << std::endl;
-		break;
-	case eDRAM:
-		std::cout << "Memory Cell: Embedded DRAM" << std::endl;
-		break;
-	case eDRAM3T:
-		std::cout << "Memory Cell: 3T Embedded DRAM" << std::endl;
-		break;
-	case eDRAM3T333:
-		std::cout << "Memory Cell: 333 Embedded DRAM" << std::endl;
-		break;
-	case MRAM:
-		std::cout << "Memory Cell: MRAM (Magnetoresistive)" << std::endl;
-		break;
-	case PCRAM:
-		std::cout << "Memory Cell: PCRAM (Phase-Change)" << std::endl;
-		break;
-	case memristor:
-		std::cout << "Memory Cell: RRAM (Memristor)" << std::endl;
-		break;
-	case FBRAM:
-		std::cout << "Memory Cell: FBRAM (Floating Body)" << std::endl;
-		break;
-	case SLCNAND:
-		std::cout << "Memory Cell: Single-Level Cell NAND Flash" << std::endl;
-		break;
-	case MLCNAND:
-		std::cout << "Memory Cell: Multi-Level Cell NAND Flash" << std::endl;
-		break;
-	case CTT:
-		std::cout << "Memory Cell: Single-Level Cell CTT" << std::endl;
-		break;
-	case MLCCTT:
-		std::cout << "Memory Cell: Multi-Level Cell CTT" << std::endl;
-		break;
-	case FeFET:
-		std::cout << "Memory Cell: Single-Level Cell FeFET" << std::endl;
-		break;
-	case MLCFeFET:
-		std::cout << "Memory Cell: Multi-Level Cell FeFET" << std::endl;
-		break;
-	case MLCRRAM:
-		std::cout << "Memory Cell: Multi-Level Cell RRAM (Memristor)" << std::endl;
-		break;
-	default:
-		std::cout << "Memory Cell: Unknown" << std::endl;
-	}
-	std::cout << "Cell Area (F^2)    : " << area << " (" << heightInFeatureSize << "Fx" << widthInFeatureSize << "F)" << std::endl;
-	std::cout << "Cell Area (um^2)    : " << area/1000000.0*gTech.featureSizeInNano*gTech.featureSizeInNano << " (" << heightInFeatureSize*gTech.featureSizeInNano << "nm x" << widthInFeatureSize*gTech.featureSizeInNano << "nm y)" << std::endl;
-	std::cout << "Cell Aspect Ratio  : " << aspectRatio << std::endl;
+void MemCell::PrintCell() {
+    std::cout << "Memory Cell: " << memCellType << "\n";
+
+	std::cout << "Cell Area (F^2)    : " << area << " (" << heightInFeatureSize << "Fx" << widthInFeatureSize << "F)\n";
+	std::cout << "Cell Area (um^2)    : " << area / 1000000.0 * gTech.featureSizeInNano * gTech.featureSizeInNano << " (" << heightInFeatureSize * gTech.featureSizeInNano << "nm x" << widthInFeatureSize * gTech.featureSizeInNano << "nm y)\n";
+	std::cout << "Cell Aspect Ratio  : " << aspectRatio << "\n";
 
 	if (memCellType == PCRAM || memCellType == MRAM || memCellType == memristor || memCellType == FBRAM || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM) {
-		if (resistanceOn < 1e3 )
-			std::cout << "Cell Turned-On Resistance : " << resistanceOn << "ohm" << std::endl;
-		else if (resistanceOn < 1e6)
-			std::cout << "Cell Turned-On Resistance : " << resistanceOn / 1e3 << "Kohm" << std::endl;
-		else
-			std::cout << "Cell Turned-On Resistance : " << resistanceOn / 1e6 << "Mohm" << std::endl;
-		if (resistanceOff < 1e3 )
-			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff << "ohm" << std::endl;
-		else if (resistanceOff < 1e6)
-			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e3 << "Kohm" << std::endl;
-		else
-			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e6 << "Mohm" << std::endl;
+		if (resistanceOn < 1e3) {
+			std::cout << "Cell Turned-On Resistance : " << resistanceOn << "ohm\n";
+		} else if (resistanceOn < 1e6) {
+			std::cout << "Cell Turned-On Resistance : " << resistanceOn / 1e3 << "Kohm\n";
+		} else {
+			std::cout << "Cell Turned-On Resistance : " << resistanceOn / 1e6 << "Mohm\n";
+        }
+		if (resistanceOff < 1e3) {
+			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff << "ohm\n";
+		} else if (resistanceOff < 1e6) {
+			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e3 << "Kohm\n";
+		} else {
+			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e6 << "Mohm\n";
+        }
 
 		if (readMode) {
-			std::cout << "Read Mode: Voltage-Sensing" << std::endl;
-			if (readCurrent > 0)
-				std::cout << "  - Read Current: " << readCurrent * 1e6 << "uA" << std::endl;
-			if (readVoltage > 0)
-				std::cout << "  - Read Voltage: " << readVoltage << "V" << std::endl;
+			std::cout << "Read Mode: Voltage-Sensing\n";
+			if (readCurrent > 0) {
+				std::cout << "  - Read Current: " << readCurrent * 1e6 << "uA\n";
+            }
+			if (readVoltage > 0) {
+				std::cout << "  - Read Voltage: " << readVoltage << "V\n";
+            }
 		} else {
-			std::cout << "Read Mode: Current-Sensing" << std::endl;
-			if (readCurrent > 0)
-				std::cout << "  - Read Current: " << readCurrent * 1e6 << "uA" << std::endl;
-			if (readVoltage > 0)
-				std::cout << "  - Read Voltage: " << readVoltage << "V" << std::endl;
+			std::cout << "Read Mode: Current-Sensing\n";
+			if (readCurrent > 0) {
+				std::cout << "  - Read Current: " << readCurrent * 1e6 << "uA\n";
+            }
+			if (readVoltage > 0) {
+				std::cout << "  - Read Voltage: " << readVoltage << "V\n";
+            }
 		}
 
 		if (resetMode) {
-			std::cout << "Reset Mode: Voltage" << std::endl;
-			std::cout << "  - Reset Voltage: " << resetVoltage << "V" << std::endl;
+			std::cout << "Reset Mode: Voltage\n";
+			std::cout << "  - Reset Voltage: " << resetVoltage << "V\n";
 		} else {
-			std::cout << "Reset Mode: Current" << std::endl;
-			std::cout << "  - Reset Current: " << resetCurrent * 1e6 << "uA" << std::endl;
+			std::cout << "Reset Mode: Current\n";
+			std::cout << "  - Reset Current: " << resetCurrent * 1e6 << "uA\n";
 		}
-		std::cout << "  - Reset Pulse: " << TO_SECOND(resetPulse) << std::endl;
+		std::cout << "  - Reset Pulse: " << TO_SECOND(resetPulse) << "\n";
 
 		if (setMode) {
-			std::cout << "Set Mode: Voltage" << std::endl;
-			std::cout << "  - Set Voltage: " << setVoltage << "V" << std::endl;
+			std::cout << "Set Mode: Voltage\n";
+			std::cout << "  - Set Voltage: " << setVoltage << "V\n";
 		} else {
-			std::cout << "Set Mode: Current" << std::endl;
-			std::cout << "  - Set Current: " << setCurrent * 1e6 << "uA" << std::endl;
+			std::cout << "Set Mode: Current\n";
+			std::cout << "  - Set Current: " << setCurrent * 1e6 << "uA\n";
 		}
-		std::cout << "  - Set Pulse: " << TO_SECOND(setPulse) << std::endl;
+		std::cout << "  - Set Pulse: " << TO_SECOND(setPulse) << "\n";
 
-		switch (accessType) {
-		case CMOS_access:
-			std::cout << "Access Type: CMOS" << std::endl;
-			break;
-		case BJT_access:
-			std::cout << "Access Type: BJT" << std::endl;
-			break;
-		case diode_access:
-			std::cout << "Access Type: Diode" << std::endl;
-			break;
-		default:
-			std::cout << "Access Type: None Access Device" << std::endl;
-		}
+        std::cout << "Access Type: " << accessType << "\n";
 	} else if (memCellType == SRAM) {
-		std::cout << "SRAM Cell Access Transistor Width: " << widthAccessCMOS << "F" << std::endl;
-		std::cout << "SRAM Cell NMOS Width: " << widthSRAMCellNMOS << "F" << std::endl;
-		std::cout << "SRAM Cell PMOS Width: " << widthSRAMCellPMOS << "F" << std::endl;
-		std::cout << "SRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << std::endl;
-		std::cout << "SRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << std::endl;
-		std::cout << "SRAM Cell VDD: " << gTech.vdd << "V" << std::endl;
-		std::cout << "Temperature: " << gCell.temperature << "K" << std::endl;
+		std::cout << "SRAM Cell Access Transistor Width: " << widthAccessCMOS << "F\n";
+		std::cout << "SRAM Cell NMOS Width: " << widthSRAMCellNMOS << "F\n";
+		std::cout << "SRAM Cell PMOS Width: " << widthSRAMCellPMOS << "F\n";
+		std::cout << "SRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
+		std::cout << "SRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
+		std::cout << "SRAM Cell VDD: " << gTech.vdd << "V\n";
+		std::cout << "Temperature: " << gCell.temperature << "K\n";
 	} else if (memCellType == DRAM || memCellType == eDRAM) {
-		std::cout << "DRAM Cell Access Transistor Width: " << widthAccessCMOS << "F" << std::endl;
-		std::cout << "DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << std::endl;
-		std::cout << "DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << std::endl;
-		std::cout << "DRAM Cell VDD: " << gTech.vdd << "V" << std::endl;
-		std::cout << "DRAM Cell WL_SWING: " << gTech.vpp << "V" << std::endl;
-		std::cout << "Temperature: " << gCell.temperature << "K" << std::endl;
+		std::cout << "DRAM Cell Access Transistor Width: " << widthAccessCMOS << "F\n";
+		std::cout << "DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
+		std::cout << "DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
+		std::cout << "DRAM Cell VDD: " << gTech.vdd << "V\n";
+		std::cout << "DRAM Cell WL_SWING: " << gTech.vpp << "V\n";
+		std::cout << "Temperature: " << gCell.temperature << "K\n";
 	} else if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
-		std::cout << "3T DRAM Cell Write Access Transistor Width: " << widthAccessCMOS << "F" << std::endl;
-		std::cout << "3T DRAM Cell Read Access Transistor Width: " << widthAccessCMOSR << "F" << std::endl;
-		std::cout << "3T DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << std::endl;
-		std::cout << "3T DRAM Cell Write Access Roadmap: " << gTechW.deviceRoadmap << std::endl;
-		std::cout << "3T DRAM Cell Read Access Roadmap: " << gTechR.deviceRoadmap << std::endl;
-		std::cout << "3T DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm" << std::endl;
-		std::cout << "3T DRAM Cell Write Access Node: " << gTechW.featureSizeInNano << "nm" << std::endl;
-		std::cout << "3T DRAM Cell Read Access Node: " << gTechR.featureSizeInNano << "nm" << std::endl;
-		std::cout << "3T DRAM Cell VDD: " << gTech.vdd << "V" << std::endl;
-		std::cout << "3T DRAM Cell WWL_SWING: " << gTechW.vpp << "V" << std::endl;
-		std::cout << "Temperature: " << gCell.temperature << "K" << std::endl;
+		std::cout << "3T DRAM Cell Write Access Transistor Width: " << widthAccessCMOS << "F\n";
+		std::cout << "3T DRAM Cell Read Access Transistor Width: " << widthAccessCMOSR << "F\n";
+		std::cout << "3T DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
+		std::cout << "3T DRAM Cell Write Access Roadmap: " << gTechW.deviceRoadmap << "\n";
+		std::cout << "3T DRAM Cell Read Access Roadmap: " << gTechR.deviceRoadmap << "\n";
+		std::cout << "3T DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
+		std::cout << "3T DRAM Cell Write Access Node: " << gTechW.featureSizeInNano << "nm\n";
+		std::cout << "3T DRAM Cell Read Access Node: " << gTechR.featureSizeInNano << "nm\n";
+		std::cout << "3T DRAM Cell VDD: " << gTech.vdd << "V\n";
+		std::cout << "3T DRAM Cell WWL_SWING: " << gTechW.vpp << "V\n";
+		std::cout << "Temperature: " << gCell.temperature << "K\n";
 	} else if (memCellType == SLCNAND) {
-		std::cout << "Pass Voltage       : " << flashPassVoltage << "V" << std::endl;
-		std::cout << "Programming Voltage: " << flashProgramVoltage << "V" << std::endl;
-		std::cout << "Erase Voltage      : " << flashEraseVoltage << "V" << std::endl;
-		std::cout << "Programming Time   : " << TO_SECOND(flashProgramTime) << std::endl;
-		std::cout << "Erase Time         : " << TO_SECOND(flashEraseTime) << std::endl;
-		std::cout << "Gate Coupling Ratio: " << gateCouplingRatio << std::endl;
+		std::cout << "Pass Voltage       : " << flashPassVoltage << "V\n";
+		std::cout << "Programming Voltage: " << flashProgramVoltage << "V\n";
+		std::cout << "Erase Voltage      : " << flashEraseVoltage << "V\n";
+		std::cout << "Programming Time   : " << TO_SECOND(flashProgramTime) << "\n";
+		std::cout << "Erase Time         : " << TO_SECOND(flashEraseTime) << "\n";
+		std::cout << "Gate Coupling Ratio: " << gateCouplingRatio << "\n";
 	} 
 	if (memCellType == MLCCTT || memCellType == MLCFeFET || memCellType == MLCRRAM) {
-			std::cout << "Number of Input Fingers: " << nFingers << std::endl;
-			std::cout << "Number of Levels per Cell: " << nLvl << std::endl;
+			std::cout << "Number of Input Fingers: " << nFingers << "\n";
+			std::cout << "Number of Levels per Cell: " << nLvl << "\n";
 	}
 }

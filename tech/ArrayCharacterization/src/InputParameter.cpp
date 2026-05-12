@@ -37,6 +37,8 @@
 
 #include "InputParameter.hpp"
 #include "global.hpp"
+#include "typedef.hpp"
+#include "enuminfo.hpp"
 
 #include "yaml-cpp/yaml.h"
 
@@ -49,697 +51,293 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         YAML::Node config = YAML::LoadFile(inputFile);
         
         // Memory Cell Input File
-        if (config["MemoryCellInputFile"]) {
-            fileMemCell = config["MemoryCellInputFile"].as<std::string>();
-        }
+        yamlValueFromNode(fileMemCell, config, "MemoryCellInputFile");
+        bool hasProcessNode = yamlValueFromNode(processNode, config, "ProcessNode");
         
         // Process Technology
-        if (config["ProcessNode"])
-            processNode = config["ProcessNode"].as<int>();
-        if (config["ProcessNodeW"])
-            processNodeW = config["ProcessNodeW"].as<int>();
-        else if (config["ProcessNode"])
+        // if we cant get ProcessNodeW and ProcessNode exists, then use ProcessNode instead
+        if (!yamlValueFromNode(processNodeW, config, "ProcessNodeW") && hasProcessNode) {
             processNodeW = processNode;
-            
-        if (config["ProcessNodeR"])
-            processNodeR = config["ProcessNodeR"].as<int>();
-        else if (config["ProcessNode"])
-            processNodeR = processNode;
-        
-        // Device Roadmap
-        if (config["DeviceRoadmap"]) {
-            std::string roadmap = config["DeviceRoadmap"].as<std::string>();
-            if (roadmap == "HP")
-                deviceRoadmap = HP;
-            else if (roadmap == "LOP")
-                deviceRoadmap = LOP;
-            else if (roadmap == "IGZO")
-                deviceRoadmap = IGZO;
-            else if (roadmap == "CNT")
-                deviceRoadmap = CNT;
-            else {
-                std::cout << "Invalid DeviceRoadmap (choose HP/LOP/CNT/IGZO)" << std::endl;
-                exit(-1);
-            }
         }
         
-        if (config["DeviceRoadmapW"]) {
-            std::string roadmap = config["DeviceRoadmapW"].as<std::string>();
-            if (roadmap == "HP")
-                deviceRoadmapW = HP;
-            else if (roadmap == "LOP")
-                deviceRoadmapW = LOP;
-            else if (roadmap == "IGZO")
-                deviceRoadmapW = IGZO;
-            else if (roadmap == "CNT")
-                deviceRoadmapW = CNT;
-            else {
-                std::cout << "Invalid DeviceRoadmapW (choose HP/LOP/CNT/IGZO)" << std::endl;
-                exit(-1);
-            }
-        } else if (config["DeviceRoadmap"]) {
+        // if we cant get ProcessNodeR and ProcessNode exists, then use ProcessNode instead
+        if (!yamlValueFromNode(processNodeR, config, "ProcessNodeR") && hasProcessNode) {
+            processNodeR = processNode;
+        }
+        
+        // Device Roadmap
+        bool hasDeviceRoadmap = yamlValueFromNode(deviceRoadmap, config, "DeviceRoadmap");
+
+        // if we cant get DeviceRoadmapW and DeviceRoadmap exists, then use DeviceRoadmap instead
+        if (!yamlValueFromNode(deviceRoadmapW, config, "DeviceRoadmapW") && hasDeviceRoadmap) {
             deviceRoadmapW = deviceRoadmap;
         }
         
-        if (config["DeviceRoadmapR"]) {
-            std::string roadmap = config["DeviceRoadmapR"].as<std::string>();
-            if (roadmap == "HP")
-                deviceRoadmapR = HP;
-            else if (roadmap == "LOP")
-                deviceRoadmapR = LOP;
-            else if (roadmap == "IGZO")
-                deviceRoadmapR = IGZO;
-            else if (roadmap == "CNT")
-                deviceRoadmapR = CNT;
-            else {
-                std::cout << "Invalid DeviceRoadmapR (choose HP/LOP/CNT/IGZO)" << std::endl;
-                exit(-1);
-            }
-        } else if (config["DeviceRoadmap"]) {
+        // if we cant get DeviceRoadmapR and DeviceRoadmap exists, then use DeviceRoadmap instead
+        if (!yamlValueFromNode(deviceRoadmapR, config, "DeviceRoadmapR") && hasDeviceRoadmap) {
             deviceRoadmapR = deviceRoadmap;
         }
         
         // Design Configuration
-        if (config["DesignTarget"]) {
-            std::string target = config["DesignTarget"].as<std::string>();
-            if (target == "cache")
-                designTarget = cache;
-            else if (target == "RAM") {
-                designTarget = RAM_chip;
-                minNumRowPerSet = 1;
-                maxNumRowPerSet = 1;
-            } else {
-                designTarget = CAM_chip;
-                minNumRowPerSet = 1;
-                maxNumRowPerSet = 1;
-            }
-        }
-        
-        if (config["CacheAccessMode"]) {
-            std::string mode = config["CacheAccessMode"].as<std::string>();
-            if (mode == "Sequential")
-                cacheAccessMode = sequential_access_mode;
-            else if (mode == "Fast")
-                cacheAccessMode = fast_access_mode;
-            else
-                cacheAccessMode = normal_access_mode;
-        }
-        
-        if (config["Associativity"])
-            associativity = config["Associativity"].as<int>();
+        yamlValueFromNode(designTarget, config, "DesignTarget");
+        yamlValueFromNode(cacheAccessMode, config, "CacheAccessMode");
+        yamlValueFromNode(associativity, config, "Associativity");
         
         // Optimization
-        if (config["OptimizationTarget"]) {
-            std::string target = config["OptimizationTarget"].as<std::string>();
-            if (target == "ReadLatency")
-                optimizationTarget = read_latency_optimized;
-            else if (target == "WriteLatency")
-                optimizationTarget = write_latency_optimized;
-            else if (target == "ReadDynamicEnergy")
-                optimizationTarget = read_energy_optimized;
-            else if (target == "WriteDynamicEnergy")
-                optimizationTarget = write_energy_optimized;
-            else if (target == "ReadEDP")
-                optimizationTarget = read_edp_optimized;
-            else if (target == "WriteEDP")
-                optimizationTarget = write_edp_optimized;
-            else if (target == "LeakagePower")
-                optimizationTarget = leakage_optimized;
-            else if (target == "Area")
-                optimizationTarget = area_optimized;
-            else
-                optimizationTarget = full_exploration;
-        }
-        
-        if (config["OutputFilePrefix"])
-            outputFilePrefix = config["OutputFilePrefix"].as<std::string>();
-        
-        if (config["OutputDirectory"])
-            outputDirectory = config["OutputDirectory"].as<std::string>();
-        
-        if (config["EnablePruning"]) {
-            std::string enable = config["EnablePruning"].as<std::string>();
-            isPruningEnabled = (enable == "Yes" || enable == "yes" || enable == "true");
-        }
+        yamlValueFromNode(optimizationTarget, config, "OptimizationTarget");
+        yamlValueFromNode(outputFilePrefix, config, "OutputFilePrefix");
+        yamlValueFromNode(outputDirectory, config, "OutputDirectory");
+        yamlValueFromNode(isPruningEnabled, config, "EnablePruning");
         
         // Memory Specifications - Support both nested and flat formats
         if (config["Capacity"]) {
             if (config["Capacity"].IsMap()) {
                 // Nested format
-                long cap = config["Capacity"]["Value"].as<long>();
-                std::string unit = config["Capacity"]["Unit"].as<std::string>();
-                if (unit == "B")
-                    capacity = cap;
-                else if (unit == "KB")
-                    capacity = cap * 1024;
-                else if (unit == "MB")
-                    capacity = cap * 1024 * 1024;
+                YAML::Node capacityNode = config["Capacity"];
+                long cap;
+                std::string unit;
+                yamlValueFromNode(cap, capacityNode, "Value");
+                if (yamlValueFromNode(unit, capacityNode, "Unit")) {
+                    if (unit == "B" ) {
+                        capacity = cap;
+                    } else if (unit == "KB") {
+                        capacity = cap * 1024;
+                    } else if (unit == "MB") {
+                        capacity = cap * 1024 * 1024;
+                    }
+                }
             } else {
                 // Flat format - assume KB for backwards compatibility
-                capacity = config["Capacity"].as<long>() * 1024;
+                if (yamlValueFromNode(capacity, config, "Capacity")) {
+                    capacity *= 1024;
+                }
             }
         }
         
         // Also support old-style flat capacity fields
-        if (config["Capacity_B"])
-            capacity = config["Capacity_B"].as<long>();
-        if (config["Capacity_KB"])
-            capacity = config["Capacity_KB"].as<long>() * 1024;
-        if (config["Capacity_MB"])
-            capacity = config["Capacity_MB"].as<long>() * 1024 * 1024;
+        if (yamlValueFromNode(capacity, config, "Capacity_B")) {
+            // capacity *= 1;
+        } else if (yamlValueFromNode(capacity, config, "Capacity_KB")) {
+            capacity *= 1024;
+        } else if (yamlValueFromNode(capacity, config, "Capacity_MB")) {
+            capacity *= 1024 * 1024;
+        }
         
-        if (config["WordWidth"])
-            wordWidth = config["WordWidth"].as<long>();
+        yamlValueFromNode(wordWidth, config, "WordWidth");
         
         // Wire Configuration
         if (config["LocalWire"]) {
             YAML::Node localWire = config["LocalWire"];
-            if (localWire["Type"]) {
-                std::string type = localWire["Type"].as<std::string>();
-                if (type == "LocalAggressive") {
-                    minLocalWireType = local_aggressive;
-                    maxLocalWireType = local_aggressive;
-                } else if (type == "LocalConservative") {
-                    minLocalWireType = local_conservative;
-                    maxLocalWireType = local_conservative;
-                } else if (type == "SemiAggressive") {
-                    minLocalWireType = semi_aggressive;
-                    maxLocalWireType = semi_aggressive;
-                } else if (type == "SemiConservative") {
-                    minLocalWireType = semi_conservative;
-                    maxLocalWireType = semi_conservative;
-                } else if (type == "GlobalAggressive") {
-                    minLocalWireType = global_aggressive;
-                    maxLocalWireType = global_aggressive;
-                } else if (type == "GlobalConservative") {
-                    minLocalWireType = global_conservative;
-                    maxLocalWireType = global_conservative;
-                } else {
-                    minLocalWireType = dram_wordline;
-                    maxLocalWireType = dram_wordline;
-                }
-            }
+            yamlValueFromNode(minLocalWireType, localWire, "Type");
+            yamlValueFromNode(maxLocalWireType, localWire, "Type");
             
-            if (localWire["RepeaterType"]) {
-                std::string type = localWire["RepeaterType"].as<std::string>();
-                if (type == "RepeatedOpt") {
-                    minLocalWireRepeaterType = repeated_opt;
-                    maxLocalWireRepeaterType = repeated_opt;
-                } else if (type == "Repeated5%Penalty") {
-                    minLocalWireRepeaterType = repeated_5;
-                    maxLocalWireRepeaterType = repeated_5;
-                } else if (type == "Repeated10%Penalty") {
-                    minLocalWireRepeaterType = repeated_10;
-                    maxLocalWireRepeaterType = repeated_10;
-                } else if (type == "Repeated20%Penalty") {
-                    minLocalWireRepeaterType = repeated_20;
-                    maxLocalWireRepeaterType = repeated_20;
-                } else if (type == "Repeated30%Penalty") {
-                    minLocalWireRepeaterType = repeated_30;
-                    maxLocalWireRepeaterType = repeated_30;
-                } else if (type == "Repeated40%Penalty") {
-                    minLocalWireRepeaterType = repeated_40;
-                    maxLocalWireRepeaterType = repeated_40;
-                } else if (type == "Repeated50%Penalty") {
-                    minLocalWireRepeaterType = repeated_50;
-                    maxLocalWireRepeaterType = repeated_50;
-                } else {
-                    minLocalWireRepeaterType = repeated_none;
-                    maxLocalWireRepeaterType = repeated_none;
-                }
-            }
-            
-            if (localWire["UseLowSwing"]) {
-                std::string use = localWire["UseLowSwing"].as<std::string>();
-                bool useLowSwing = (use == "Yes" || use == "yes" || use == "true");
-                minIsLocalWireLowSwing = useLowSwing;
-                maxIsLocalWireLowSwing = useLowSwing;
-            }
+            yamlValueFromNode(minLocalWireRepeaterType, localWire, "RepeaterType");
+            yamlValueFromNode(maxLocalWireRepeaterType, localWire, "RepeaterType");
+
+            yamlValueFromNode(minIsLocalWireLowSwing, localWire, "UseLowSwing");
+            yamlValueFromNode(maxIsLocalWireLowSwing, localWire, "UseLowSwing");
         }
         
         // Also support flat local wire fields
-        if (config["LocalWireType"]) {
-            std::string type = config["LocalWireType"].as<std::string>();
-            if (type == "LocalAggressive") {
-                minLocalWireType = local_aggressive;
-                maxLocalWireType = local_aggressive;
-            } else if (type == "LocalConservative") {
-                minLocalWireType = local_conservative;
-                maxLocalWireType = local_conservative;
-            } else if (type == "SemiAggressive") {
-                minLocalWireType = semi_aggressive;
-                maxLocalWireType = semi_aggressive;
-            } else if (type == "SemiConservative") {
-                minLocalWireType = semi_conservative;
-                maxLocalWireType = semi_conservative;
-            } else if (type == "GlobalAggressive") {
-                minLocalWireType = global_aggressive;
-                maxLocalWireType = global_aggressive;
-            } else if (type == "GlobalConservative") {
-                minLocalWireType = global_conservative;
-                maxLocalWireType = global_conservative;
-            } else {
-                minLocalWireType = dram_wordline;
-                maxLocalWireType = dram_wordline;
-            }
-        }
+        yamlValueFromNode(minLocalWireType, config, "LocalWireType");
+        yamlValueFromNode(maxLocalWireType, config, "LocalWireType");
         
-        if (config["LocalWireRepeaterType"]) {
-            std::string type = config["LocalWireRepeaterType"].as<std::string>();
-            if (type == "RepeatedOpt") {
-                minLocalWireRepeaterType = repeated_opt;
-                maxLocalWireRepeaterType = repeated_opt;
-            } else if (type == "Repeated5%Penalty") {
-                minLocalWireRepeaterType = repeated_5;
-                maxLocalWireRepeaterType = repeated_5;
-            } else if (type == "Repeated10%Penalty") {
-                minLocalWireRepeaterType = repeated_10;
-                maxLocalWireRepeaterType = repeated_10;
-            } else if (type == "Repeated20%Penalty") {
-                minLocalWireRepeaterType = repeated_20;
-                maxLocalWireRepeaterType = repeated_20;
-            } else if (type == "Repeated30%Penalty") {
-                minLocalWireRepeaterType = repeated_30;
-                maxLocalWireRepeaterType = repeated_30;
-            } else if (type == "Repeated40%Penalty") {
-                minLocalWireRepeaterType = repeated_40;
-                maxLocalWireRepeaterType = repeated_40;
-            } else if (type == "Repeated50%Penalty") {
-                minLocalWireRepeaterType = repeated_50;
-                maxLocalWireRepeaterType = repeated_50;
-            } else {
-                minLocalWireRepeaterType = repeated_none;
-                maxLocalWireRepeaterType = repeated_none;
-            }
-        }
+        yamlValueFromNode(minLocalWireRepeaterType, config, "LocalWireRepeaterType");
+        yamlValueFromNode(maxLocalWireRepeaterType, config, "LocalWireRepeaterType");
         
-        if (config["LocalWireUseLowSwing"]) {
-            std::string use = config["LocalWireUseLowSwing"].as<std::string>();
-            bool useLowSwing = (use == "Yes" || use == "yes" || use == "true");
-            minIsLocalWireLowSwing = useLowSwing;
-            maxIsLocalWireLowSwing = useLowSwing;
-        }
+        yamlValueFromNode(minIsLocalWireLowSwing, config, "LocalWireUseLowSwing");
+        yamlValueFromNode(maxIsLocalWireLowSwing, config, "LocalWireUseLowSwing");
         
         // Global Wire Configuration
         if (config["GlobalWire"]) {
             YAML::Node globalWire = config["GlobalWire"];
-            if (globalWire["Type"]) {
-                std::string type = globalWire["Type"].as<std::string>();
-                if (type == "LocalAggressive") {
-                    minGlobalWireType = local_aggressive;
-                    maxGlobalWireType = local_aggressive;
-                } else if (type == "LocalConservative") {
-                    minGlobalWireType = local_conservative;
-                    maxGlobalWireType = local_conservative;
-                } else if (type == "SemiAggressive") {
-                    minGlobalWireType = semi_aggressive;
-                    maxGlobalWireType = semi_aggressive;
-                } else if (type == "SemiConservative") {
-                    minGlobalWireType = semi_conservative;
-                    maxGlobalWireType = semi_conservative;
-                } else if (type == "GlobalAggressive") {
-                    minGlobalWireType = global_aggressive;
-                    maxGlobalWireType = global_aggressive;
-                } else if (type == "GlobalConservative") {
-                    minGlobalWireType = global_conservative;
-                    maxGlobalWireType = global_conservative;
-                } else {
-                    minGlobalWireType = dram_wordline;
-                    maxGlobalWireType = dram_wordline;
-                }
-            }
+            yamlValueFromNode(minGlobalWireType, globalWire, "Type");
+            yamlValueFromNode(maxGlobalWireType, globalWire, "Type");
             
-            if (globalWire["RepeaterType"]) {
-                std::string type = globalWire["RepeaterType"].as<std::string>();
-                if (type == "RepeatedOpt") {
-                    minGlobalWireRepeaterType = repeated_opt;
-                    maxGlobalWireRepeaterType = repeated_opt;
-                } else if (type == "Repeated5%Penalty") {
-                    minGlobalWireRepeaterType = repeated_5;
-                    maxGlobalWireRepeaterType = repeated_5;
-                } else if (type == "Repeated10%Penalty") {
-                    minGlobalWireRepeaterType = repeated_10;
-                    maxGlobalWireRepeaterType = repeated_10;
-                } else if (type == "Repeated20%Penalty") {
-                    minGlobalWireRepeaterType = repeated_20;
-                    maxGlobalWireRepeaterType = repeated_20;
-                } else if (type == "Repeated30%Penalty") {
-                    minGlobalWireRepeaterType = repeated_30;
-                    maxGlobalWireRepeaterType = repeated_30;
-                } else if (type == "Repeated40%Penalty") {
-                    minGlobalWireRepeaterType = repeated_40;
-                    maxGlobalWireRepeaterType = repeated_40;
-                } else if (type == "Repeated50%Penalty") {
-                    minGlobalWireRepeaterType = repeated_50;
-                    maxGlobalWireRepeaterType = repeated_50;
-                } else {
-                    minGlobalWireRepeaterType = repeated_none;
-                    maxGlobalWireRepeaterType = repeated_none;
-                }
-            }
+            yamlValueFromNode(minGlobalWireRepeaterType, globalWire, "RepeaterType");
+            yamlValueFromNode(maxGlobalWireRepeaterType, globalWire, "RepeaterType");
             
-            if (globalWire["UseLowSwing"]) {
-                std::string use = globalWire["UseLowSwing"].as<std::string>();
-                bool useLowSwing = (use == "Yes" || use == "yes" || use == "true");
-                minIsGlobalWireLowSwing = useLowSwing;
-                maxIsGlobalWireLowSwing = useLowSwing;
-            }
+            yamlValueFromNode(minIsGlobalWireLowSwing, globalWire, "UseLowSwing");
+            yamlValueFromNode(maxIsGlobalWireLowSwing, globalWire, "UseLowSwing");
         }
         
         // Also support flat global wire fields
-        if (config["GlobalWireType"]) {
-            std::string type = config["GlobalWireType"].as<std::string>();
-            if (type == "LocalAggressive") {
-                minGlobalWireType = local_aggressive;
-                maxGlobalWireType = local_aggressive;
-            } else if (type == "LocalConservative") {
-                minGlobalWireType = local_conservative;
-                maxGlobalWireType = local_conservative;
-            } else if (type == "SemiAggressive") {
-                minGlobalWireType = semi_aggressive;
-                maxGlobalWireType = semi_aggressive;
-            } else if (type == "SemiConservative") {
-                minGlobalWireType = semi_conservative;
-                maxGlobalWireType = semi_conservative;
-            } else if (type == "GlobalAggressive") {
-                minGlobalWireType = global_aggressive;
-                maxGlobalWireType = global_aggressive;
-            } else if (type == "GlobalConservative") {
-                minGlobalWireType = global_conservative;
-                maxGlobalWireType = global_conservative;
-            } else {
-                minGlobalWireType = dram_wordline;
-                maxGlobalWireType = dram_wordline;
-            }
-        }
+        yamlValueFromNode(minGlobalWireType, config, "GlobalWireType");
+        yamlValueFromNode(maxGlobalWireType, config, "GlobalWireType");
         
-        if (config["GlobalWireRepeaterType"]) {
-            std::string type = config["GlobalWireRepeaterType"].as<std::string>();
-            if (type == "RepeatedOpt") {
-                minGlobalWireRepeaterType = repeated_opt;
-                maxGlobalWireRepeaterType = repeated_opt;
-            } else if (type == "Repeated5%Penalty") {
-                minGlobalWireRepeaterType = repeated_5;
-                maxGlobalWireRepeaterType = repeated_5;
-            } else if (type == "Repeated10%Penalty") {
-                minGlobalWireRepeaterType = repeated_10;
-                maxGlobalWireRepeaterType = repeated_10;
-            } else if (type == "Repeated20%Penalty") {
-                minGlobalWireRepeaterType = repeated_20;
-                maxGlobalWireRepeaterType = repeated_20;
-            } else if (type == "Repeated30%Penalty") {
-                minGlobalWireRepeaterType = repeated_30;
-                maxGlobalWireRepeaterType = repeated_30;
-            } else if (type == "Repeated40%Penalty") {
-                minGlobalWireRepeaterType = repeated_40;
-                maxGlobalWireRepeaterType = repeated_40;
-            } else if (type == "Repeated50%Penalty") {
-                minGlobalWireRepeaterType = repeated_50;
-                maxGlobalWireRepeaterType = repeated_50;
-            } else {
-                minGlobalWireRepeaterType = repeated_none;
-                maxGlobalWireRepeaterType = repeated_none;
-            }
-        }
+        yamlValueFromNode(minGlobalWireRepeaterType, config, "GlobalWireRepeaterType");
+        yamlValueFromNode(maxGlobalWireRepeaterType, config, "GlobalWireRepeaterType");
         
-        if (config["GlobalWireUseLowSwing"]) {
-            std::string use = config["GlobalWireUseLowSwing"].as<std::string>();
-            bool useLowSwing = (use == "Yes" || use == "yes" || use == "true");
-            minIsGlobalWireLowSwing = useLowSwing;
-            maxIsGlobalWireLowSwing = useLowSwing;
-        }
+        yamlValueFromNode(minIsGlobalWireLowSwing, config, "GlobalWireUseLowSwing");
+        yamlValueFromNode(maxIsGlobalWireLowSwing, config, "GlobalWireUseLowSwing");
         
         // Routing
-        if (config["Routing"]) {
-            std::string routing = config["Routing"].as<std::string>();
-            routingMode = (routing == "H-tree") ? h_tree : non_h_tree;
-        }
-        
-        if (config["InternalSensing"]) {
-            if (config["InternalSensing"].IsScalar()) {
-                std::string sensing = config["InternalSensing"].as<std::string>();
-                internalSensing = (sensing == "true" || sensing == "True" || sensing == "yes" || sensing == "Yes");
-            } else {
-                internalSensing = config["InternalSensing"].as<bool>();
-            }
-        }
+        yamlValueFromNode(routingMode, config, "Routing");
+        yamlValueFromNode(internalSensing, config, "InternalSensing");
         
         // Operating Conditions
-        if (config["Temperature"])
-            temperature = config["Temperature"].as<int>();
+        yamlValueFromNode(temperature, config, "Temperature");
         
         // Additional parameters
-        if (config["MaxDriverCurrent"])
-            maxDriverCurrent = config["MaxDriverCurrent"].as<double>();
-        
-        if (config["MaxNmosSize"])
-            maxNmosSize = config["MaxNmosSize"].as<double>();
-        
-        if (config["WriteScheme"]) {
-            std::string scheme = config["WriteScheme"].as<std::string>();
-            if (scheme == "SetBeforeReset")
-                writeScheme = set_before_reset;
-            else if (scheme == "ResetBeforeSet")
-                writeScheme = reset_before_set;
-            else if (scheme == "EraseBeforeSet")
-                writeScheme = erase_before_set;
-            else if (scheme == "EraseBeforeReset")
-                writeScheme = erase_before_reset;
-            else if (scheme == "WriteAndVerify")
-                writeScheme = write_and_verify;
-            else
-                writeScheme = normal_write;
-        }
+        yamlValueFromNode(maxDriverCurrent, config, "MaxDriverCurrent");
+        yamlValueFromNode(maxNmosSize, config, "MaxNmosSize");
+        yamlValueFromNode(writeScheme, config, "WriteScheme");
         
         // Buffer Design Optimization
-        if (config["BufferDesignOptimization"]) {
-            std::string opt = config["BufferDesignOptimization"].as<std::string>();
-            if (opt == "latency") {
-                minAreaOptimizationLevel = 0;
-                maxAreaOptimizationLevel = 0;
-            } else if (opt == "area") {
-                minAreaOptimizationLevel = 2;
-                maxAreaOptimizationLevel = 2;
-			} else {
-                minAreaOptimizationLevel = 1;
-                maxAreaOptimizationLevel = 1;
-            }
-        }
+        yamlValueFromNode(minAreaOptimizationLevel, config, "BufferDesignOptimization");
+        yamlValueFromNode(maxAreaOptimizationLevel, config, "BufferDesignOptimization");
         
         // Flash-specific parameters
-        if (config["FlashPageSize"]) {
-            pageSize = config["FlashPageSize"].as<long>() * 8;  // Byte to bit
+        if (yamlValueFromNode(pageSize, config, "FlashPageSize")) {
+            pageSize *= 8; // Byte to bit
         }
         
-        if (config["FlashBlockSize"]) {
-            flashBlockSize = config["FlashBlockSize"].as<long>() * (8 * 1024);  // KB to bit
+        if (yamlValueFromNode(flashBlockSize, config, "FlashBlockSize")) {
+            flashBlockSize *= (8 * 1024); // KB to bit
         }
         
         // Force configurations
         if (config["ForceBank"]) {
             YAML::Node forceBank = config["ForceBank"];
-            if (forceBank["TotalRows"])
-                minNumRowMat = maxNumRowMat = forceBank["TotalRows"].as<int>();
-            if (forceBank["TotalColumns"])
-                minNumColumnMat = maxNumColumnMat = forceBank["TotalColumns"].as<int>();
-            if (forceBank["ActiveRows"])
-                minNumActiveMatPerColumn = maxNumActiveMatPerColumn = forceBank["ActiveRows"].as<int>();
-            if (forceBank["ActiveColumns"])
-                minNumActiveMatPerRow = maxNumActiveMatPerRow = forceBank["ActiveColumns"].as<int>();
+            yamlValueFromNode(minNumRowMat, forceBank, "TotalRows");
+            yamlValueFromNode(maxNumRowMat, forceBank, "TotalRows");
+
+            yamlValueFromNode(minNumColumnMat, forceBank, "TotalColumns");
+            yamlValueFromNode(maxNumColumnMat, forceBank, "TotalColumns");
+
+            yamlValueFromNode(minNumActiveMatPerColumn, forceBank, "ActiveRows");
+            yamlValueFromNode(maxNumActiveMatPerColumn, forceBank, "ActiveRows");
+
+            yamlValueFromNode(minNumActiveMatPerRow, forceBank, "ActiveColumns");
+            yamlValueFromNode(maxNumActiveMatPerRow, forceBank, "ActiveColumns");
         }
         
         if (config["ForceMat"]) {
             YAML::Node forceMat = config["ForceMat"];
-            if (forceMat["TotalRows"])
-                minNumRowSubarray = maxNumRowSubarray = forceMat["TotalRows"].as<int>();
-            if (forceMat["TotalColumns"])
-                minNumColumnSubarray = maxNumColumnSubarray = forceMat["TotalColumns"].as<int>();
-            if (forceMat["ActiveRows"])
-                minNumActiveSubarrayPerColumn = maxNumActiveSubarrayPerColumn = forceMat["ActiveRows"].as<int>();
-            if (forceMat["ActiveColumns"])
-                minNumActiveSubarrayPerRow = maxNumActiveSubarrayPerRow = forceMat["ActiveColumns"].as<int>();
+            yamlValueFromNode(minNumRowSubarray, forceMat, "TotalRows");
+            yamlValueFromNode(maxNumRowSubarray, forceMat, "TotalRows");
+
+            yamlValueFromNode(minNumColumnSubarray, forceMat, "TotalColumns");
+            yamlValueFromNode(maxNumColumnSubarray, forceMat, "TotalColumns");
+
+            yamlValueFromNode(minNumActiveSubarrayPerColumn, forceMat, "ActiveRows");
+            yamlValueFromNode(maxNumActiveSubarrayPerColumn, forceMat, "ActiveRows");
+
+            yamlValueFromNode(minNumActiveSubarrayPerRow, forceMat, "ActiveColumns");
+            yamlValueFromNode(maxNumActiveSubarrayPerRow, forceMat, "ActiveColumns");
         }
         
-        if (config["ForceMuxSenseAmp"]) {
-            minMuxSenseAmp = maxMuxSenseAmp = config["ForceMuxSenseAmp"].as<int>();
-        }
+        yamlValueFromNode(minMuxSenseAmp, config, "ForceMuxSenseAmp");
+        yamlValueFromNode(maxMuxSenseAmp, config, "ForceMuxSenseAmp");
         
-        if (config["ForceMuxOutputLev1"]) {
-            minMuxOutputLev1 = maxMuxOutputLev1 = config["ForceMuxOutputLev1"].as<int>();
-        }
+        yamlValueFromNode(minMuxOutputLev1, config, "ForceMuxOutputLev1");
+        yamlValueFromNode(maxMuxOutputLev1, config, "ForceMuxOutputLev1");
         
-        if (config["ForceMuxOutputLev2"]) {
-            minMuxOutputLev2 = maxMuxOutputLev2 = config["ForceMuxOutputLev2"].as<int>();
-        }
+        yamlValueFromNode(minMuxOutputLev2, config, "ForceMuxOutputLev2");
+        yamlValueFromNode(maxMuxOutputLev2, config, "ForceMuxOutputLev2");
         
         // CACTI Assumption
-        if (config["UseCactiAssumption"]) {
-            std::string use = config["UseCactiAssumption"].as<std::string>();
-            if (use == "Yes" || use == "yes" || use == "true") {
-                useCactiAssumption = true;
-                minNumActiveMatPerRow = maxNumColumnMat;
-                maxNumActiveMatPerRow = maxNumColumnMat;
-                minNumActiveMatPerColumn = 1;
-                maxNumActiveMatPerColumn = 1;
-                minNumRowSubarray = 2;
-                maxNumRowSubarray = 2;
-                minNumColumnSubarray = 2;
-                maxNumColumnSubarray = 2;
-                minNumActiveSubarrayPerRow = 2;
-                maxNumActiveSubarrayPerRow = 2;
-                minNumActiveSubarrayPerColumn = 2;
-                maxNumActiveSubarrayPerColumn = 2;
-            } else {
-                useCactiAssumption = false;
-            }
+        if (yamlValueFromNode(useCactiAssumption, config, "UseCactiAssumption")) {
+            minNumActiveMatPerRow = maxNumColumnMat;
+            maxNumActiveMatPerRow = maxNumColumnMat;
+            minNumActiveMatPerColumn = 1;
+            maxNumActiveMatPerColumn = 1;
+            minNumRowSubarray = 2;
+            maxNumRowSubarray = 2;
+            minNumColumnSubarray = 2;
+            maxNumColumnSubarray = 2;
+            minNumActiveSubarrayPerRow = 2;
+            maxNumActiveSubarrayPerRow = 2;
+            minNumActiveSubarrayPerColumn = 2;
+            maxNumActiveSubarrayPerColumn = 2;
         }
         
         // Constraints
         if (config["Constraints"]) {
             YAML::Node constraints = config["Constraints"];
-            if (constraints["ReadLatency"]) {
-                readLatencyConstraint = constraints["ReadLatency"].as<double>();
-                isConstraintApplied = true;
-            }
-            if (constraints["WriteLatency"]) {
-                writeLatencyConstraint = constraints["WriteLatency"].as<double>();
-                isConstraintApplied = true;
-            }
-            if (constraints["ReadDynamicEnergy"]) {
-                readDynamicEnergyConstraint = constraints["ReadDynamicEnergy"].as<double>();
-                isConstraintApplied = true;
-            }
-            if (constraints["WriteDynamicEnergy"]) {
-                writeDynamicEnergyConstraint = constraints["WriteDynamicEnergy"].as<double>();
-                isConstraintApplied = true;
-            }
-            if (constraints["Leakage"]) {
-                leakageConstraint = constraints["Leakage"].as<double>();
-                isConstraintApplied = true;
-            }
-            if (constraints["Area"]) {
-                areaConstraint = constraints["Area"].as<double>();
-                isConstraintApplied = true;
-            }
-            if (constraints["ReadEdp"]) {
-                readEdpConstraint = constraints["ReadEdp"].as<double>();
-                isConstraintApplied = true;
-            }
-            if (constraints["WriteEdp"]) {
-                writeEdpConstraint = constraints["WriteEdp"].as<double>();
+            if (yamlValueFromNode(readLatencyConstraint, constraints, "ReadLatency") ||
+                yamlValueFromNode(writeLatencyConstraint, constraints, "WriteLatency") ||
+                yamlValueFromNode(readDynamicEnergyConstraint, constraints, "ReadDynamicEnergy") ||
+                yamlValueFromNode(writeDynamicEnergyConstraint, constraints, "WriteDynamicEnergy") ||
+                yamlValueFromNode(leakageConstraint, constraints, "Leakage") ||
+                yamlValueFromNode(areaConstraint, constraints, "Area") ||
+                yamlValueFromNode(readEdpConstraint, constraints, "ReadEdp") ||
+                yamlValueFromNode(writeEdpConstraint, constraints, "WriteEdp")
+               ) {
                 isConstraintApplied = true;
             }
         }
         
         // Also support flat constraint fields for backwards compatibility
-        if (config["ApplyReadLatencyConstraint"]) {
-            readLatencyConstraint = config["ApplyReadLatencyConstraint"].as<double>();
-            isConstraintApplied = true;
-        }
-        if (config["ApplyWriteLatencyConstraint"]) {
-            writeLatencyConstraint = config["ApplyWriteLatencyConstraint"].as<double>();
-            isConstraintApplied = true;
-        }
-        if (config["ApplyReadDynamicEnergyConstraint"]) {
-            readDynamicEnergyConstraint = config["ApplyReadDynamicEnergyConstraint"].as<double>();
-            isConstraintApplied = true;
-        }
-        if (config["ApplyWriteDynamicEnergyConstraint"]) {
-            writeDynamicEnergyConstraint = config["ApplyWriteDynamicEnergyConstraint"].as<double>();
-            isConstraintApplied = true;
-        }
-        if (config["ApplyLeakageConstraint"]) {
-            leakageConstraint = config["ApplyLeakageConstraint"].as<double>();
-            isConstraintApplied = true;
-        }
-        if (config["ApplyAreaConstraint"]) {
-            areaConstraint = config["ApplyAreaConstraint"].as<double>();
-            isConstraintApplied = true;
-        }
-        if (config["ApplyReadEdpConstraint"]) {
-            readEdpConstraint = config["ApplyReadEdpConstraint"].as<double>();
-            isConstraintApplied = true;
-        }
-        if (config["ApplyWriteEdpConstraint"]) {
-            writeEdpConstraint = config["ApplyWriteEdpConstraint"].as<double>();
+        if (yamlValueFromNode(readLatencyConstraint, config, "ApplyReadLatencyConstraint") ||
+            yamlValueFromNode(writeLatencyConstraint, config, "ApplyWriteLatencyConstraint") ||
+            yamlValueFromNode(readDynamicEnergyConstraint, config, "ApplyReadDynamicEnergyConstraint") ||
+            yamlValueFromNode(writeDynamicEnergyConstraint, config, "ApplyWriteDynamicEnergyConstraint") ||
+            yamlValueFromNode(leakageConstraint, config, "ApplyLeakageConstraint") ||
+            yamlValueFromNode(areaConstraint, config, "ApplyAreaConstraint") ||
+            yamlValueFromNode(readEdpConstraint, config, "ApplyReadEdpConstraint") ||
+            yamlValueFromNode(writeEdpConstraint, config, "ApplyWriteEdpConstraint")
+           ) {
             isConstraintApplied = true;
         }
         
     } catch (const YAML::Exception& e) {
-        std::cout << "Error parsing YAML file: " << e.what() << std::endl;
-        exit(-1);
+        std::cerr << "Error parsing YAML file: " << e.what() << std::endl;
+        exit(EXIT_FAILURE);
     } catch (const std::exception& e) {
-        std::cout << "Error reading file: " << e.what() << std::endl;
-        exit(-1);
+        std::cerr << "Error reading file: " << e.what() << std::endl;
+        exit(EXIT_FAILURE);
     }
 }
 
 void InputParameter::PrintInputParameter() {
-	std::cout << std::endl << "====================" << std::endl << "DESIGN SPECIFICATION" << std::endl << "====================" << std::endl;
+	std::cout << "\n====================\n"
+              << "DESIGN SPECIFICATION\n"
+              << "====================\n";
+
 	std::cout << "Design Target: ";
 	switch (designTarget) {
 	case cache:
-		std::cout << "Cache" << std::endl;
+		std::cout << "Cache\n";
 		break;
 	case RAM_chip:
-		std::cout << "Random Access Memory" << std::endl;
+		std::cout << "Random Access Memory\n";
 		break;
-	default:	/* CAM */
-		std::cout << "Content Addressable Memory" << std::endl;
+	case CAM_chip:
+		std::cout << "Content Addressable Memory\n";
+        break;
 	}
 
 	std::cout << "Capacity   : ";
-	if (capacity < 1024 * 1024)
-		std::cout << capacity / 1024 << "KB" << std::endl;
-	else if (capacity < 1024 * 1024 * 1024)
-		std::cout << capacity / 1024 / 1024 << "MB" << std::endl;
-	else
-		std::cout << capacity / 1024 / 1024 / 1024 << "GB" << std::endl;
+    if (capacity < 1024) {
+        std::cout << capacity << "B\n";
+    } else if (capacity < 1024 * 1024) {
+		std::cout << capacity / 1024 << "KB\n";
+	} else if (capacity < 1024 * 1024 * 1024) {
+		std::cout << capacity / 1024 / 1024 << "MB\n";
+	} else {
+		std::cout << capacity / 1024 / 1024 / 1024 << "GB\n";
+    }
 
 	if (designTarget == cache) {
-		std::cout << "Cache Line Size: " << wordWidth / 8 << "Bytes" << std::endl;
-		std::cout << "Cache Associativity: " << associativity << " Ways" << std::endl;
+		std::cout << "Cache Line Size: " << wordWidth / 8 << "Bytes\n";
+		std::cout << "Cache Associativity: " << associativity << " Ways\n";
 	} else {
 		std::cout << "Data Width : " << wordWidth << "Bits";
-		if (wordWidth % 8 == 0)
-			std::cout << " (" << wordWidth / 8 << "Bytes)" << std::endl;
-		else
-			std::cout << std::endl;
+		if (wordWidth % 8 == 0) {
+			std::cout << " (" << wordWidth / 8 << "Bytes)";
+        }
+        std::cout << "\n";
 	}
 	if (designTarget == RAM_chip && (gCell.memCellType == SLCNAND || gCell.memCellType == MLCNAND)) {
-		std::cout << "Page Size  : " << pageSize / 8 << "Bytes" << std::endl;
-		std::cout << "Block Size : " << flashBlockSize / 8 / 1024 << "KB" << std::endl;
+		std::cout << "Page Size  : " << pageSize / 8 << "Bytes\n";
+		std::cout << "Block Size : " << flashBlockSize / 8 / 1024 << "KB\n";
 	}
 	// TO-DO: tedious work here!!!
 
 	if (optimizationTarget == full_exploration) {
-		std::cout << std::endl << "Full design space exploration ... might take hours" << std::endl;
+		std::cout << "\nFull design space exploration ... might take hours\n";
 	} else {
-		std::cout << std::endl << "Searching for the best solution that is optimized for ";
-		switch (optimizationTarget) {
-		case read_latency_optimized:
-			std::cout << "read latency ..." << std::endl;
-			break;
-		case write_latency_optimized:
-			std::cout << "write latency ..." << std::endl;
-			break;
-		case read_energy_optimized:
-			std::cout << "read energy ..." << std::endl;
-			break;
-		case write_energy_optimized:
-			std::cout << "write energy ..." << std::endl;
-			break;
-		case read_edp_optimized:
-			std::cout << "read energy-delay-product ..." << std::endl;
-			break;
-		case write_edp_optimized:
-			std::cout << "write energy-delay-product ..." << std::endl;
-			break;
-		case leakage_optimized:
-			std::cout << "leakage power ..." << std::endl;
-			break;
-		default:	/* area */
-			std::cout << "area ..." << std::endl;
-		}
+		std::cout << "\nSearching for the best solution that is optimized for " << optimizationTarget << " ...\n";
 	}
 }

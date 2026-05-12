@@ -37,6 +37,8 @@
 
 #include "Bank.hpp"
 
+#include <iostream>
+
 void Bank::PrintProperty() {
 	std::cout << "Bank Properties:" << std::endl;
 	FunctionUnit::PrintProperty();

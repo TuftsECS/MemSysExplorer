@@ -116,20 +116,20 @@ public:
 	int maxMuxOutputLev2 = 256;
 	int minNumRowPerSet = 1;
 	int maxNumRowPerSet = 256;
-	int minAreaOptimizationLevel = latency_first; /* This one is actually OptPriority type */
-	int maxAreaOptimizationLevel = area_first; /* This one is actually OptPriority type */
-	int minLocalWireType = local_aggressive; /* This one is actually WireType type */
-	int maxLocalWireType = local_conservative; /* This one is actually WireType type */
-	int minGlobalWireType = global_aggressive; /* This one is actually WireType type */
-	int maxGlobalWireType = global_conservative; /* This one is actually WireType type */
-	int minLocalWireRepeaterType = repeated_none; /* This one is actually WireRepeaterType type */
-	int maxLocalWireRepeaterType = repeated_50; /* This one is actually WireRepeaterType type */
-	int minGlobalWireRepeaterType = repeated_none; /* This one is actually WireRepeaterType type */
-	int maxGlobalWireRepeaterType = repeated_50; /* This one is actually WireRepeaterType type */
-	int minIsLocalWireLowSwing = false; /* This one is actually boolean */
-	int maxIsLocalWireLowSwing = true; /* This one is actually boolean */
-	int minIsGlobalWireLowSwing = false; /* This one is actually boolean */
-	int maxIsGlobalWireLowSwing = true; /* This one is actually boolean */
+	BufferDesignTarget minAreaOptimizationLevel = latency_first;
+	BufferDesignTarget maxAreaOptimizationLevel = area_first;
+	WireType minLocalWireType = local_aggressive;
+	WireType maxLocalWireType = local_conservative;
+	WireType minGlobalWireType = global_aggressive;
+	WireType maxGlobalWireType = global_conservative;
+	WireRepeaterType minLocalWireRepeaterType = repeated_none;
+	WireRepeaterType maxLocalWireRepeaterType = repeated_50;
+	WireRepeaterType minGlobalWireRepeaterType = repeated_none;
+	WireRepeaterType maxGlobalWireRepeaterType = repeated_50;
+	bool minIsLocalWireLowSwing = false;
+	bool maxIsLocalWireLowSwing = true;
+	bool minIsGlobalWireLowSwing = false;
+	bool maxIsGlobalWireLowSwing = true;
 };
 
 #endif /* MSE_INPUTPARAMETER_H */

@@ -37,6 +37,8 @@
 
 #include "FunctionUnit.hpp"
 
+#include <iostream>
+
 void FunctionUnit::PrintProperty() {
 	std::cout << "Area = " << height*1e6 << "um x " << width*1e6 << "um = " << area*1e6 << "mm^2" << std::endl;
 	std::cout << "Timing:" << std::endl;

@@ -38,8 +38,6 @@
 #ifndef MSE_FUNCTIONUNIT_H
 #define MSE_FUNCTIONUNIT_H
 
-#include <iostream>
-
 class FunctionUnit {
 public:
     FunctionUnit() = default;
