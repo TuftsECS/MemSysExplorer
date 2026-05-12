@@ -355,7 +355,7 @@ double CalculateTransconductance(double width, int type, Technology tech) {
         } else {
         gm = tech.gm_oncurrent*widthEff;
         }
-        
+
     } else {//type==PMOS
         if (tech.featureSize >= 22 * 1e-9) {
 			vsat = MIN(tech.vdsatPmos, tech.vdd - tech.vth);

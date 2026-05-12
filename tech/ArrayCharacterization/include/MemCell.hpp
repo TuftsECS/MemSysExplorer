@@ -109,7 +109,7 @@ public:
 	double resistanceOnAtHalfReadVoltage = 0; /* Low resistance state when 1/2 read voltage is applied */
 	double resistanceOffAtHalfReadVoltage = 0; /* High resistance state when 1/2 read voltage is applied */
 	double resistanceOnAtHalfResetVoltage = 0; /* Low resistance state when 1/2 reset voltage is applied */
-    
+
         /*For multi-level cells SA*/
         int nFingers = 8;
         double nLvl = 4;

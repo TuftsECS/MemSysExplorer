@@ -467,7 +467,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 	if (!invalid) {
 		bitlineMux.CalculateRC();
 	}
-	
+
 	//Qing: initialize subarray buffer,
 	//do not consider buffering control signals for now
 	subarrayBuffer.Initialize(1, numColumn);
@@ -541,7 +541,7 @@ void SubArray::CalculateArea() {
 		//assume the buffer has the same width as the subarray
 		addHeight += subarrayBuffer.height;
 		//Qing.
-		
+
 		width += addWidth;
 		height += addHeight;
 
@@ -742,7 +742,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			setLatency = MAX(rowDecoder.readLatency, columnDecoderLatency + chargeLatency) + gCell.flashProgramTime;
 			/* use the programming latency as the write latency for SLC NAND*/
 			writeLatency = setLatency;
-		
+
                 } else if (gCell.memCellType == CTT || gCell.memCellType == MLCCTT) {
                         /* Calculate the NAND flash string length, which is the page count per block plus 2 (two select transistors) */
 			double resPullDown = CalculateOnResistance(((gTech.featureSize <= 14*1e-9)? 2:1)*gTech.featureSize, NMOS, gInputParameter.temperature, gTech) * 2;
@@ -773,7 +773,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			setLatency = MAX(rowDecoder.readLatency, columnDecoderLatency + chargeLatency);
 			/* use the programming latency as the write latency for SLC NAND*/
 			writeLatency = setLatency;
-        
+
         } else {	/* MLC NAND */
 			/* TO-DO */
 		}

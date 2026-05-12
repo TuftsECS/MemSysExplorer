@@ -629,7 +629,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			pnSizeRatio = 1.0;
 			effectiveResistanceMultiplier = 2.0;
 			gm_oncurrent = 0.0; // dummy value only used for advanced nodes
-		
+
 			// NMOS ON-current, Unit: μA/μm 
 			currentOnNmos[0] = 155.6;
 			currentOnNmos[10] = 153.0;
@@ -642,12 +642,12 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			currentOnNmos[80] = 135.1;
 			currentOnNmos[90] = 132.5;
 			currentOnNmos[100] = 130.0;
-		
+
 			// PMOS ON-current (IGZO has no PMOS)
 			for (int i = 0; i <= 100; i += 10) {
 				currentOnPmos[i] = 0.0;
 			}
-		
+
 			// NMOS off current, Unit: A/m
 			currentOffNmos[0] = 6.79e-7;   
 			currentOffNmos[10] = 1.358e-6;  
@@ -660,7 +660,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			currentOffNmos[80] = 1.73824e-4;
 			currentOffNmos[90] = 3.47648e-4;
 			currentOffNmos[100] = 6.95296e-4;
-		
+
 			// PMOS off current (N/A in IGZO)
 			for (int i = 0; i <= 100; i += 10) {
 				currentOffPmos[i] = 0.0;
@@ -806,7 +806,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			pnSizeRatio = 1.0;
 			effectiveResistanceMultiplier = 2.0;
 			gm_oncurrent = 0.0; // dummy value only used for advanced nodes
-		
+
 			// NMOS ON-current, Unit: μA/μm approximately scaled with temperature
 			currentOnNmos[0] = 155.6;
 			currentOnNmos[10] = 153.0;
@@ -819,12 +819,12 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			currentOnNmos[80] = 135.1;
 			currentOnNmos[90] = 132.5;
 			currentOnNmos[100] = 130.0;
-		
+
 			// PMOS ON-current (IGZO has no PMOS)
 			for (int i = 0; i <= 100; i += 10) {
 				currentOnPmos[i] = 0.0;
 			}
-		
+
 			// NMOS off current, Unit: A/m
 			currentOffNmos[0] = 6.79e-7;   
 			currentOffNmos[10] = 1.358e-6;  
@@ -837,7 +837,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			currentOffNmos[80] = 1.73824e-4;
 			currentOffNmos[90] = 3.47648e-4;
 			currentOffNmos[100] = 6.95296e-4;
-		
+
 			// PMOS off current (N/A in IGZO)
 			for (int i = 0; i <= 100; i += 10) {
 				currentOffPmos[i] = 0.0;
@@ -1228,7 +1228,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
         }
 	} else if (featureSizeInNano >= 14) {
 		if (deviceRoadmap != LOP) {
-			
+
 			std::cout<<"Only LOP for 14 nm and beyond is supported"<< std::endl;
 			exit(-1);
 
@@ -1549,7 +1549,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			// height is not needed as long as effective width is specified
 			effective_width = 101.0*1e-9;
 			max_fin_num =2;	
-			
+
 			capIdealGate = caplist[4] * 1E-18 / (effective_width);   //6.44E-10; //8.91E-10;
 			cap_draintotal = cap_draintotallist[4]/ (effective_width);
 			capFringe = 0;
@@ -1707,10 +1707,10 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			max_sheet_num=4;
 			thickness_sheet=6*1e-9;
 			width_sheet=10*1e-9;	
-				
+
 			widthFin= width_sheet; // for drain height calculation 
 			effective_width=(thickness_sheet+width_sheet)*2;
-			
+
 			capIdealGate = caplist[6] * 1E-18 /  (effective_width*max_sheet_num) ;
 			cap_draintotal = cap_draintotallist[6]/ (effective_width);
 			capFringe = 0;

@@ -44,14 +44,14 @@ void Buffer::Initialize(long long _numRow, long long _numColumn) {
 
 	numRow = _numRow;
 	numColumn = _numColumn;
-	
+
 	initialized = true;
 }
 
 void Buffer::CalculateArea() {
     double cellheight, cellwidth;
     double xorheight;
-    
+
 	if (!initialized) {
 		std::cout << "[Buffer] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
@@ -74,7 +74,7 @@ void Buffer::CalculateArea() {
 			cellwidth = 0.755e-6;
 			xorheight = 1.059e-6;
 		}
-		
+
 		height = (cellheight + xorheight) * numRow;
 		//numColumn = num of data bits + num of control signals. Control signals
 		//do not need XOR, allowing more room to place XORs.
@@ -116,7 +116,7 @@ void Buffer::CalculateLatency() {
 		    xorLatency = 0.21e-9;
 		}
 	}
-	
+
 	setLatency = resetLatency = writeLatency;
 }
 
@@ -150,17 +150,17 @@ void Buffer::CalculatePower() {
 		    xorDynamicEnergy = 0.001e-18;
 		    xorLeakage = 104.67e-9;
 		}
-		
+
 		cellReadEnergy = readDynamicEnergy;
 		cellSetEnergy = cellResetEnergy = writeDynamicEnergy;
-		
+
 		readDynamicEnergy *= numColumn;
 		writeDynamicEnergy = readDynamicEnergy;
 		leakage *= numColumn;
 		xorDynamicEnergy *= numColumn;
 		xorLeakage *= numColumn;
 	}
-	
+
 	setDynamicEnergy = resetDynamicEnergy = writeDynamicEnergy;
 }
 

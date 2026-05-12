@@ -49,22 +49,22 @@
 void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
     try {
         YAML::Node config = YAML::LoadFile(inputFile);
-        
+
         // Memory Cell Input File
         yamlValueFromNode(fileMemCell, config, "MemoryCellInputFile");
         bool hasProcessNode = yamlValueFromNode(processNode, config, "ProcessNode");
-        
+
         // Process Technology
         // if we cant get ProcessNodeW and ProcessNode exists, then use ProcessNode instead
         if (!yamlValueFromNode(processNodeW, config, "ProcessNodeW") && hasProcessNode) {
             processNodeW = processNode;
         }
-        
+
         // if we cant get ProcessNodeR and ProcessNode exists, then use ProcessNode instead
         if (!yamlValueFromNode(processNodeR, config, "ProcessNodeR") && hasProcessNode) {
             processNodeR = processNode;
         }
-        
+
         // Device Roadmap
         bool hasDeviceRoadmap = yamlValueFromNode(deviceRoadmap, config, "DeviceRoadmap");
 
@@ -72,23 +72,23 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         if (!yamlValueFromNode(deviceRoadmapW, config, "DeviceRoadmapW") && hasDeviceRoadmap) {
             deviceRoadmapW = deviceRoadmap;
         }
-        
+
         // if we cant get DeviceRoadmapR and DeviceRoadmap exists, then use DeviceRoadmap instead
         if (!yamlValueFromNode(deviceRoadmapR, config, "DeviceRoadmapR") && hasDeviceRoadmap) {
             deviceRoadmapR = deviceRoadmap;
         }
-        
+
         // Design Configuration
         yamlValueFromNode(designTarget, config, "DesignTarget");
         yamlValueFromNode(cacheAccessMode, config, "CacheAccessMode");
         yamlValueFromNode(associativity, config, "Associativity");
-        
+
         // Optimization
         yamlValueFromNode(optimizationTarget, config, "OptimizationTarget");
         yamlValueFromNode(outputFilePrefix, config, "OutputFilePrefix");
         yamlValueFromNode(outputDirectory, config, "OutputDirectory");
         yamlValueFromNode(isPruningEnabled, config, "EnablePruning");
-        
+
         // Memory Specifications - Support both nested and flat formats
         if (config["Capacity"]) {
             if (config["Capacity"].IsMap()) {
@@ -113,7 +113,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
                 }
             }
         }
-        
+
         // Also support old-style flat capacity fields
         if (yamlValueFromNode(capacity, config, "Capacity_B")) {
             // capacity *= 1;
@@ -122,80 +122,80 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         } else if (yamlValueFromNode(capacity, config, "Capacity_MB")) {
             capacity *= 1024 * 1024;
         }
-        
+
         yamlValueFromNode(wordWidth, config, "WordWidth");
-        
+
         // Wire Configuration
         if (config["LocalWire"]) {
             YAML::Node localWire = config["LocalWire"];
             yamlValueFromNode(minLocalWireType, localWire, "Type");
             yamlValueFromNode(maxLocalWireType, localWire, "Type");
-            
+
             yamlValueFromNode(minLocalWireRepeaterType, localWire, "RepeaterType");
             yamlValueFromNode(maxLocalWireRepeaterType, localWire, "RepeaterType");
 
             yamlValueFromNode(minIsLocalWireLowSwing, localWire, "UseLowSwing");
             yamlValueFromNode(maxIsLocalWireLowSwing, localWire, "UseLowSwing");
         }
-        
+
         // Also support flat local wire fields
         yamlValueFromNode(minLocalWireType, config, "LocalWireType");
         yamlValueFromNode(maxLocalWireType, config, "LocalWireType");
-        
+
         yamlValueFromNode(minLocalWireRepeaterType, config, "LocalWireRepeaterType");
         yamlValueFromNode(maxLocalWireRepeaterType, config, "LocalWireRepeaterType");
-        
+
         yamlValueFromNode(minIsLocalWireLowSwing, config, "LocalWireUseLowSwing");
         yamlValueFromNode(maxIsLocalWireLowSwing, config, "LocalWireUseLowSwing");
-        
+
         // Global Wire Configuration
         if (config["GlobalWire"]) {
             YAML::Node globalWire = config["GlobalWire"];
             yamlValueFromNode(minGlobalWireType, globalWire, "Type");
             yamlValueFromNode(maxGlobalWireType, globalWire, "Type");
-            
+
             yamlValueFromNode(minGlobalWireRepeaterType, globalWire, "RepeaterType");
             yamlValueFromNode(maxGlobalWireRepeaterType, globalWire, "RepeaterType");
-            
+
             yamlValueFromNode(minIsGlobalWireLowSwing, globalWire, "UseLowSwing");
             yamlValueFromNode(maxIsGlobalWireLowSwing, globalWire, "UseLowSwing");
         }
-        
+
         // Also support flat global wire fields
         yamlValueFromNode(minGlobalWireType, config, "GlobalWireType");
         yamlValueFromNode(maxGlobalWireType, config, "GlobalWireType");
-        
+
         yamlValueFromNode(minGlobalWireRepeaterType, config, "GlobalWireRepeaterType");
         yamlValueFromNode(maxGlobalWireRepeaterType, config, "GlobalWireRepeaterType");
-        
+
         yamlValueFromNode(minIsGlobalWireLowSwing, config, "GlobalWireUseLowSwing");
         yamlValueFromNode(maxIsGlobalWireLowSwing, config, "GlobalWireUseLowSwing");
-        
+
         // Routing
         yamlValueFromNode(routingMode, config, "Routing");
         yamlValueFromNode(internalSensing, config, "InternalSensing");
-        
+
         // Operating Conditions
         yamlValueFromNode(temperature, config, "Temperature");
-        
+
         // Additional parameters
         yamlValueFromNode(maxDriverCurrent, config, "MaxDriverCurrent");
         yamlValueFromNode(maxNmosSize, config, "MaxNmosSize");
         yamlValueFromNode(writeScheme, config, "WriteScheme");
-        
+
         // Buffer Design Optimization
         yamlValueFromNode(minAreaOptimizationLevel, config, "BufferDesignOptimization");
         yamlValueFromNode(maxAreaOptimizationLevel, config, "BufferDesignOptimization");
-        
+
         // Flash-specific parameters
         if (yamlValueFromNode(pageSize, config, "FlashPageSize")) {
             pageSize *= 8; // Byte to bit
         }
-        
+
         if (yamlValueFromNode(flashBlockSize, config, "FlashBlockSize")) {
             flashBlockSize *= (8 * 1024); // KB to bit
         }
-        
+
         // Force configurations
         if (config["ForceBank"]) {
             YAML::Node forceBank = config["ForceBank"];
@@ -211,7 +211,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             yamlValueFromNode(minNumActiveMatPerRow, forceBank, "ActiveColumns");
             yamlValueFromNode(maxNumActiveMatPerRow, forceBank, "ActiveColumns");
         }
-        
+
         if (config["ForceMat"]) {
             YAML::Node forceMat = config["ForceMat"];
             yamlValueFromNode(minNumRowSubarray, forceMat, "TotalRows");
@@ -226,16 +226,16 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             yamlValueFromNode(minNumActiveSubarrayPerRow, forceMat, "ActiveColumns");
             yamlValueFromNode(maxNumActiveSubarrayPerRow, forceMat, "ActiveColumns");
         }
-        
+
         yamlValueFromNode(minMuxSenseAmp, config, "ForceMuxSenseAmp");
         yamlValueFromNode(maxMuxSenseAmp, config, "ForceMuxSenseAmp");
-        
+
         yamlValueFromNode(minMuxOutputLev1, config, "ForceMuxOutputLev1");
         yamlValueFromNode(maxMuxOutputLev1, config, "ForceMuxOutputLev1");
-        
+
         yamlValueFromNode(minMuxOutputLev2, config, "ForceMuxOutputLev2");
         yamlValueFromNode(maxMuxOutputLev2, config, "ForceMuxOutputLev2");
-        
+
         // CACTI Assumption
         if (yamlValueFromNode(useCactiAssumption, config, "UseCactiAssumption")) {
             minNumActiveMatPerRow = maxNumColumnMat;
@@ -251,7 +251,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
             minNumActiveSubarrayPerColumn = 2;
             maxNumActiveSubarrayPerColumn = 2;
         }
-        
+
         // Constraints
         if (config["Constraints"]) {
             YAML::Node constraints = config["Constraints"];
@@ -267,7 +267,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
                 isConstraintApplied = true;
             }
         }
-        
+
         // Also support flat constraint fields for backwards compatibility
         if (yamlValueFromNode(readLatencyConstraint, config, "ApplyReadLatencyConstraint") ||
             yamlValueFromNode(writeLatencyConstraint, config, "ApplyWriteLatencyConstraint") ||
@@ -280,7 +280,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
            ) {
             isConstraintApplied = true;
         }
-        
+
     } catch (const YAML::Exception& e) {
         std::cerr << "Error parsing YAML file: " << e.what() << std::endl;
         exit(EXIT_FAILURE);

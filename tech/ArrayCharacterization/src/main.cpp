@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 	gInputParameter.ReadInputParameterFromFile(inputFileName);
 
 	gCell.ReadCellFromFile(gInputParameter.fileMemCell);
-	
+
 	bool is_FeFET = false;
 	if (gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET){
 		is_FeFET = true; // flag for FeFET cell type, used to scale gate capacitance as appropriate
@@ -572,7 +572,7 @@ int main(int argc, char* argv[])
 				bestDataResults[gInputParameter.optimizationTarget].printAsCache(bestTagResults[gInputParameter.optimizationTarget], gInputParameter.cacheAccessMode);
 			else
 				bestDataResults[gInputParameter.optimizationTarget].print();
-			
+
 			// NEW: Also write to YAML file (for pipeline to parse)
 			std::string outputDirectory = gInputParameter.outputDirectory;
 			std::stringstream temp;

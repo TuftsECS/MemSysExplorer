@@ -47,17 +47,17 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
 {
     try {
         YAML::Node config = YAML::LoadFile(inputFile);
-        
+
         // Basic Cell Properties
         yamlValueFromNode(memCellType, config, "MemCellType");
-        
+
         yamlValueFromNode(processNode, config, "ProcessNode");
         yamlValueFromNode(area, config, "CellArea_F2");
         if (yamlValueFromNode(aspectRatio, config, "CellAspectRatio")) {
             heightInFeatureSize = sqrt(area * aspectRatio);
             widthInFeatureSize = sqrt(area / aspectRatio);
         }
-        
+
         // Resistance Values
         if (config["Resistance"]) {
             YAML::Node resist = config["Resistance"];
@@ -73,26 +73,26 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
             yamlValueFromNode(resistanceOffAtHalfReadVoltage, resist, "OffAtHalfReadVoltage_ohm");
             yamlValueFromNode(resistanceOnAtHalfResetVoltage, resist, "OnAtHalfResetVoltage_ohm");
         }
-        
+
         // Also support flat resistance fields (backwards compatibility)
         yamlValueFromNode(resistanceOn, config, "ResistanceOn_ohm");
         yamlValueFromNode(resistanceOff, config, "ResistanceOff_ohm");
-        
+
         // Capacitance
         if (config["Capacitance"]) {
             YAML::Node cap = config["Capacitance"];
             yamlValueFromNode(capacitanceOn, cap, "On_F");
             yamlValueFromNode(capacitanceOff, cap, "Off_F");
         }
-        
+
         // Also support flat capacitance fields
         yamlValueFromNode(capacitanceOn, config, "CapacitanceOn_F");
         yamlValueFromNode(capacitanceOff, config, "CapacitanceOff_F");
-        
+
         yamlValueFromNode(gateOxThicknessFactor, config, "GateOxThicknessFactor");
-            
+
         yamlValueFromNode(widthSOIDevice, config, "SOIDeviceWidth_F");
-        
+
         // Read Operation
         if (config["Read"]) {
             YAML::Node read = config["Read"];
@@ -108,11 +108,11 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 readPower /= 1e6;
             }
         }
-        
+
         yamlValueFromNode(wordlineBoostRatio, config, "WordlineBoostRatio");
         yamlValueFromNode(minSenseVoltage, config, "MinSenseVoltage_mV");
         yamlValueFromNode(maxStorageNodeDrop, config, "MaxStorageNodeDrop_V");
-        
+
         // Reset Operation
         if (config["Reset"]) {
             YAML::Node reset = config["Reset"];
@@ -131,7 +131,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 resetEnergy /= 1e12;
             }
         }
-        
+
         // Set Operation
         if (config["Set"]) {
             YAML::Node set = config["Set"];
@@ -150,7 +150,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 setEnergy /= 1e12;
             }
         }
-        
+
         // Access Device
         if (config["Access"]) {
             YAML::Node access = config["Access"];
@@ -174,7 +174,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 leakageCurrentAccessDevice /= 1e6;
             }
         }
-        
+
         // Also support flat access fields
         yamlValueFromNode(accessType, config, "AccessType");
         if (config["AccessCMOSWidth_F"]) {
@@ -195,10 +195,10 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         if (yamlValueFromNode(leakageCurrentAccessDevice, config, "LeakageCurrentAccessDevice_uA")) {
             leakageCurrentAccessDevice /= 1e6;
         }
-        
+
         // Additional Properties
         yamlValueFromNode(readFloating, config, "ReadFloating");
-        
+
         // DRAM specific
         if (config["DRAMCellCapacitance_F"]) {
             if (memCellType != DRAM && memCellType != eDRAM && 
@@ -208,7 +208,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 yamlValueFromNode(capDRAMCell, config, "DRAMCellCapacitance_F");
             }
         }
-        
+
         // SRAM specific
         if (config["SRAMCellNMOSWidth_F"]) {
             if (memCellType != SRAM) {
@@ -217,7 +217,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 yamlValueFromNode(widthSRAMCellNMOS, config, "SRAMCellNMOSWidth_F");
             }
         }
-        
+
         if (config["SRAMCellPMOSWidth_F"]) {
             if (memCellType != SRAM) {
                 std::cout << "Warning: SRAM PMOS width ignored (not SRAM)" << std::endl;
@@ -225,7 +225,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 yamlValueFromNode(widthSRAMCellPMOS, config, "SRAMCellPMOSWidth_F");
             }
         }
-        
+
         // Flash specific
         if (config["Flash"]) {
             YAML::Node flash = config["Flash"];
@@ -244,7 +244,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 yamlValueFromNode(gateCouplingRatio, flash, "GateCouplingRatio");
             }
         }
-        
+
         // Also support flat flash fields
         if (config["FlashEraseVoltage_V"]) {
             if (memCellType != SLCNAND && memCellType != MLCNAND) {
@@ -292,7 +292,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 yamlValueFromNode(gateCouplingRatio, config, "GateCouplingRatio");
             }
         }
-        
+
         // Retention time
         if (config["RetentionTime_us"]) {
             if (memCellType != DRAM && memCellType != eDRAM && 
@@ -304,7 +304,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 }
             }
         }
-        
+
         // MLC specific
         if (config["InputFingers"]) {
             if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM) {
@@ -313,7 +313,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 yamlValueFromNode(nFingers, config, "InputFingers");
             }
         }
-        
+
         if (config["CellLevels"]) {
             if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM) {
                 std::cout << "Warning: CellLevels used only for MLC" << std::endl;
@@ -321,7 +321,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 yamlValueFromNode(nLvl, config, "CellLevels");
             }
         }
-        
+
     } catch (const YAML::Exception& e) {
         std::cout << "Error parsing YAML file: " << e.what() << std::endl;
         exit(EXIT_FAILURE);

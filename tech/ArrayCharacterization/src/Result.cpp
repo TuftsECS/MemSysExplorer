@@ -683,7 +683,7 @@ YAML::Node Result::toYamlNode() {
 			result["Capacity"]["Value"] = gInputParameter.capacity / 1024 / 1024 / 1024;
 			result["Capacity"]["Unit"] = "GB";
 		}
-	
+
 
 
 		switch (optimizationTarget) {
@@ -706,7 +706,7 @@ YAML::Node Result::toYamlNode() {
     result["Configuration"]["BankOrganization"]["TotalRows"] = bank->numRowMat;
     result["Configuration"]["BankOrganization"]["ColumnActivation"] = bank->numActiveMatPerRow;
     result["Configuration"]["BankOrganization"]["TotalColumns"] = bank->numColumnMat;
-    
+
     result["Configuration"]["MatOrganization"]["Rows"] = bank->numRowSubarray;
     result["Configuration"]["MatOrganization"]["Columns"] = bank->numColumnSubarray;
     result["Configuration"]["MatOrganization"]["RowActivation"] = bank->numActiveSubarrayPerColumn;
@@ -715,13 +715,13 @@ YAML::Node Result::toYamlNode() {
     result["Configuration"]["MatOrganization"]["TotalColumns"] = bank->numColumnSubarray;
     result["Configuration"]["MatOrganization"]["SubarrayRows"] = bank->mat.subarray.numRow;
     result["Configuration"]["MatOrganization"]["SubarrayColumns"] = bank->mat.subarray.numColumn;
-    
+
     result["Configuration"]["MuxLevels"]["SenseampMux"] = bank->muxSenseAmp;
     result["Configuration"]["MuxLevels"]["OutputLevel1Mux"] = bank->muxOutputLev1;
     result["Configuration"]["MuxLevels"]["OutputLevel2Mux"] = bank->muxOutputLev2;
     if (gInputParameter.designTarget == cache)
         result["Configuration"]["MuxLevels"]["RowsPerSet"] = bank->numRowPerSet;
-    
+
     // Local Wire
     switch (localWire->wireType) {
         case local_aggressive: result["Configuration"]["LocalWire"]["WireType"] = "LocalAggressive"; break;
@@ -744,7 +744,7 @@ YAML::Node Result::toYamlNode() {
         default: result["Configuration"]["LocalWire"]["RepeaterType"] = "Unknown";
     }
     result["Configuration"]["LocalWire"]["LowSwing"] = localWire->isLowSwing ? "Yes" : "No";
-    
+
     // Global Wire
     switch (globalWire->wireType) {
         case local_aggressive: result["Configuration"]["GlobalWire"]["WireType"] = "LocalAggressive"; break;
@@ -767,25 +767,25 @@ YAML::Node Result::toYamlNode() {
         default: result["Configuration"]["GlobalWire"]["RepeaterType"] = "Unknown";
     }
     result["Configuration"]["GlobalWire"]["LowSwing"] = globalWire->isLowSwing ? "Yes" : "No";
-    
+
     switch (bank->areaOptimizationLevel) {
         case latency_first: result["Configuration"]["BufferDesignStyle"] = "LatencyOptimized"; break;
         case area_first: result["Configuration"]["BufferDesignStyle"] = "AreaOptimized"; break;
         default: result["Configuration"]["BufferDesignStyle"] = "Balanced";
     }
-    
+
     // Area
     result["Results"]["Area"]["Total"]["Height_um"] = bank->height * 1e6;
     result["Results"]["Area"]["Total"]["Width_um"] = bank->width * 1e6;
     result["Results"]["Area"]["Total"]["Area_mm2"] = bank->area * 1e6;
-    
+
     result["Results"]["Area"]["Mat"]["Height_um"] = bank->mat.height * 1e6;
     result["Results"]["Area"]["Mat"]["Width_um"] = bank->mat.width * 1e6;
     result["Results"]["Area"]["Mat"]["Area_mm2"] = bank->mat.area * 1e6;
     result["Results"]["Area"]["Mat"]["Efficiency_percent"] = 
         (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / 
          bank->numRowMat / bank->numColumnMat / bank->mat.area * 100);
-    
+
     result["Results"]["Area"]["Subarray"]["Height_um"] = bank->mat.subarray.height * 1e6;
     result["Results"]["Area"]["Subarray"]["Width_um"] = bank->mat.subarray.width * 1e6;
     result["Results"]["Area"]["Subarray"]["Area_mm2"] = bank->mat.subarray.area * 1e6;
@@ -793,10 +793,10 @@ YAML::Node Result::toYamlNode() {
         (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / 
          bank->numRowMat / bank->numColumnMat / bank->numRowSubarray / 
          bank->numColumnSubarray / bank->mat.subarray.area * 100);
-    
+
     result["Results"]["Area"]["AreaEfficiency_percent"] =
         (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / bank->area * 100);
-    
+
     // Timing
     result["Results"]["Timing"]["Read"]["Latency_ns"] = bank->readLatency * 1e9;
     result["Results"]["Timing"]["Read"]["TreeLatency_ns"] = 

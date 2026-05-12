@@ -77,22 +77,22 @@ void SenseAmp::CalculateArea() {
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += tempHeight;
-		
+
 		CalculateGateArea(INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_P * gTech.featureSize,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += 2 * tempHeight;
-		
+
 		CalculateGateArea(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_N * gTech.featureSize, 0,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += 2 * tempHeight;
-		
+
 		CalculateGateArea(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * gTech.featureSize, 0,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += 2 * tempHeight;
-        
+
                 /* Scale SA area for MLC programming, or defer to ISLPED modeled values for FeFET sensing */
                 if (mlc && (gCell.memCellType == MLCCTT || gCell.memCellType == MLCRRAM)) {
                     if (numF == 8)
@@ -109,7 +109,7 @@ void SenseAmp::CalculateArea() {
                         width = 9.6E-6;
                     else if (numF == 56)
                         width = 11E-6;
-            
+
                     height = 1.4E-6;
                     width = width * (numLvl - 1.0);
                 }
@@ -119,7 +119,7 @@ void SenseAmp::CalculateArea() {
 
                 /* Add additional area if IV converter exists */
                 height += area / width;
- 
+
 		area = height * width;
 
                 /* Override area value for FeFET SAs */
@@ -170,7 +170,7 @@ void SenseAmp::CalculateLatency() {
 		std::cout << "[Sense Amp] Error: Require initialization first!" << std::endl;
 	} else {
 		readLatency = writeLatency = 0;
-		
+
 		//Qing: re-model the current S/A
 		if (currentSense) {
 			/* all the following values achieved from HSPICE */
@@ -239,7 +239,7 @@ void SenseAmp::CalculatePower() {
 	} else {
 		readDynamicEnergy = writeDynamicEnergy = 0;
 		leakage = 0;
-		
+
 		//Qing: re-model the current S/A
 		if (currentSense) {
 			/* all the following values achieved from HSPICE */
@@ -285,7 +285,7 @@ void SenseAmp::CalculatePower() {
                 } else if (gCell.memCellType == MLCFeFET && numLvl == 8){ // 3 bits per cell
                     readDynamicEnergy = 3.823e-14;
                 } // else, given MLC config not supported yet, stick with default SLC SA
-		
+
 		readDynamicEnergy *= numColumn;
 		leakage *= numColumn;
 
