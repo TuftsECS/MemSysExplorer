@@ -11,7 +11,7 @@ incdirs := include
 # C++ tool to use
 CXX := g++
 # C++ version to compile for
-CXXVERSION := c++17
+CXXVERSION := c++23
 # list of include path flags to feed to compiler
 INC := $(addprefix -I, $(incdirs))
 # list of warning flags to feed to compiler

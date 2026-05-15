@@ -37,23 +37,17 @@
 template<typename T>
 struct EnumInfo;
 
-// Helper trait struct which is specialized below to have std::true_type whenever a user defines default value
-template<typename T, typename = void>
-struct EnumHasDefault : std::false_type {};
-
+// Concept for determining if enum is usable in below functions
 template<typename T>
-struct EnumHasDefault<T, std::void_t<decltype(EnumInfo<T>::defaultConfigValue)>> : std::true_type {};
-
-// Helper trait struct which is specialized below to have std::true_type for each custom enum info struct defined below (checking stringMap)
-template<typename T, typename = void>
-struct EnumIsMapped : std::false_type {};
-
-template<typename T>
-struct EnumIsMapped<T, std::void_t<decltype(EnumInfo<T>::stringMap)>> : std::true_type {};
+concept EnumIsMapped = requires(EnumInfo<T> ei){
+    ei.stringMap;
+    ei.yamlMap;
+};
 
 // Types to use in EnumInfo structs for YAML to enum mappings and enum to string mappings
 template<typename T>
 using EnumFromYamlMap = std::unordered_map<std::string, T>;
+
 template<typename T>
 using EnumToStringMap = std::unordered_map<T, std::string>;
 
@@ -375,6 +369,7 @@ struct EnumInfo<CacheAccessMode> {
 //==================================================
 
 template<typename T>
+requires EnumIsMapped<T>
 std::string enumToString(const T& v) {
     const auto& map = EnumInfo<T>::stringMap;
     const auto it = map.find(v);
@@ -385,6 +380,7 @@ std::string enumToString(const T& v) {
 }
 
 template<typename T>
+requires EnumIsMapped<T>
 T enumToYaml(const T& v) {
     const auto& map = EnumInfo<T>::yamlMap;
     for(const auto it = map.cbegin(); it != map.cend(); ++it) {
@@ -396,21 +392,22 @@ T enumToYaml(const T& v) {
 }
 
 template<typename T>
-typename std::enable_if<EnumIsMapped<T>::value, std::ostream&>::type operator<<(std::ostream& stream, const T& v) {
+requires EnumIsMapped<T>
+std::ostream& operator<<(std::ostream& stream, const T& v) {
     stream << enumToString<T>(v);
     return stream;
 }
 
 template<typename T>
 bool yamlValueFromNode(T& var, const YAML::Node& node, const std::string& key) {
-    if constexpr (EnumIsMapped<T>::value) {
+    if constexpr (EnumIsMapped<T>) {
         // one of the mapped enum types, first get the string and then do enum mapping magic
         std::string enumString;
         if (node[key]) {
             enumString = node[key].as<std::string>();
             const auto it = EnumInfo<T>::yamlMap.find(enumString);
             if (it == EnumInfo<T>::yamlMap.cend()) {
-                if constexpr (EnumHasDefault<T>::value) {
+                if constexpr (requires (EnumInfo<T> ei) { ei.defaultConfigValue; }) {
                     var = EnumInfo<T>::defaultConfigValue;
                     return true;
                 } else {
