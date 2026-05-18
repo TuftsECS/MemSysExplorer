@@ -110,7 +110,9 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         }
 
         yamlValueFromNode(wordlineBoostRatio, config, "WordlineBoostRatio");
-        yamlValueFromNode(minSenseVoltage, config, "MinSenseVoltage_mV");
+        if (yamlValueFromNode(minSenseVoltage, config, "MinSenseVoltage_mV")) {
+            minSenseVoltage /= 1e3;
+        }
         yamlValueFromNode(maxStorageNodeDrop, config, "MaxStorageNodeDrop_V");
 
         // Reset Operation
