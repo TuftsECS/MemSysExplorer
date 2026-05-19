@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_BANK_H
-#define MSE_BANK_H
+#ifndef MSE_BANK_HPP
+#define MSE_BANK_HPP
 
 #include "FunctionUnit.hpp"
 #include "Mat.hpp"
@@ -92,4 +92,4 @@ public:
     double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
-#endif /* MSE_BANK_H */
+#endif /* MSE_BANK_HPP */

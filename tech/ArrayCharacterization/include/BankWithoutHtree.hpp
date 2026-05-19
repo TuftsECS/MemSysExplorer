@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_BANKWITHOUTHTREE_H
-#define MSE_BANKWITHOUTHTREE_H
+#ifndef MSE_BANKWITHOUTHTREE_HPP
+#define MSE_BANKWITHOUTHTREE_HPP
 
 #include "Bank.hpp"
 #include "Mat.hpp"
@@ -66,4 +66,4 @@ public:
 	Comparator globalComparator;
 };
 
-#endif /* MSE_BANKWITHOUTHTREE_H */
+#endif /* MSE_BANKWITHOUTHTREE_HPP */

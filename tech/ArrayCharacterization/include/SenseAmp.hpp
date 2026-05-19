@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_SENSEAMP_H
-#define MSE_SENSEAMP_H
+#ifndef MSE_SENSEAMP_HPP
+#define MSE_SENSEAMP_HPP
 
 #include "FunctionUnit.hpp"
 
@@ -67,4 +67,4 @@ public:
     double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
-#endif /* MSE_SENSEAMP_H */
+#endif /* MSE_SENSEAMP_HPP */

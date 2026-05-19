@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_TYPEDEF_H
-#define MSE_TYPEDEF_H
+#ifndef MSE_TYPEDEF_HPP
+#define MSE_TYPEDEF_HPP
 
 enum MemCellType {
 	SRAM,
@@ -146,4 +146,4 @@ enum CacheAccessMode {
 	fast_access_mode		/* data and tag access happen in parallel */
 };
 
-#endif /* MSE_TYPEDEF_H */
+#endif /* MSE_TYPEDEF_HPP */

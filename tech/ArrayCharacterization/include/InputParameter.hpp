@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_INPUTPARAMETER_H
-#define MSE_INPUTPARAMETER_H
+#ifndef MSE_INPUTPARAMETER_HPP
+#define MSE_INPUTPARAMETER_HPP
 
 #include "constant.hpp"
 #include "typedef.hpp"
@@ -132,4 +132,4 @@ public:
 	bool maxIsGlobalWireLowSwing = true;
 };
 
-#endif /* MSE_INPUTPARAMETER_H */
+#endif /* MSE_INPUTPARAMETER_HPP */

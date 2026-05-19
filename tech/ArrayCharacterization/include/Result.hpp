@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_RESULT_H
-#define MSE_RESULT_H
+#ifndef MSE_RESULT_HPP
+#define MSE_RESULT_HPP
 
 #include "BankWithHtree.hpp"
 #include "BankWithoutHtree.hpp"
@@ -76,4 +76,4 @@ public:
 	double limitLeakage = invalid_value;				/* The maximum allowable leakage power, Unit: W */
 };
 
-#endif /* MSE_RESULT_H */
+#endif /* MSE_RESULT_HPP */

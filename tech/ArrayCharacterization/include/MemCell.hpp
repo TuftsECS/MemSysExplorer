@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_MEMCELL_H
-#define MSE_MEMCELL_H
+#ifndef MSE_MEMCELL_HPP
+#define MSE_MEMCELL_HPP
 
 #include "constant.hpp"
 #include "typedef.hpp"
@@ -127,4 +127,4 @@ public:
 	double maxStorageNodeDrop;
 };
 
-#endif /* MSE_MEMCELL_H */
+#endif /* MSE_MEMCELL_HPP */

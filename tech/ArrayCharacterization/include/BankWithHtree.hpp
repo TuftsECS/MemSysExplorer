@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_BANKWITHHTREE_H
-#define MSE_BANKWITHHTREE_H
+#ifndef MSE_BANKWITHHTREE_HPP
+#define MSE_BANKWITHHTREE_HPP
 
 #include "Bank.hpp"
 
@@ -76,4 +76,4 @@ public:
 	std::vector<double> lengthVerticalWire;	/* The length of vertical wires on level x, Unit: m */
 };
 
-#endif /* MSE_BANKWITHHTREE_H */
+#endif /* MSE_BANKWITHHTREE_HPP */

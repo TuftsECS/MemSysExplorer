@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_CONSTANT_H
-#define MSE_CONSTANT_H
+#ifndef MSE_CONSTANT_HPP
+#define MSE_CONSTANT_HPP
 
 #define WARNING	0
 
@@ -112,4 +112,4 @@
 inline constexpr double invalid_value = 1e41;
 inline constexpr double infinite_ramp = 1e41;
 
-#endif /* MSE_CONSTANT_H */
+#endif /* MSE_CONSTANT_HPP */

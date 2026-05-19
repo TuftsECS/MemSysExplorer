@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_FORMULA_H
-#define MSE_FORMULA_H
+#ifndef MSE_FORMULA_HPP
+#define MSE_FORMULA_HPP
 
 #include "Technology.hpp"
 #include "constant.hpp"
@@ -97,4 +97,4 @@ double CalculateWireCapacitance(
 		double verticalDielectic, double fringeCap);
 
 
-#endif /* MSE_FORMULA_H */
+#endif /* MSE_FORMULA_HPP */

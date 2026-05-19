@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_MUX_H
-#define MSE_MUX_H
+#ifndef MSE_MUX_HPP
+#define MSE_MUX_HPP
 
 #include "FunctionUnit.hpp"
 #include "constant.hpp"
@@ -69,4 +69,4 @@ public:
     double rampOutput;
 };
 
-#endif /* MSE_MUX_H */
+#endif /* MSE_MUX_HPP */

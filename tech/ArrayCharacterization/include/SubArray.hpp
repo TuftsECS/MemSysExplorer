@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_SUBARRAY_H
-#define MSE_SUBARRAY_H
+#ifndef MSE_SUBARRAY_HPP
+#define MSE_SUBARRAY_HPP
 
 #include "FunctionUnit.hpp"
 #include "RowDecoder.hpp"
@@ -126,4 +126,4 @@ public:
     double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
-#endif /* MSE_SUBARRAY_H */
+#endif /* MSE_SUBARRAY_HPP */

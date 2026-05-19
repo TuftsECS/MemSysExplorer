@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_WIRE_H
-#define MSE_WIRE_H
+#ifndef MSE_WIRE_HPP
+#define MSE_WIRE_HPP
 
 #include "typedef.hpp"
 #include "SenseAmp.hpp"
@@ -84,4 +84,4 @@ public:
 	double capWirePerUnit;			/* Unit: F/m */
 };
 
-#endif /* MSE_WIRE_H */
+#endif /* MSE_WIRE_HPP */

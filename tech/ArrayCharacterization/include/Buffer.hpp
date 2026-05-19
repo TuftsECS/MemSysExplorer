@@ -34,8 +34,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_BUFFER_H
-#define MSE_BUFFER_H
+#ifndef MSE_BUFFER_HPP
+#define MSE_BUFFER_HPP
 
 #include "FunctionUnit.hpp"
 
@@ -68,4 +68,4 @@ public:
     double cellResetEnergy = 0;	/* Unit: J */
 };
 
-#endif /* MSE_Buffer_H */
+#endif /* MSE_BUFFER_HPP */

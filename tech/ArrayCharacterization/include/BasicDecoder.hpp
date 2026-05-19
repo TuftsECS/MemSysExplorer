@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_BASICDECODER_H
-#define MSE_BASICDECODER_H
+#ifndef MSE_BASICDECODER_HPP
+#define MSE_BASICDECODER_HPP
 
 #include "FunctionUnit.hpp"
 #include "OutputDriver.hpp"
@@ -68,4 +68,4 @@ public:
 	/* TO-DO: Basic decoder so far does not take BufferDesignTarget input because the output driver is already quite fixed in this module */
 };
 
-#endif /* MSE_BASICDECODER_H */
+#endif /* MSE_BASICDECODER_HPP */

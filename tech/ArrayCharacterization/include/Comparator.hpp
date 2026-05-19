@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_COMPARATOR_H
-#define MSE_COMPARATOR_H
+#ifndef MSE_COMPARATOR_HPP
+#define MSE_COMPARATOR_HPP
 
 #include "FunctionUnit.hpp"
 #include "constant.hpp"
@@ -69,4 +69,4 @@ public:
     double rampOutput = 1e40;
 };
 
-#endif /* MSE_COMPARATOR_H */
+#endif /* MSE_COMPARATOR_HPP */

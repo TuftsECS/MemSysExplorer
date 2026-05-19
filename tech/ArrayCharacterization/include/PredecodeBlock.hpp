@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_PREDECODEBLOCK_H
-#define MSE_PREDECODEBLOCK_H
+#ifndef MSE_PREDECODEBLOCK_HPP
+#define MSE_PREDECODEBLOCK_HPP
 
 #include "FunctionUnit.hpp"
 #include "RowDecoder.hpp"
@@ -96,4 +96,4 @@ private:
 	/* TO-DO: Predecoder so far does not take BufferDesignTarget input because the output driver is already quite fixed in this module */
 };
 
-#endif /* MSE_PREDECODEBLOCK_H */
+#endif /* MSE_PREDECODEBLOCK_HPP */

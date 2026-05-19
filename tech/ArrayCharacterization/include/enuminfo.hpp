@@ -1,5 +1,5 @@
-#ifndef MSE_ENUMINFO_H
-#define MSE_ENUMINFO_H
+#ifndef MSE_ENUMINFO_HPP
+#define MSE_ENUMINFO_HPP
 
 #include "typedef.hpp"
 

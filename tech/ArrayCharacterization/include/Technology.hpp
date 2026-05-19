@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_TECHNOLOGY_H
-#define MSE_TECHNOLOGY_H
+#ifndef MSE_TECHNOLOGY_HPP
+#define MSE_TECHNOLOGY_HPP
 
 #include "typedef.hpp"
 
@@ -100,4 +100,4 @@ public:
 	double cap_draintotal = 0;
 };
 
-#endif /* MSE_TECHNOLOGY_H */
+#endif /* MSE_TECHNOLOGY_HPP */

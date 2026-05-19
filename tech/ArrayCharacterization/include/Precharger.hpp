@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_PRECHARGER_H
-#define MSE_PRECHARGER_H
+#ifndef MSE_PRECHARGER_HPP
+#define MSE_PRECHARGER_HPP
 
 #include "FunctionUnit.hpp"
 #include "OutputDriver.hpp"
@@ -76,4 +76,4 @@ public:
     double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
-#endif /* MSE_PRECHARGER_H */
+#endif /* MSE_PRECHARGER_HPP */

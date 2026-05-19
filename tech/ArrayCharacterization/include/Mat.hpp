@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_MAT_H
-#define MSE_MAT_H
+#ifndef MSE_MAT_HPP
+#define MSE_MAT_HPP
 
 #include "FunctionUnit.hpp"
 #include "SubArray.hpp"
@@ -102,4 +102,4 @@ public:
     double refreshDynamicEnergy = 0;	/* Unit: J */
 };
 
-#endif /* MSE_MAT_H */
+#endif /* MSE_MAT_HPP */

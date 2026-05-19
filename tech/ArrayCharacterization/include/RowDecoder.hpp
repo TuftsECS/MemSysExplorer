@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_ROWDECODER_H
-#define MSE_ROWDECODER_H
+#ifndef MSE_ROWDECODER_HPP
+#define MSE_ROWDECODER_HPP
 
 #include "FunctionUnit.hpp"
 #include "OutputDriver.hpp"
@@ -77,4 +77,4 @@ public:
     double resetDynamicEnergy = 0;	/* Unit: J */
 };
 
-#endif /* MSE_ROWDECODER_H */
+#endif /* MSE_ROWDECODER_HPP */

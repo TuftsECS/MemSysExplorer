@@ -34,8 +34,8 @@
 *                     Website: http://www.cse.psu.edu/~xydong/ )
 *******************************************************************************/
 
-#ifndef MSE_GLOBAL_H
-#define MSE_GLOBAL_H
+#ifndef MSE_GLOBAL_HPP
+#define MSE_GLOBAL_HPP
 
 #include "InputParameter.hpp"
 #include "Technology.hpp"
@@ -51,4 +51,3 @@ extern Wire gLocalWire;		/* The wire type of local interconnects (for example, w
 extern Wire gGlobalWire;	/* The wire type of global interconnects (for example, the ones that connect mats) */
 
 #endif
-

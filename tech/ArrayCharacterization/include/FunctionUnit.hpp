@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_FUNCTIONUNIT_H
-#define MSE_FUNCTIONUNIT_H
+#ifndef MSE_FUNCTIONUNIT_HPP
+#define MSE_FUNCTIONUNIT_HPP
 
 class FunctionUnit {
 public:
@@ -62,4 +62,4 @@ public:
 	double leakage = 0;		/* Unit: W */
 };
 
-#endif /* MSE_FUNCTIONUNIT_H */
+#endif /* MSE_FUNCTIONUNIT_HPP */

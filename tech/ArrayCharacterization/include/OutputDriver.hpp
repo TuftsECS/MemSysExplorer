@@ -35,8 +35,8 @@
 *******************************************************************************/
 
 
-#ifndef MSE_OUTPUTDRIVER_H
-#define MSE_OUTPUTDRIVER_H
+#ifndef MSE_OUTPUTDRIVER_HPP
+#define MSE_OUTPUTDRIVER_HPP
 
 #include "FunctionUnit.hpp"
 #include "constant.hpp"
@@ -72,4 +72,4 @@ public:
     double rampOutput;
 };
 
-#endif /* MSE_OUTPUTDRIVER_H */
+#endif /* MSE_OUTPUTDRIVER_HPP */
