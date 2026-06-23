@@ -295,7 +295,6 @@ int main(int argc, char* argv[])
 
 	/* for cache tag array only */
 	Result bestTagResults[(int)full_exploration];	/* full_exploration is always set as the last element in the enum, so if full_exploration is 8, what we want here is a 0-7 array, which is correct */
-	Bank* tagBank = nullptr;
 	for (int i = 0; i < (int)full_exploration; i++)
 		bestTagResults[i].optimizationTarget = (OptimizationTarget)i;
 
@@ -313,27 +312,73 @@ int main(int argc, char* argv[])
 		int numOffsetBit = (int)(log2(gInputParameter.wordWidth / 8) + 0.1);
 		INITIAL_BASIC_WIRE;
 		/* Simulate tag */
-		BIGFOR {
-			blockSize = TOTAL_ADDRESS_BIT - numIndexBit - numOffsetBit;
-			blockSize += 2;		/* add dirty bits and valid bits */
-			if (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) == 0) {
-				/* To aggressive partitioning */
-				continue;
+		// BIGFOR
+		#pragma omp parallel
+		{
+			// These parameters need to be declared here so that they are treated as firstprivate by OpenMP.
+			int numRowMat, numColumnMat, numActiveMatPerRow, numActiveMatPerColumn;
+			int numRowSubarray, numColumnSubarray, numActiveSubarrayPerRow, numActiveSubarrayPerColumn;
+			int muxSenseAmp, muxOutputLev1, muxOutputLev2, numRowPerSet;
+			int areaOptimizationLevel;							/* actually BufferDesignTarget */
+
+			#pragma omp single
+			for (numRowMat = gInputParameter.minNumRowMat; numRowMat <= gInputParameter.maxNumRowMat; numRowMat *= 2)
+			for (numColumnMat = gInputParameter.minNumColumnMat; numColumnMat <= gInputParameter.maxNumColumnMat; numColumnMat *= 2)
+			for (numActiveMatPerRow = MIN(numColumnMat, gInputParameter.minNumActiveMatPerRow); numActiveMatPerRow <= MIN(numColumnMat, gInputParameter.maxNumActiveMatPerRow); numActiveMatPerRow *= 2)
+			for (numActiveMatPerColumn = MIN(numRowMat, gInputParameter.minNumActiveMatPerColumn); numActiveMatPerColumn <= MIN(numRowMat, gInputParameter.maxNumActiveMatPerColumn); numActiveMatPerColumn *= 2)
+			for (numRowSubarray = gInputParameter.minNumRowSubarray; numRowSubarray <= gInputParameter.maxNumRowSubarray; numRowSubarray *= 2)
+			for (numColumnSubarray = gInputParameter.minNumColumnSubarray; numColumnSubarray <= gInputParameter.maxNumColumnSubarray; numColumnSubarray *= 2) {
+				#pragma omp task
+				{
+					Result bestTagResultsTask[full_exploration];
+					for (int i = 0; i < (int)full_exploration; i++)
+						bestTagResultsTask[i].optimizationTarget = (OptimizationTarget)i;
+					long long numSolutionTask = 0;
+
+					for (numActiveSubarrayPerRow = MIN(numColumnSubarray, gInputParameter.minNumActiveSubarrayPerRow); numActiveSubarrayPerRow <= MIN(numColumnSubarray, gInputParameter.maxNumActiveSubarrayPerRow); numActiveSubarrayPerRow *=2)
+					for (numActiveSubarrayPerColumn = MIN(numRowSubarray, gInputParameter.minNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn <= MIN(numRowSubarray, gInputParameter.maxNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn *= 2)
+					for (muxSenseAmp = gInputParameter.minMuxSenseAmp; muxSenseAmp <= gInputParameter.maxMuxSenseAmp; muxSenseAmp *= 2)
+					for (muxOutputLev1 = gInputParameter.minMuxOutputLev1; muxOutputLev1 <= gInputParameter.maxMuxOutputLev1; muxOutputLev1 *= 2)
+					for (muxOutputLev2 = gInputParameter.minMuxOutputLev2; muxOutputLev2 <= gInputParameter.maxMuxOutputLev2; muxOutputLev2 *= 2)
+					for (numRowPerSet = gInputParameter.minNumRowPerSet; numRowPerSet <= MIN(gInputParameter.maxNumRowPerSet, gInputParameter.associativity); numRowPerSet *= 2)
+					for (areaOptimizationLevel = gInputParameter.minAreaOptimizationLevel; areaOptimizationLevel <= gInputParameter.maxAreaOptimizationLevel; areaOptimizationLevel++) {
+						long blockSize = TOTAL_ADDRESS_BIT - numIndexBit - numOffsetBit;
+						blockSize += 2;		/* add dirty bits and valid bits */
+						if (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) == 0) {
+							/* To aggressive partitioning */
+							continue;
+						}
+						if (blockSize % (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn)) {
+							blockSize = (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) + 1)
+									* (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn);
+						}
+						long long capacity = (long long)gInputParameter.capacity * 8 / gInputParameter.wordWidth * blockSize;
+						int associativity = gInputParameter.associativity;
+						Bank *tagBank;
+						CALCULATE(tagBank, tag);
+						if (!tagBank->invalid) {
+							Result tempResult;
+							VERIFY_TAG_CAPACITY;
+							numSolutionTask++;
+							// UPDATE_BEST_TAG;
+							*(tempResult.bank) = *tagBank;
+							*(tempResult.localWire) = gLocalWire;
+							*(tempResult.globalWire) = gGlobalWire;
+							for (int i = 0; i < (int)full_exploration; i++)
+								bestTagResultsTask[i].compareAndUpdate(tempResult);
+						}
+						delete tagBank;
+					}
+
+					#pragma omp critical
+					{
+						for (int i = 0; i < full_exploration; i++) {
+							bestTagResults[i].compareAndUpdate(bestTagResultsTask[i]);
+						}
+						numSolution += numSolutionTask;
+					}
+				}
 			}
-			if (blockSize % (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn)) {
-				blockSize = (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) + 1)
-						* (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn);
-			}
-			capacity = (long long)gInputParameter.capacity * 8 / gInputParameter.wordWidth * blockSize;
-			associativity = gInputParameter.associativity;
-			CALCULATE(tagBank, tag);
-			if (!tagBank->invalid) {
-				Result tempResult;
-				VERIFY_TAG_CAPACITY;
-				numSolution++;
-				UPDATE_BEST_TAG;
-			}
-			delete tagBank;
 		}
 		if (numSolution > 0) {
 			Bank* trialBank;
@@ -410,22 +455,67 @@ int main(int argc, char* argv[])
 	}
 
 	INITIAL_BASIC_WIRE;
-	BIGFOR {
-		if (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) == 0) {
-			/* To aggressive partitioning */
-			continue;
-		}
-		CALCULATE(dataBank, dataT);
-		if (!dataBank->invalid) {
-			Result tempResult;
-			VERIFY_DATA_CAPACITY;
-			numSolution++;
-			UPDATE_BEST_DATA;
-			if (gInputParameter.optimizationTarget == full_exploration && !gInputParameter.isPruningEnabled) {
-				OUTPUT_TO_FILE;
+	// BIGFOR
+	#pragma omp parallel
+	{
+		// These parameters need to be declared here so that they are treated as firstprivate by OpenMP.
+		int numRowMat, numColumnMat, numActiveMatPerRow, numActiveMatPerColumn;
+		int numRowSubarray, numColumnSubarray, numActiveSubarrayPerRow, numActiveSubarrayPerColumn;
+		int muxSenseAmp, muxOutputLev1, muxOutputLev2, numRowPerSet;
+		int areaOptimizationLevel;							/* actually BufferDesignTarget */
+
+		#pragma omp single
+		for (numRowMat = gInputParameter.minNumRowMat; numRowMat <= gInputParameter.maxNumRowMat; numRowMat *= 2)
+		for (numColumnMat = gInputParameter.minNumColumnMat; numColumnMat <= gInputParameter.maxNumColumnMat; numColumnMat *= 2)
+		for (numActiveMatPerRow = MIN(numColumnMat, gInputParameter.minNumActiveMatPerRow); numActiveMatPerRow <= MIN(numColumnMat, gInputParameter.maxNumActiveMatPerRow); numActiveMatPerRow *= 2)
+		for (numActiveMatPerColumn = MIN(numRowMat, gInputParameter.minNumActiveMatPerColumn); numActiveMatPerColumn <= MIN(numRowMat, gInputParameter.maxNumActiveMatPerColumn); numActiveMatPerColumn *= 2)
+		for (numRowSubarray = gInputParameter.minNumRowSubarray; numRowSubarray <= gInputParameter.maxNumRowSubarray; numRowSubarray *= 2)
+		for (numColumnSubarray = gInputParameter.minNumColumnSubarray; numColumnSubarray <= gInputParameter.maxNumColumnSubarray; numColumnSubarray *= 2)
+			#pragma omp task
+			{
+				Result bestDataResultsTask[full_exploration];
+				for (int i = 0; i < (int)full_exploration; i++)
+					bestDataResultsTask[i].optimizationTarget = (OptimizationTarget)i;
+				long long numSolutionTask = 0;
+
+				for (numActiveSubarrayPerRow = MIN(numColumnSubarray, gInputParameter.minNumActiveSubarrayPerRow); numActiveSubarrayPerRow <= MIN(numColumnSubarray, gInputParameter.maxNumActiveSubarrayPerRow); numActiveSubarrayPerRow *=2)
+				for (numActiveSubarrayPerColumn = MIN(numRowSubarray, gInputParameter.minNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn <= MIN(numRowSubarray, gInputParameter.maxNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn *= 2)
+				for (muxSenseAmp = gInputParameter.minMuxSenseAmp; muxSenseAmp <= gInputParameter.maxMuxSenseAmp; muxSenseAmp *= 2)
+				for (muxOutputLev1 = gInputParameter.minMuxOutputLev1; muxOutputLev1 <= gInputParameter.maxMuxOutputLev1; muxOutputLev1 *= 2)
+				for (muxOutputLev2 = gInputParameter.minMuxOutputLev2; muxOutputLev2 <= gInputParameter.maxMuxOutputLev2; muxOutputLev2 *= 2)
+				for (numRowPerSet = gInputParameter.minNumRowPerSet; numRowPerSet <= MIN(gInputParameter.maxNumRowPerSet, gInputParameter.associativity); numRowPerSet *= 2)
+				for (areaOptimizationLevel = gInputParameter.minAreaOptimizationLevel; areaOptimizationLevel <= gInputParameter.maxAreaOptimizationLevel; areaOptimizationLevel++) {
+					if (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) == 0) {
+						/* To aggressive partitioning */
+						continue;
+					}
+					Bank *dataBank;
+					CALCULATE(dataBank, dataT);
+					if (!dataBank->invalid) {
+						Result tempResult;
+						VERIFY_DATA_CAPACITY;
+						numSolutionTask++;
+						// UPDATE_BEST_DATA;
+						*(tempResult.bank) = *dataBank;
+						*(tempResult.localWire) = gLocalWire;
+						*(tempResult.globalWire) = gGlobalWire;
+						for (int i = 0; i < (int)full_exploration; i++)
+							bestDataResultsTask[i].compareAndUpdate(tempResult);
+						if (gInputParameter.optimizationTarget == full_exploration && !gInputParameter.isPruningEnabled) {
+							OUTPUT_TO_FILE;
+						}
+					}
+					delete dataBank;
+				}
+
+				#pragma omp critical
+				{
+					for (int i = 0; i < full_exploration; i++) {
+						bestDataResults[i].compareAndUpdate(bestDataResultsTask[i]);
+					}
+					numSolution += numSolutionTask;
+				}
 			}
-		}
-		delete dataBank;
 	}
 
 	if (numSolution > 0) {

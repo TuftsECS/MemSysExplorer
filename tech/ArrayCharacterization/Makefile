@@ -17,9 +17,9 @@ INC := $(addprefix -I, $(incdirs))
 # list of warning flags to feed to compiler
 CXXWARN := -Wall -Wpedantic -Wextra -Werror
 # final list of flags to feed to compiler, -MMD and -MP generate dependencies
-CXXFLAGS := -std=$(CXXVERSION) $(CXXWARN) $(INC) -MMD -MP
+CXXFLAGS := -std=$(CXXVERSION) $(CXXWARN) $(INC) -MMD -MP -fopenmp
 # list of flags to feed to linker
-LDFLAGS :=
+LDFLAGS := -fopenmp
 
 # lists of files required by the target to compile (SRCS and DEPS) and link (OBJS)
 SRCS = $(shell find $(SRCDIR) -name "*.cpp")

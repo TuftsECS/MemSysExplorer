@@ -49,6 +49,7 @@
 class Result {
 public:
 	Result();
+	Result(const Result& other);
 
 	/* Functions */
 	void print();

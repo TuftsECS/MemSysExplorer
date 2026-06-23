@@ -59,6 +59,12 @@ Result::Result() {
     reset();
 }
 
+Result::Result(const Result& other) : Result() {
+	*bank = *(other.bank);
+	*localWire = *(other.localWire);
+	*globalWire = *(other.globalWire);
+}
+
 void Result::reset() {
 	bank->readLatency = invalid_value;
 	bank->writeLatency = invalid_value;
