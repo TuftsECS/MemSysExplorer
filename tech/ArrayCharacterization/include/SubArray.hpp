@@ -45,6 +45,7 @@
 #include "Mux.hpp"
 #include "Buffer.hpp"    //Qing
 #include "typedef.hpp"
+#include "cell/types.hpp"
 
 class SubArray: public FunctionUnit {
 public:
@@ -81,20 +82,12 @@ public:
 	double capBitline;	/* Bitline capacitance, Unit: F */
 	double resWordline;	/* Wordline resistance, Unit: ohm */
 	double resBitline;	/* Bitline resistance, Unit: ohm */
-	double resCellAccess; /* Resistance of access device, Unit: ohm */
-	double capCellAccess; /* Capacitance of access device, Unit: ohm */
-	double resCellAccessW; /* Resistance of write access device, Unit: ohm */
-	double capCellAccessW; /* Capacitance of write access device, Unit: ohm */
-	double resCellAccessR; /* Resistance of read access device, Unit: ohm */
-	double capCellAccessR; /* Capacitance of read access device, Unit: ohm */
 	double resMemCellOff;  /* HRS resistance, Unit: ohm */
 	double resMemCellOn;   /* LRS resistance, Unit: ohm */
 	double voltageMemCellOff; /* Voltage drop on HRS during read operation, Unit: V */
 	double voltageMemCellOn;   /* Voltage drop on LRS druing read operation, Unit: V */
-	double resInSerialForSenseAmp; /* Serial resistance of voltage-in voltage sensing as a voltage divider, Unit: ohm */
 	double resEquivalentOn;          /* resInSerialForSenseAmp in parallel with resMemCellOn, Unit: ohm */
 	double resEquivalentOff;          /* resInSerialForSenseAmp in parallel with resMemCellOn, Unit: ohm */
-	double bitlineDelay;	/* Bitline delay, Unit: s */
 	double bitlineDelayW;	/* Bitline write delay, Unit: s */
 	double bitlineDelayR;	/* Bitline read delay, Unit: s */
 	double chargeLatency;	/* The bitline charge delay during write operations, Unit: s */
@@ -124,6 +117,8 @@ public:
     double cellSetEnergy = 0;	/* Unit: J */
     double cellResetEnergy = 0;	/* Unit: J */
     double refreshDynamicEnergy = 0;	/* Unit: J */
+
+    static inline mse::cell::MemoryCellVariant cell{};
 };
 
 #endif /* MSE_SUBARRAY_HPP */

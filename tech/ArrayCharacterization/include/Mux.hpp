@@ -48,7 +48,7 @@ public:
 	void Initialize(int _numInput, long long _numMux, double _capLoad, double _capInputNextStage, double _minDriverCurrent);
 	void CalculateArea();
 	void CalculateRC();
-	void CalculateLatency(double _rampInput);
+	void CalculateLatency();
 	void CalculatePower();
 
 	/* Properties */
@@ -65,7 +65,6 @@ public:
 	double capForPreviousDelayCalculation = 0;
 	double capForPreviousPowerCalculation = 0;
 
-	double rampInput;
     double rampOutput;
 };
 

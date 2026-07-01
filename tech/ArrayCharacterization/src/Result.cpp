@@ -198,10 +198,7 @@ void Result::print() {
 	std::cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << "\n";
 	std::cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.readLatency) << "\n";
 	std::cout << "       |--- Row Decoder Latency = " << TO_SECOND(bank->mat.subarray.rowDecoder.readLatency) << "\n";
-	if (gCell.memCellType != eDRAM3T333 && gCell.memCellType != eDRAM3T)
-		std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelay) << "\n";
-	else
-		std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelayR) << "\n";
+    std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelayR) << "\n";
 	if (gInputParameter.internalSensing)
 		std::cout << "       |--- Senseamp Latency    = " << TO_SECOND(bank->mat.subarray.senseAmp.readLatency) << "\n";
 	std::cout << "       |--- Mux Latency         = " << TO_SECOND(bank->mat.subarray.bitlineMux.readLatency
@@ -261,10 +258,7 @@ void Result::print() {
 			std::cout << "       |--- Write Pulse Duration = " << TO_SECOND(gCell.resetPulse) << "\n";	// MRAM reset/set is equal
 		std::cout << "       |--- Row Decoder Latency = " << TO_SECOND(bank->mat.subarray.rowDecoder.writeLatency) << "\n";
 		std::cout << "       |--- Charge Latency      = " << TO_SECOND(bank->mat.subarray.chargeLatency) << "\n";
-		if (gCell.memCellType != eDRAM3T333 && gCell.memCellType != eDRAM3T)
-			std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelay) << "\n";
-		else
-			std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelayW) << "\n";
+        std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelayW) << "\n";
 		}
 
 	//Qing: subarray buffer latency
@@ -812,11 +806,7 @@ YAML::Node Result::toYamlNode() {
     result["Results"]["Timing"]["Read"]["SubarrayLatency_ns"] = bank->mat.subarray.readLatency * 1e9;
     result["Results"]["Timing"]["Read"]["RowDecoderLatency_ns"] = 
         bank->mat.subarray.rowDecoder.readLatency * 1e9;
-	if (gCell.memCellType == eDRAM3T333 || gCell.memCellType == eDRAM3T) {
-    	result["Results"]["Timing"]["Read"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelayR * 1e9;
-	} else {
-		result["Results"]["Timing"]["Read"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelay * 1e9;
-	}
+    result["Results"]["Timing"]["Read"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelayR * 1e9;
     if (gInputParameter.internalSensing)
         result["Results"]["Timing"]["Read"]["SenseampLatency_ns"] = 
             bank->mat.subarray.senseAmp.readLatency * 1e9;
@@ -860,11 +850,7 @@ YAML::Node Result::toYamlNode() {
 		result["Results"]["Timing"]["Write"]["SubarrayLatency_ns"] = bank->mat.subarray.readLatency * 1e9;
 		result["Results"]["Timing"]["Write"]["RowDecoderLatency_ns"] = 
 			bank->mat.subarray.rowDecoder.readLatency * 1e9;
-		if (gCell.memCellType == eDRAM3T333 || gCell.memCellType == eDRAM3T) {
-			result["Results"]["Timing"]["Write"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelayW * 1e9;
-		} else {
-			result["Results"]["Timing"]["Write"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelay * 1e9;
-		}
+        result["Results"]["Timing"]["Write"]["BitlineLatency_ns"] = bank->mat.subarray.bitlineDelayW * 1e9;
     }
 
     double readBandwidth = (double)bank->blockSize /

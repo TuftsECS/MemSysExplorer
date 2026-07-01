@@ -349,7 +349,7 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 								(resLocalBitline + resGlobalBitline) * (capGlobalBitline / 2 + capGlobalBitlineMux);
 						latency *= log(vpre / (vpre - globalSenseAmp.senseVoltage));
 						latency += resLocalBitline * capGlobalBitline / 2;
-						globalBitlineMux.CalculateLatency(1e20);
+						globalBitlineMux.CalculateLatency();
 						latency += globalBitlineMux.readLatency;
 						globalSenseAmp.CalculateLatency();
 						writeLatency += latency;
@@ -396,7 +396,7 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 								tau = resLocalBitline * capGlobalBitline + (resLocalBitline + resGlobalBitline) * capGlobalBitline / 2;
 								latencyOff = tau * log((vOff - vPre)/(vOff - vPre - globalSenseAmp.senseVoltage));
 							}
-							readLatency -= mat.subarray.bitlineDelay;
+							readLatency -= mat.subarray.bitlineDelayR;
 							if ((latencyOn + mat.subarray.bitlineDelayOn) > (latencyOff + mat.subarray.bitlineDelayOff))
 								readLatency += latencyOn + mat.subarray.bitlineDelayOn;
 							else
@@ -417,7 +417,7 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 			}
 		}
 		if (!internalSenseAmp) {
-			globalBitlineMux.CalculateLatency(1e40);
+			globalBitlineMux.CalculateLatency();
 			globalSenseAmp.CalculateLatency();
 			readLatency += globalBitlineMux.readLatency + globalSenseAmp.readLatency;
 			writeLatency += globalBitlineMux.writeLatency + globalSenseAmp.writeLatency;

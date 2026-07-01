@@ -52,6 +52,8 @@
 #include "Result.hpp"
 #include "formula.hpp"
 #include "macros.hpp"
+#include "cell/types.hpp"
+#include "input.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -272,6 +274,10 @@ int main(int argc, char* argv[])
 	}
 
 	gCell.PrintCell();
+
+    mse::YamlInputFile cellYamlFile(gInputParameter.fileMemCell);
+    std::string memoryCellTypeName = "MemCellType";
+    mse::cell::MemoryCellFactory<>::create(cellYamlFile, memoryCellTypeName, SubArray::cell);
 
 	applyConstraint();
 

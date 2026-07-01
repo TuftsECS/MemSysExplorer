@@ -100,12 +100,11 @@ void Mux::CalculateRC() {
 	}
 }
 
-void Mux::CalculateLatency(double _rampInput) {  //rampInput is actually useless in Mux module
+void Mux::CalculateLatency() {
 	if (!initialized) {
 		std::cout << "[Mux] Error: Require initialization first!" << std::endl;
 	} else {
 		if ((numInput > 1) && (numMux > 0 )) {
-			rampInput = _rampInput;
 			double tr;
 			tr = resNMOSPassTransistor * (capOutput + capLoad);
 			readLatency = 2.3 * tr;
