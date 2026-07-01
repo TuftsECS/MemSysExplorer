@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
 		INITIAL_BASIC_WIRE;
 		/* Simulate tag */
 		// BIGFOR
-		#pragma omp parallel
+		#pragma omp parallel firstprivate(gInputParameter, gTech, gTechR, gTechW, gCell, gLocalWire, gGlobalWire)
 		{
 			// These parameters need to be declared here so that they are treated as firstprivate by OpenMP.
 			int numRowMat, numColumnMat, numActiveMatPerRow, numActiveMatPerColumn;
@@ -456,7 +456,7 @@ int main(int argc, char* argv[])
 
 	INITIAL_BASIC_WIRE;
 	// BIGFOR
-	#pragma omp parallel
+	#pragma omp parallel firstprivate(gInputParameter, gTech, gTechR, gTechW, gCell, gLocalWire, gGlobalWire)
 	{
 		// These parameters need to be declared here so that they are treated as firstprivate by OpenMP.
 		int numRowMat, numColumnMat, numActiveMatPerRow, numActiveMatPerColumn;
