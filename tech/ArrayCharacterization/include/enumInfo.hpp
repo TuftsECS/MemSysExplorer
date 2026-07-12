@@ -1,63 +1,123 @@
+// This file contains template structures for converting YAML field values / strings to enum values and enum values to strings
+// It is meant to reduce boilerplate when working with enums
+// The enumToString function takes any specialized enum value and returns its string representation
+// The enumToYaml function takes any specialized enum value and returns its YAML name
+// input.hpp functions also use these maps in parameter filling logic
+// All mappings created in this file will automatically apply to that logic
+//
+// To add mappings for a new enum, use the following specialization pattern:
+//
+// template<>
+// struct EnumMap<EnumType> {
+//     static inline const EnumFromYamlMap<EnumType> fromYaml = {
+//         {"FieldValue1", EnumValue1},
+//         {"FieldValue2", EnumValue2},
+//         ...
+//     };
+// 
+//     *OPTIONAL MAPPING - fromYaml USED WHEN THIS MAPPING NOT PRESENT*
+//     static inline const EnumToStringMap<EnumType> toString = {
+//         {EnumValue1, "String1"},
+//         {EnumValue2, "String2"},
+//         ...
+//     };
+// };
+//
+// The toString mapping can be defined when other strings beside the YAML field values should be used for printing
+// If it is not defined, a backwards search through fromYaml is used for printing enum values
+
 #ifndef MSE_ENUMINFO_HPP
 #define MSE_ENUMINFO_HPP
 
 #include "typedef.hpp"
+#include "debug.hpp"
 
 #include "yaml-cpp/yaml.h"
 
 #include <unordered_map>
 #include <iostream>
 
-/*
- * This file contains template structures for automatically converting YAML strings to enum values and enum values to strings
- * It is meant to reduce boilerplate when working with enums
- * The enumToString function takes any specialized enum value and returns its string representation
- * The enumToYaml function takes any specialized enum value and returns its YAML name
- * The yamlValueFromNode function assigns some type (specialized enum or other) using a YAML node object and field string
- *
- * To add mappings for a new enum, use the following specialization pattern:
- *
- * template<>
- * struct EnumInfo<ENUM_TYPE> {
- *      static constexpr auto name = "ENUM_TYPE"; (or something else appropriate)
- *      static inline const EnumFromYamlMap<ENUM_TYPE> yamlMap = {...};
- *      static inline const EnumToStringMap<ENUM_TYPE> stringMap = {...};
- *
- *      (these are for YAML things - if your enum should have a default value,
- *          define defaultConfigValue, otherwise define configError)
- *      static constexpr auto defaultConfigValue = ...;
- *      static constexpr auto configError = "...";
- *  };
- *
- *  defaultConfigValue is the value assigned to a YAML parameter when no value matches in yamlMap, INCLUDING CASES WHERE A YAML FIELD IS GIVEN BUT INVALID FOR THE TYPE
- *  configError is a string used in a runtime exception if a YAML parameter must be explicitly given a value, but either nothing was given or the given value was not in yamlMap
- */
-
-// Templated struct which will be specialized for each support enum type
+// Templated struct which will be specialized for each enum mapping
 template<typename T>
-struct EnumInfo;
+//requires std::is_scoped_enum_v<T> TODO
+struct EnumMap;
 
-// Concept for determining if enum is usable in below functions
+// Concept for determining if enum is actually mapped
 template<typename T>
-concept EnumIsMapped = requires(EnumInfo<T> ei){
-    ei.stringMap;
-    ei.yamlMap;
+//requires std::is_scoped_enum_v<T> TODO
+concept EnumIsMapped = requires {
+    typename EnumMap<T>;
+    EnumMap<T>::fromYaml;
 };
 
-// Types to use in EnumInfo structs for YAML to enum mappings and enum to string mappings
+// Types to use in EnumMap structs for YAML to enum mappings and enum to string mappings
 template<typename T>
+//requires std::is_scoped_enum_v<T> TODO
 using EnumFromYamlMap = std::unordered_map<std::string, T>;
 
 template<typename T>
+//requires std::is_scoped_enum_v<T> TODO
 using EnumToStringMap = std::unordered_map<T, std::string>;
+
+//==================================================
+// Search the enum's fromYaml map backwards to convert back into the YAML string
+
+template<typename T>
+requires EnumIsMapped<T>
+std::string enumToYaml(T v) noexcept {
+    const auto& map = EnumMap<T>::fromYaml;
+    // For loop instead of std:: algo because backward search is nonstandard but simple :)
+    for(auto it = map.cbegin(); it != map.cend(); ++it) {
+        if (it->second == v) {
+            return it->first;
+        }
+    }
+    
+    // No mapping rule is bad and not really recoverable, so just terminate
+    mse::debug::fatal("Missing YAML to enum conversion rule\n");
+}
+
+//==================================================
+// Turn an enum value into a string from its mappings
+// If the optional toString map exists, use that string
+// Otherwise, just use the fromYaml map in enumToYaml
+
+template<typename T>
+requires EnumIsMapped<T>
+std::string enumToString(T v) noexcept {
+    // Check if the optional toString mapping exists
+    if constexpr (requires { EnumMap<T>::toString; }) {
+        const auto& map = EnumMap<T>::toString;
+        const auto it = map.find(v);
+
+        // If no mapping was found, not a fatal error
+        // Warn the user and just use enumToYaml as a fallback
+        if (it == map.cend()) {
+            mse::debug::warn(it == map.cend(), "Missing enum to string conversion rule\n");
+            return enumToYaml(v);
+        }
+        // Otherwise, success and return the string mapping
+        return it->second;
+    } else {
+        return enumToYaml(v);
+    }
+}
+
+//==================================================
+// Custom stream insertion operator to print enums naturally
+
+template<typename T>
+requires EnumIsMapped<T>
+std::ostream& operator<<(std::ostream& stream, T v) {
+    stream << enumToString(v);
+    return stream;
+}
 
 //==================================================
 
 template<>
-struct EnumInfo<MemCellType> {
-    static constexpr auto name = "MemCellType";
-
-    static inline const EnumFromYamlMap<MemCellType> yamlMap = {
+struct EnumMap<MemCellType> {
+    static inline const EnumFromYamlMap<MemCellType> fromYaml = {
         {"SRAM", SRAM},
         {"DRAM", DRAM},
         {"eDRAM", eDRAM},
@@ -76,7 +136,7 @@ struct EnumInfo<MemCellType> {
         {"MLCRRAM", MLCRRAM}
     };
 
-    static inline const EnumToStringMap<MemCellType> stringMap = {
+    static inline const EnumToStringMap<MemCellType> toString = {
         {SRAM, "SRAM"},
         {DRAM, "DRAM"},
         {eDRAM, "Embedded DRAM"},
@@ -94,40 +154,32 @@ struct EnumInfo<MemCellType> {
         {MLCFeFET, "Multi-Level Cell FeFET"},
         {MLCRRAM, "Multi-Level Cell RRAM (Memristor)"}
     };
-
-    static constexpr auto defaultConfigValue = MLCNAND;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<CellAccessType> {
-    static constexpr auto name = "CellAccessType";
-
-    static inline const EnumFromYamlMap<CellAccessType> yamlMap = {
+struct EnumMap<CellAccessType> {
+    static inline const EnumFromYamlMap<CellAccessType> fromYaml = {
         {"CMOS", CMOS_access},
         {"BJT", BJT_access},
         {"diode", diode_access},
-        {"none", none_access}
+        {"None", none_access}
     };
 
-    static inline const EnumToStringMap<CellAccessType> stringMap = {
+    static inline const EnumToStringMap<CellAccessType> toString = {
         {CMOS_access, "CMOS"},
         {BJT_access, "BJT"},
         {diode_access, "Diode"},
         {none_access, "None Access Device"}
     };
-
-    static constexpr auto defaultConfigValue = none_access;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<DeviceRoadmap> {
-    static constexpr auto name = "DeviceRoadmap";
-
-    static inline const EnumFromYamlMap<DeviceRoadmap> yamlMap = {
+struct EnumMap<DeviceRoadmap> {
+    static inline const EnumFromYamlMap<DeviceRoadmap> fromYaml = {
         {"HP", HP},
         //{"LSTP", LSTP},
         {"LOP", LOP},
@@ -136,7 +188,7 @@ struct EnumInfo<DeviceRoadmap> {
         {"CNT", CNT}
     };
 
-    static inline const EnumToStringMap<DeviceRoadmap> stringMap = {
+    static inline const EnumToStringMap<DeviceRoadmap> toString = {
         {HP, "HP"},
         {LSTP, "LSTP"},
         {LOP, "LOP"},
@@ -151,10 +203,8 @@ struct EnumInfo<DeviceRoadmap> {
 //==================================================
 
 template<>
-struct EnumInfo<WireType> {
-    static constexpr auto name = "WireType";
-
-    static inline const EnumFromYamlMap<WireType> yamlMap = {
+struct EnumMap<WireType> {
+    static inline const EnumFromYamlMap<WireType> fromYaml = {
         {"LocalAggressive", local_aggressive},
         {"LocalConservative", local_conservative},
         {"SemiAggressive", semi_aggressive},
@@ -164,7 +214,7 @@ struct EnumInfo<WireType> {
         {"DRAMWordline", dram_wordline}
     };
 
-    static inline const EnumToStringMap<WireType> stringMap = {
+    static inline const EnumToStringMap<WireType> toString = {
         {local_aggressive, "Local Aggressive"},
         {local_conservative, "Local Conservative"},
         {semi_aggressive, "Semi-Global Aggressive"},
@@ -173,17 +223,13 @@ struct EnumInfo<WireType> {
         {global_conservative, "Global Conservative"},
         {dram_wordline, "DRAM Wire"}
     };
-
-    static constexpr auto defaultConfigValue = dram_wordline;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<WireRepeaterType> {
-    static constexpr auto name = "WireRepeaterType";
-
-    static inline const EnumFromYamlMap<WireRepeaterType> yamlMap = {
+struct EnumMap<WireRepeaterType> {
+    static inline const EnumFromYamlMap<WireRepeaterType> fromYaml = {
         {"RepeatedNone", repeated_none},
         {"RepeatedOpt", repeated_opt},
         {"Repeated5%Penalty", repeated_5},
@@ -194,7 +240,7 @@ struct EnumInfo<WireRepeaterType> {
         {"Repeated50%Penalty", repeated_50}
     };
 
-    static inline const EnumToStringMap<WireRepeaterType> stringMap = {
+    static inline const EnumToStringMap<WireRepeaterType> toString = {
         {repeated_none, "No Repeaters"},
         {repeated_opt, "Fully-Optimized Repeaters"},
         {repeated_5, "Repeaters with 5% Overhead"},
@@ -204,73 +250,57 @@ struct EnumInfo<WireRepeaterType> {
         {repeated_40, "Repeaters with 40% Overhead"},
         {repeated_50, "Repeaters with 50% Overhead"},
     };
-
-    static constexpr auto defaultConfigValue = repeated_none;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<BufferDesignTarget> {
-    static constexpr auto name = "BufferDesignTarget";
-
-    static inline const EnumFromYamlMap<BufferDesignTarget> yamlMap = {
+struct EnumMap<BufferDesignTarget> {
+    static inline const EnumFromYamlMap<BufferDesignTarget> fromYaml = {
         {"latency", latency_first},
         {"trade", latency_area_trade_off},
         {"area", area_first}
     };
 
-    static inline const EnumToStringMap<BufferDesignTarget> stringMap = {
+    static inline const EnumToStringMap<BufferDesignTarget> toString = {
         {latency_first, "Latency-Optimized"},
         {latency_area_trade_off, "Balanced"},
         {area_first, "Area-Optimized"}
     };
-
-    static constexpr auto defaultConfigValue = latency_area_trade_off;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<MemoryType> {
-    static constexpr auto name = "MemoryType";
+struct EnumMap<MemoryType> {
+    static inline const EnumFromYamlMap<MemoryType> fromYaml = {};
 
-    static inline const EnumFromYamlMap<MemoryType> yamlMap = {};
-
-    static inline const EnumToStringMap<MemoryType> stringMap = {
+    static inline const EnumToStringMap<MemoryType> toString = {
         {dataT, "DataT"},
         {tag, "Tag"},
         {CAM, "CAM"}
     };
-
-    static constexpr auto defaultConfigValue = tag;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<RoutingMode> {
-    static constexpr auto name = "RoutingMode";
-
-    static inline const EnumFromYamlMap<RoutingMode> yamlMap = {
+struct EnumMap<RoutingMode> {
+    static inline const EnumFromYamlMap<RoutingMode> fromYaml = {
         {"H-tree", h_tree}
     };
 
-    static inline const EnumToStringMap<RoutingMode> stringMap = {
+    static inline const EnumToStringMap<RoutingMode> toString = {
         {h_tree, "H-tree"},
         {non_h_tree, "Non-H-tree"}
     };
-
-    static constexpr auto defaultConfigValue = non_h_tree;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<WriteScheme> {
-    static constexpr auto name = "WriteScheme";
-
-    static inline const EnumFromYamlMap<WriteScheme> yamlMap = {
+struct EnumMap<WriteScheme> {
+    static inline const EnumFromYamlMap<WriteScheme> fromYaml = {
         {"SetBeforeReset", set_before_reset},
         {"ResetBeforeSet", reset_before_set},
         {"EraseBeforeSet", erase_before_set},
@@ -279,7 +309,7 @@ struct EnumInfo<WriteScheme> {
         {"NormalWrite", normal_write}
     };
 
-    static inline const EnumToStringMap<WriteScheme> stringMap = {
+    static inline const EnumToStringMap<WriteScheme> toString = {
         {set_before_reset, "Set Before Reset"},
         {reset_before_set, "Reset Before Set"},
         {erase_before_set, "Erase Before Set"},
@@ -287,38 +317,30 @@ struct EnumInfo<WriteScheme> {
         {write_and_verify, "Write And Verify"},
         {normal_write, "Normal Write"}
     };
-
-    static constexpr auto defaultConfigValue = normal_write;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<DesignTarget> {
-    static constexpr auto name = "DesignTarget";
-
-    static inline const EnumFromYamlMap<DesignTarget> yamlMap = {
+struct EnumMap<DesignTarget> {
+    static inline const EnumFromYamlMap<DesignTarget> fromYaml = {
         {"cache", cache},
         {"RAM", RAM_chip},
         {"CAM", CAM_chip}
     };
 
-    static inline const EnumToStringMap<DesignTarget> stringMap = {
+    static inline const EnumToStringMap<DesignTarget> toString = {
         {cache, "Cache"},
-        {RAM_chip, "RAM"},
-        {CAM_chip, "CAM"}
+        {RAM_chip, "Random Access Memory"},
+        {CAM_chip, "Content Addressable Memory"}
     };
-
-    static constexpr auto defaultConfigValue = CAM_chip;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<OptimizationTarget> {
-    static constexpr auto name = "OptimizationTarget";
-
-    static inline const EnumFromYamlMap<OptimizationTarget> yamlMap = {
+struct EnumMap<OptimizationTarget> {
+    static inline const EnumFromYamlMap<OptimizationTarget> fromYaml = {
         {"ReadLatency", read_latency_optimized},
         {"WriteLatency", write_latency_optimized},
         {"ReadDynamicEnergy", read_energy_optimized},
@@ -330,7 +352,7 @@ struct EnumInfo<OptimizationTarget> {
         {"Full", full_exploration}
     };
 
-    static inline const EnumToStringMap<OptimizationTarget> stringMap = {
+    static inline const EnumToStringMap<OptimizationTarget> toString = {
         {read_latency_optimized, "read latency"},
         {write_latency_optimized, "write latency"},
         {read_energy_optimized, "read energy"},
@@ -341,62 +363,29 @@ struct EnumInfo<OptimizationTarget> {
         {area_optimized, "area"},
         {full_exploration, "full exploration"}
     };
-
-    static constexpr auto defaultConfigValue = full_exploration;
 };
 
 //==================================================
 
 template<>
-struct EnumInfo<CacheAccessMode> {
-    static constexpr auto name = "CacheAccessMode";
-
-    static inline const EnumFromYamlMap<CacheAccessMode> yamlMap = {
+struct EnumMap<CacheAccessMode> {
+    static inline const EnumFromYamlMap<CacheAccessMode> fromYaml = {
         {"Normal", normal_access_mode},
         {"Sequential", sequential_access_mode},
         {"Fast", fast_access_mode}
     };
 
-    static inline const EnumToStringMap<CacheAccessMode> stringMap = {
+    static inline const EnumToStringMap<CacheAccessMode> toString = {
         {normal_access_mode, "Normal"},
         {sequential_access_mode, "Sequential"},
         {fast_access_mode, "Fast"}
     };
-
-    static constexpr auto defaultConfigValue = normal_access_mode;
 };
 
 //==================================================
-
-template<typename T>
-requires EnumIsMapped<T>
-std::string enumToString(const T& v) {
-    const auto& map = EnumInfo<T>::stringMap;
-    const auto it = map.find(v);
-    if (it == map.cend()) {
-        throw std::runtime_error("Missing enum to string conversion rule");
-    }
-    return it->second;
-}
-
-template<typename T>
-requires EnumIsMapped<T>
-T enumToYaml(const T& v) {
-    const auto& map = EnumInfo<T>::yamlMap;
-    for(const auto it = map.cbegin(); it != map.cend(); ++it) {
-        if (it->second == v) {
-            return it->first;
-        }
-    }
-    throw std::runtime_error("Missing enum to YAML string conversion rule");
-}
-
-template<typename T>
-requires EnumIsMapped<T>
-std::ostream& operator<<(std::ostream& stream, const T& v) {
-    stream << enumToString<T>(v);
-    return stream;
-}
+// TODO REMOVE THIS FUNCTION
+// This still exists because the new input interface is not fully added yet
+// Once ready, delete this function and fix all references to it to use the new input interface
 
 template<typename T>
 bool yamlValueFromNode(T& var, const YAML::Node& node, const std::string& key) {
@@ -405,14 +394,9 @@ bool yamlValueFromNode(T& var, const YAML::Node& node, const std::string& key) {
         std::string enumString;
         if (node[key]) {
             enumString = node[key].as<std::string>();
-            const auto it = EnumInfo<T>::yamlMap.find(enumString);
-            if (it == EnumInfo<T>::yamlMap.cend()) {
-                if constexpr (requires (EnumInfo<T> ei) { ei.defaultConfigValue; }) {
-                    var = EnumInfo<T>::defaultConfigValue;
-                    return true;
-                } else {
-                    throw std::runtime_error(EnumInfo<T>::configError);
-                }
+            const auto it = EnumMap<T>::fromYaml.find(enumString);
+            if (it == EnumMap<T>::fromYaml.cend()) {
+                throw std::runtime_error(std::string("Unconvertable enum string: ") + enumString);
             }
             var = it->second;
             return true;

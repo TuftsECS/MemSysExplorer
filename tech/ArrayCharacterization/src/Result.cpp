@@ -39,7 +39,7 @@
 #include "global.hpp"
 #include "formula.hpp"
 #include "macros.hpp"
-#include "enuminfo.hpp"
+#include "enumInfo.hpp"
 
 #include "yaml-cpp/yaml.h"
 

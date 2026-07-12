@@ -38,7 +38,7 @@
 #include "InputParameter.hpp"
 #include "global.hpp"
 #include "typedef.hpp"
-#include "enuminfo.hpp"
+#include "enumInfo.hpp"
 
 #include "yaml-cpp/yaml.h"
 

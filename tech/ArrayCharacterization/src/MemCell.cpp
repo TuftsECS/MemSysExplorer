@@ -39,7 +39,7 @@
 #include "formula.hpp"
 #include "global.hpp"
 #include "macros.hpp"
-#include "enuminfo.hpp"
+#include "enumInfo.hpp"
 
 #include <math.h>
 
