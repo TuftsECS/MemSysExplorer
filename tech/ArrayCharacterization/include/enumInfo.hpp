@@ -30,7 +30,8 @@
 #define MSE_ENUMINFO_HPP
 
 #include "typedef.hpp"
-#include "debug.hpp"
+#include "log.hpp"
+#include "utility.hpp"
 
 #include "yaml-cpp/yaml.h"
 
@@ -74,7 +75,8 @@ std::string enumToYaml(T v) noexcept {
     }
     
     // No mapping rule is bad and not really recoverable, so just terminate
-    mse::debug::fatal("Missing YAML to enum conversion rule\n");
+    mse::outputLog.fatal("Missing YAML to enum conversion rule\n");
+    mse::exit(mse::ExitCode::Failure);
 }
 
 //==================================================
@@ -93,7 +95,7 @@ std::string enumToString(T v) noexcept {
         // If no mapping was found, not a fatal error
         // Warn the user and just use enumToYaml as a fallback
         if (it == map.cend()) {
-            mse::debug::warn(it == map.cend(), "Missing enum to string conversion rule\n");
+            mse::outputLog.warn("Missing enum to string conversion rule\n");
             return enumToYaml(v);
         }
         // Otherwise, success and return the string mapping

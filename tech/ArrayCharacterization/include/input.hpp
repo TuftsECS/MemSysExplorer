@@ -20,6 +20,8 @@
 
 #include "Unit.hpp"
 #include "enumInfo.hpp"
+#include "log.hpp"
+#include "utility.hpp"
 
 #include "yaml-cpp/yaml.h"
 
@@ -422,9 +424,11 @@ public:
             (touchField(parameters.fieldName), ...); // Mark field as seen in this input file
             return result;
         } catch (const YAML::Exception& e) {
-            mse::debug::fatal(std::string("Error parsing YAML file \"") + _filePath + "\": " + e.what() + "\n");
+            outputLog.fatal("Error parsing YAML file \"{}\": {}\n", _filePath, e.what());
+            mse::exit(mse::ExitCode::Failure);
         } catch (const std::exception& e) {
-            mse::debug::fatal(std::string("Error reading file \"") + _filePath + "\": " + e.what() + "\n");
+            outputLog.fatal("Error reading file \"{}\": {}\n", _filePath, e.what());
+            mse::exit(mse::ExitCode::Failure);
         }
     }
 

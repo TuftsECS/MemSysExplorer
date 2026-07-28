@@ -1,6 +1,7 @@
 #include "cmos.hpp"
 #include "constants.hpp"
-#include "debug.hpp"
+#include "log.hpp"
+#include "utility.hpp"
 #include "Technology.hpp"
 #include "global.hpp"
 
@@ -18,7 +19,8 @@ static int calcFoldDegree(mse::unit::Feature regionHeight, mse::unit::Feature ma
     if (regionHeight > maxRegionHeight) {
         // Need to fold
         if (maxRegionHeight < 3.0_feat) {
-            mse::debug::fatal("Error: Unable to do CMOS folding because CMOS size limitation is less than 3F!\n");
+            mse::outputLog.fatal("Unable to do CMOS folding because CMOS size limitation is less than 3F\n");
+            mse::exit(mse::ExitCode::Failure);
         }
         return static_cast<int>(std::ceil(regionHeight / (maxRegionHeight - 3.0_feat))); // 3F for folding overhead
     }
@@ -52,7 +54,10 @@ mse::CmosTransistor::CmosTransistor(const Technology& tech, unit::Feature gateWi
     _gateCapacitance = Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * gateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
 
     int tempIndex = gInputParameter.temperature - 300;
-    debug::fatal((tempIndex > 100) || (tempIndex < 0), "Error: Temperature is out of range\n");
+    if (tempIndex > 100 || tempIndex < 0) {
+        outputLog.fatal("Temperature is out of range\n");
+        exit(ExitCode::Failure);
+    }
 
     _channelResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * gateWidth.toMeters(featureSize).value()));
 
@@ -149,7 +154,11 @@ mse::CmosGate<Derived, Inputs>::CmosGate(const Technology& tech, unit::Feature n
     _gateCapacitance += Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * pmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
 
     int tempIndex = gInputParameter.temperature - 300;
-    debug::fatal((tempIndex > 100) || (tempIndex < 0), "Error: Temperature is out of range\n");
+    if (tempIndex > 100 || tempIndex < 0) {
+        outputLog.fatal("Temperature is out of range\n");
+        exit(ExitCode::Failure);
+    }
+
     // TODO account for number of inputs, this is the same code as a transistor right now
     _nmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * nmosGateWidth.toMeters(featureSize).value()));
     _pmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnPmos[tempIndex] * pmosGateWidth.toMeters(featureSize).value()));
@@ -228,7 +237,11 @@ mse::CmosGate<Derived, 0>::CmosGate(const Technology& tech, int inputs, unit::Fe
     _gateCapacitance += Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * pmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
 
     int tempIndex = gInputParameter.temperature - 300;
-    debug::fatal((tempIndex > 100) || (tempIndex < 0), "Error: Temperature is out of range\n");
+    if (tempIndex > 100 || tempIndex < 0) {
+        outputLog.fatal("Temperature is out of range\n");
+        exit(ExitCode::Failure);
+    }
+
     // TODO account for number of inputs, this is the same code as a transistor right now
     _nmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * nmosGateWidth.toMeters(featureSize).value()));
     _pmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnPmos[tempIndex] * pmosGateWidth.toMeters(featureSize).value()));
@@ -237,7 +250,10 @@ mse::CmosGate<Derived, 0>::CmosGate(const Technology& tech, int inputs, unit::Fe
 mse::CmosInverter::CmosInverter(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
         : CmosGate<CmosInverter, 1>(tech, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
     int tempIndex = gInputParameter.temperature - 300;
-    debug::fatal((tempIndex > 100) || (tempIndex < 0), "Error: Temperature is out of range\n");
+    if (tempIndex > 100 || tempIndex < 0) {
+        outputLog.fatal("Temperature is out of range\n");
+        exit(ExitCode::Failure);
+    }
     _leakageCurrent = unit::Ampere(std::max(nmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex], pmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex]));
 }
 
@@ -245,7 +261,10 @@ template <int Inputs>
 mse::CmosNand<Inputs>::CmosNand(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
         : CmosGate<CmosNand<Inputs>, Inputs>(tech, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
     int tempIndex = gInputParameter.temperature - 300;
-    debug::fatal((tempIndex > 100) || (tempIndex < 0), "Error: Temperature is out of range\n");
+    if (tempIndex > 100 || tempIndex < 0) {
+        outputLog.fatal("Temperature is out of range\n");
+        exit(ExitCode::Failure);
+    }
 
     auto& _leakageCurrent = CmosGate<CmosNand<Inputs>, Inputs>::_leakageCurrent;
     _leakageCurrent = unit::Ampere(pmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex] * Inputs);
@@ -260,7 +279,10 @@ mse::CmosNand<0>::CmosNand(const Technology& tech, int inputs, unit::Feature nmo
         : CmosGate<CmosNand<0>, 0>(tech, inputs, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
     assert(inputs == 2 || inputs == 3);
     int tempIndex = gInputParameter.temperature - 300;
-    debug::fatal((tempIndex > 100) || (tempIndex < 0), "Error: Temperature is out of range\n");
+    if (tempIndex > 100 || tempIndex < 0) {
+        outputLog.fatal("Temperature is out of range\n");
+        exit(ExitCode::Failure);
+    }
 
     _leakageCurrent = unit::Ampere(pmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex] * inputs);
     if (inputs == 2) {
@@ -274,7 +296,10 @@ template <int Inputs>
 mse::CmosNor<Inputs>::CmosNor(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
         : CmosGate<CmosNor<Inputs>, Inputs>(tech, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
     int tempIndex = gInputParameter.temperature - 300;
-    debug::fatal((tempIndex > 100) || (tempIndex < 0), "Error: Temperature is out of range\n");
+    if (tempIndex > 100 || tempIndex < 0) {
+        outputLog.fatal("Temperature is out of range\n");
+        exit(ExitCode::Failure);
+    }
 
     auto& _leakageCurrent = CmosGate<CmosNand<Inputs>, Inputs>::_leakageCurrent;
     _leakageCurrent = unit::Ampere(nmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex] * Inputs);
@@ -289,7 +314,10 @@ mse::CmosNor<0>::CmosNor(const Technology& tech, int inputs, unit::Feature nmosG
         : CmosGate<CmosNor<0>, 0>(tech, inputs, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
     assert(inputs == 2 || inputs == 3);
     int tempIndex = gInputParameter.temperature - 300;
-    debug::fatal((tempIndex > 100) || (tempIndex < 0), "Error: Temperature is out of range\n");
+    if (tempIndex > 100 || tempIndex < 0) {
+        outputLog.fatal("Temperature is out of range\n");
+        exit(ExitCode::Failure);
+    }
 
     _leakageCurrent = unit::Ampere(nmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex] * inputs);
     if (inputs == 2) {

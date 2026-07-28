@@ -1,6 +1,6 @@
 #include "input.hpp"
 
-#include "debug.hpp"
+#include "log.hpp"
 #include "Unit.hpp"
 
 //==================================================
@@ -8,7 +8,7 @@
 
 void mse::input::YamlFile::verifyStrictAccess() const noexcept {
     if (!strictlyAccessed()) {
-        mse::debug::fatal(std::string("Error parsing YAML file \"") + _filePath + "\": strict access check failed, ensure there are no unused fields in the file\n");
+        outputLog.error("Error parsing YAML file \"{}\": strict access check failed, ensure there are no unused fields in the file\n", _filePath);
     }
 }
 
