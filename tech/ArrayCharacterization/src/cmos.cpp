@@ -83,10 +83,21 @@ mse::PmosTransistor::PmosTransistor(const Technology& tech, unit::Feature gateWi
         : CmosTransistor(tech, gateWidth, transistorRegionHeight, tech.currentOnPmos, tech.currentOffPmos, unit::Volt(tech.vdsatPmos), unit::Number(tech.effectiveHoleMobility)) {}
 
 template <typename Derived, int Inputs>
-mse::CmosGate<Derived, Inputs>::CmosGate(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight) {
+mse::CmosGate<Derived, Inputs>::CmosGate(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight) {
     using namespace mse::unit;
 
     const Meter featureSize(tech.featureSize);
+
+    // The NMOS and PMOS widths are multiplied by the number of inputs for sizing
+    unit::Feature nmosGateWidth = unitNmosGateWidth;
+    unit::Feature pmosGateWidth = unitPmosGateWidth;
+    if constexpr (Derived::sequentialNmos) {
+        nmosGateWidth *= Inputs;
+    } else {
+        pmosGateWidth *= Inputs;
+    }
+
+    _logicalEffort = (nmosGateWidth + pmosGateWidth) / (unitNmosGateWidth + unitPmosGateWidth);
 
     const Feature remainingHeight = gateRegionHeight - constant::minimumGapBetweenPandNDiffusions;
     const Feature nmosGateMaxWidth = nmosGateWidth / (nmosGateWidth + pmosGateWidth) * remainingHeight;
@@ -150,8 +161,9 @@ mse::CmosGate<Derived, Inputs>::CmosGate(const Technology& tech, unit::Feature n
     Farad pmosDrainCapacitance = Farad(pmosJunctionCapacitance + pmosSidewallCapacitance + pmosChannelCapacitance);
     _drainCapacitance = nmosDrainCapacitance + pmosDrainCapacitance;
 
-    _gateCapacitance = Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * nmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
-    _gateCapacitance += Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * pmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    Farad nmosGateCapacitance = Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * nmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    Farad pmosGateCapacitance = Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * pmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    _gateCapacitance = nmosGateCapacitance + pmosGateCapacitance;
 
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
@@ -159,17 +171,33 @@ mse::CmosGate<Derived, Inputs>::CmosGate(const Technology& tech, unit::Feature n
         exit(ExitCode::Failure);
     }
 
-    // TODO account for number of inputs, this is the same code as a transistor right now
     _nmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * nmosGateWidth.toMeters(featureSize).value()));
     _pmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnPmos[tempIndex] * pmosGateWidth.toMeters(featureSize).value()));
+
+    if constexpr (Derived::sequentialNmos) {
+        _nmosResistance *= Inputs;
+    } else {
+        _pmosResistance *= Inputs;
+    }
 }
 
 template <typename Derived>
-mse::CmosGate<Derived, 0>::CmosGate(const Technology& tech, int inputs, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
+mse::CmosGate<Derived, 0>::CmosGate(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight)
         : _inputs(inputs) {
     using namespace mse::unit;
 
     const Meter featureSize(tech.featureSize);
+
+    // The NMOS and PMOS widths are multiplied by the number of inputs for sizing
+    unit::Feature nmosGateWidth = unitNmosGateWidth;
+    unit::Feature pmosGateWidth = unitPmosGateWidth;
+    if constexpr (Derived::sequentialNmos) {
+        nmosGateWidth *= inputs;
+    } else {
+        pmosGateWidth *= inputs;
+    }
+
+    _logicalEffort = (nmosGateWidth + pmosGateWidth) / (unitNmosGateWidth + unitPmosGateWidth);
 
     const Feature remainingHeight = gateRegionHeight - constant::minimumGapBetweenPandNDiffusions;
     const Feature nmosGateMaxWidth = nmosGateWidth / (nmosGateWidth + pmosGateWidth) * remainingHeight;
@@ -233,8 +261,9 @@ mse::CmosGate<Derived, 0>::CmosGate(const Technology& tech, int inputs, unit::Fe
     Farad pmosDrainCapacitance = Farad(pmosJunctionCapacitance + pmosSidewallCapacitance + pmosChannelCapacitance);
     _drainCapacitance = nmosDrainCapacitance + pmosDrainCapacitance;
 
-    _gateCapacitance = Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * nmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
-    _gateCapacitance += Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * pmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    Farad nmosGateCapacitance = Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * nmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    Farad pmosGateCapacitance = Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * pmosGateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    _gateCapacitance = nmosGateCapacitance + pmosGateCapacitance;
 
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
@@ -242,32 +271,40 @@ mse::CmosGate<Derived, 0>::CmosGate(const Technology& tech, int inputs, unit::Fe
         exit(ExitCode::Failure);
     }
 
-    // TODO account for number of inputs, this is the same code as a transistor right now
     _nmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * nmosGateWidth.toMeters(featureSize).value()));
     _pmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnPmos[tempIndex] * pmosGateWidth.toMeters(featureSize).value()));
+
+    if constexpr (Derived::sequentialNmos) {
+        _nmosResistance *= inputs;
+    } else {
+        _pmosResistance *= inputs;
+    }
 }
 
-mse::CmosInverter::CmosInverter(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
-        : CmosGate<CmosInverter, 1>(tech, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
+mse::CmosInverter::CmosInverter(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight)
+        : CmosGate<CmosInverter, 1>(tech, unitNmosGateWidth, unitPmosGateWidth, gateRegionHeight) {
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
         outputLog.fatal("Temperature is out of range\n");
         exit(ExitCode::Failure);
     }
-    _leakageCurrent = unit::Ampere(std::max(nmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex], pmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex]));
+    _leakageCurrent = unit::Ampere(std::max(unitNmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex], unitPmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex]));
 }
 
 template <int Inputs>
-mse::CmosNand<Inputs>::CmosNand(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
-        : CmosGate<CmosNand<Inputs>, Inputs>(tech, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
+mse::CmosNand<Inputs>::CmosNand(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight)
+        : CmosGate<CmosNand<Inputs>, Inputs>(tech, unitNmosGateWidth, unitPmosGateWidth, gateRegionHeight) {
+    static_assert(Inputs == 2 || Inputs == 3);
+
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
         outputLog.fatal("Temperature is out of range\n");
         exit(ExitCode::Failure);
     }
 
+    // OK to use unit PMOS width here instead of scaled one since NAND PMOS doesnt scale
     auto& _leakageCurrent = CmosGate<CmosNand<Inputs>, Inputs>::_leakageCurrent;
-    _leakageCurrent = unit::Ampere(pmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex] * Inputs);
+    _leakageCurrent = unit::Ampere(unitPmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex] * Inputs);
     if constexpr (Inputs == 2) {
         _leakageCurrent *= constant::averageLeakRatioNand2;
     } else {
@@ -275,16 +312,18 @@ mse::CmosNand<Inputs>::CmosNand(const Technology& tech, unit::Feature nmosGateWi
     }
 }
 
-mse::CmosNand<0>::CmosNand(const Technology& tech, int inputs, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
-        : CmosGate<CmosNand<0>, 0>(tech, inputs, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
+mse::CmosNand<0>::CmosNand(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight)
+        : CmosGate<CmosNand<0>, 0>(tech, inputs, unitNmosGateWidth, unitPmosGateWidth, gateRegionHeight) {
     assert(inputs == 2 || inputs == 3);
+
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
         outputLog.fatal("Temperature is out of range\n");
         exit(ExitCode::Failure);
     }
 
-    _leakageCurrent = unit::Ampere(pmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex] * inputs);
+    // OK to use unit PMOS width here instead of scaled one since NAND PMOS doesnt scale
+    _leakageCurrent = unit::Ampere(unitPmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex] * inputs);
     if (inputs == 2) {
         _leakageCurrent *= constant::averageLeakRatioNand2;
     } else {
@@ -293,16 +332,19 @@ mse::CmosNand<0>::CmosNand(const Technology& tech, int inputs, unit::Feature nmo
 }
 
 template <int Inputs>
-mse::CmosNor<Inputs>::CmosNor(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
-        : CmosGate<CmosNor<Inputs>, Inputs>(tech, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
+mse::CmosNor<Inputs>::CmosNor(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight)
+        : CmosGate<CmosNor<Inputs>, Inputs>(tech, unitNmosGateWidth, unitPmosGateWidth, gateRegionHeight) {
+    static_assert(Inputs == 2 || Inputs == 3);
+
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
         outputLog.fatal("Temperature is out of range\n");
         exit(ExitCode::Failure);
     }
 
-    auto& _leakageCurrent = CmosGate<CmosNand<Inputs>, Inputs>::_leakageCurrent;
-    _leakageCurrent = unit::Ampere(nmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex] * Inputs);
+    // OK to use unit NMOS width here instead of scaled one since NAND PMOS doesnt scale
+    auto& _leakageCurrent = CmosGate<CmosNor<Inputs>, Inputs>::_leakageCurrent;
+    _leakageCurrent = unit::Ampere(unitNmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex] * Inputs);
     if constexpr (Inputs == 2) {
         _leakageCurrent *= constant::averageLeakRatioNor2;
     } else {
@@ -310,8 +352,8 @@ mse::CmosNor<Inputs>::CmosNor(const Technology& tech, unit::Feature nmosGateWidt
     }
 }
 
-mse::CmosNor<0>::CmosNor(const Technology& tech, int inputs, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight)
-        : CmosGate<CmosNor<0>, 0>(tech, inputs, nmosGateWidth, pmosGateWidth, gateRegionHeight) {
+mse::CmosNor<0>::CmosNor(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight)
+        : CmosGate<CmosNor<0>, 0>(tech, inputs, unitNmosGateWidth, unitPmosGateWidth, gateRegionHeight) {
     assert(inputs == 2 || inputs == 3);
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
@@ -319,7 +361,8 @@ mse::CmosNor<0>::CmosNor(const Technology& tech, int inputs, unit::Feature nmosG
         exit(ExitCode::Failure);
     }
 
-    _leakageCurrent = unit::Ampere(nmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex] * inputs);
+    // OK to use unit NMOS width here instead of scaled one since NAND PMOS doesnt scale
+    _leakageCurrent = unit::Ampere(unitNmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex] * inputs);
     if (inputs == 2) {
         _leakageCurrent *= constant::averageLeakRatioNor2;
     } else {
