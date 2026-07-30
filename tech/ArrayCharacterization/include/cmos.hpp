@@ -21,9 +21,6 @@ public:
 
     virtual unit::Farad drainCapacitance() const noexcept = 0;
     virtual unit::Farad gateCapacitance() const noexcept = 0;
-    unit::Farad totalGateCapacitance() const noexcept {
-        return gateCapacitance() * inputCount();
-    }
 
     virtual unit::Ampere leakageCurrent() const noexcept = 0;
 
@@ -48,6 +45,7 @@ public:
 
 protected:
 
+    constexpr CmosTransistor() = default;
     CmosTransistor(
         const Technology& tech,
         unit::Feature gateWidth,
@@ -107,10 +105,12 @@ public:
     unit::Ampere leakageCurrent() const noexcept override { return _leakageCurrent; }
     unit::Meter width() const noexcept override { return _width; }
     unit::Meter height() const noexcept override { return _height; }
+    unit::Number logicalEffort() const noexcept { return _logicalEffort; }
 
 protected:
 
-    CmosGate(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight);
+    constexpr CmosGate() = default;
+    CmosGate(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
     unit::Farad _drainCapacitance;
     unit::Farad _gateCapacitance;
@@ -119,6 +119,7 @@ protected:
     unit::Ampere _leakageCurrent;
     unit::Meter _width;
     unit::Meter _height;
+    unit::Number _logicalEffort;
 };
 
 // Specialization for CMOS gates where the number of gate inputs must be given at runtime
@@ -137,11 +138,12 @@ public:
     unit::Ampere leakageCurrent() const noexcept override { return _leakageCurrent; }
     unit::Meter width() const noexcept override { return _width; }
     unit::Meter height() const noexcept override { return _height; }
+    unit::Number logicalEffort() const noexcept { return _logicalEffort; }
 
 protected:
 
     constexpr CmosGate() = default;
-    CmosGate(const Technology& tech, int inputs, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight);
+    CmosGate(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
     const int _inputs;
     unit::Farad _drainCapacitance;
@@ -151,6 +153,7 @@ protected:
     unit::Ampere _leakageCurrent;
     unit::Meter _width;
     unit::Meter _height;
+    unit::Number _logicalEffort;
 };
 
 //==================================================
@@ -163,7 +166,7 @@ class CmosInverter final : public CmosGate<CmosInverter, 1> {
 public:
 
     constexpr CmosInverter() = default;
-    CmosInverter(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight);
+    CmosInverter(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
 private:
 
@@ -181,7 +184,7 @@ class CmosNand final : public CmosGate<CmosNand<Inputs>, Inputs> {
 public:
 
     constexpr CmosNand() = default;
-    CmosNand(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight);
+    CmosNand(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
 private:
 
@@ -196,7 +199,7 @@ class CmosNand<0> final : public CmosGate<CmosNand<0>, 0> {
 public:
 
     constexpr CmosNand() = default;
-    CmosNand(const Technology& tech, int inputs, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight);
+    CmosNand(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
 private:
 
@@ -214,7 +217,7 @@ class CmosNor final : public CmosGate<CmosNor<Inputs>, Inputs> {
 public:
 
     constexpr CmosNor() = default;
-    CmosNor(const Technology& tech, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight);
+    CmosNor(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
 private:
 
@@ -229,7 +232,7 @@ class CmosNor<0> final : public CmosGate<CmosNor<0>, 0> {
 public:
 
     constexpr CmosNor() = default;
-    CmosNor(const Technology& tech, int inputs, unit::Feature nmosGateWidth, unit::Feature pmosGateWidth, unit::Feature gateRegionHeight);
+    CmosNor(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
 private:
 
