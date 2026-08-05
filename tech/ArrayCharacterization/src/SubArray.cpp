@@ -112,7 +112,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 			initialized = true;
 			return;
 		}
-		maxBitlineCurrent = MAX(gCell.resetCurrent, gCell.setCurrent) + gCell.leakageCurrentAccessDevice * (numRow - 1);
+		maxBitlineCurrent = std::max(gCell.resetCurrent, gCell.setCurrent) + gCell.leakageCurrentAccessDevice * (numRow - 1);
 	}
 
 	if (gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
@@ -124,7 +124,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				initialized = true;
 				return;
 			}
-			maxBitlineCurrent = MAX(gCell.resetCurrent, gCell.setCurrent) + gCell.leakageCurrentAccessDevice * (numRow - 1);
+			maxBitlineCurrent = std::max(gCell.resetCurrent, gCell.setCurrent) + gCell.leakageCurrentAccessDevice * (numRow - 1);
 		} else { //non-CMOS access
 		//	if (!gCell.readFloating) { // conventional half select read scheme
 		//		if ((2 * gCell.resistanceOnAtHalfReadVoltage / (numRow - 1)) < (gCell.resistanceOffAtReadVoltage / BITLINE_LEAKAGE_TOLERANCE)){
@@ -174,7 +174,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 	}
 
 	double minBitlineMuxWidth = maxBitlineCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300];
-	minBitlineMuxWidth = MAX(MIN_NMOS_SIZE * gTech.featureSize, minBitlineMuxWidth);
+	minBitlineMuxWidth = std::max(MIN_NMOS_SIZE * gTech.featureSize, minBitlineMuxWidth);
 	if (minBitlineMuxWidth > gInputParameter.maxNmosSize * gTech.featureSize) {
 		invalid = true;
 		return;
@@ -204,7 +204,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 	} else if (gCell.memCellType == SLCNAND){
 		/* suppose the reference voltage is 0.5Vdd, the initial bitline voltage is 0.6Vdd
 		 * if the bitline drops to 0.4Vdd, the senseamp can tell which data is stored */
-		senseVoltage = MAX(gCell.minSenseVoltage, 0.2 * gTech.vdd);
+		senseVoltage = std::max(gCell.minSenseVoltage, 0.2 * gTech.vdd);
 	} else {
 		/* TO-DO: different memory technology might have different values here */
 		senseVoltage = gCell.minSenseVoltage;
@@ -254,7 +254,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 	} else if (gCell.memCellType == SLCNAND){
 		/* suppose the reference voltage is 0.5Vdd, the initial bitline voltage is 0.6Vdd
 		 * if the bitline drops to 0.4Vdd, the senseamp can tell which data is stored */
-		senseVoltage = MAX(gCell.minSenseVoltage, 0.2 * gTech.vdd);
+		senseVoltage = std::max(gCell.minSenseVoltage, 0.2 * gTech.vdd);
 	} else {
 		/* TO-DO: different memory technology might have different values here */
 		senseVoltage = gCell.minSenseVoltage;
@@ -281,8 +281,8 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 		resCellAccessR = CalculateOnResistance(((gTechR.featureSize <= 14*1e-9)? 2:1)*gCell.widthAccessCMOSR * gTechR.featureSize, NMOS, gInputParameter.temperature, gTechR);
 		capCellAccessW = CalculateDrainCap(((gTechW.featureSize <= 14*1e-9)? 2:1)*gCell.widthAccessCMOS * gTechW.featureSize, NMOS, gCell.widthInFeatureSize * gTech.featureSize, gTechW);
 		capCellAccessR = CalculateDrainCap(((gTechR.featureSize <= 14*1e-9)? 2:1)*gCell.widthAccessCMOSR * gTechR.featureSize, NMOS, gCell.widthInFeatureSize * gTech.featureSize, gTechR);
-		capWordline += MAX(CalculateGateCap(((gTechR.featureSize <= 14*1e-9)? 2:1)*gCell.widthAccessCMOSR * gTechR.featureSize, gTechR), CalculateGateCap(((gTechW.featureSize <= 14*1e-9)? 2:1)*gCell.widthAccessCMOS * gTechW.featureSize, gTechW)) * numColumn;
-		capBitline  += MAX(capCellAccessW, capCellAccessR) * numRow;
+		capWordline += std::max(CalculateGateCap(((gTechR.featureSize <= 14*1e-9)? 2:1)*gCell.widthAccessCMOSR * gTechR.featureSize, gTechR), CalculateGateCap(((gTechW.featureSize <= 14*1e-9)? 2:1)*gCell.widthAccessCMOS * gTechW.featureSize, gTechW)) * numColumn;
+		capBitline  += std::max(capCellAccessW, capCellAccessR) * numRow;
 		voltagePrecharge = gTech.vdd;	/* DRAM read voltage is always half of vdd */
 	} else if (gCell.memCellType == FBRAM){ /* Floating Body RAM */
 		resCellAccess = 0;
@@ -296,7 +296,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				voltageMemCellOff = gCell.readCurrent * resMemCellOff;
 				voltageMemCellOn = gCell.readCurrent * resMemCellOn;
 				voltagePrecharge = (voltageMemCellOff + voltageMemCellOn) / 2;
-				voltagePrecharge = MIN(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
+				voltagePrecharge = std::min(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
 				if ((voltagePrecharge - voltageMemCellOn) <= senseVoltage) {
 					std::cout <<"Error[Subarray]: Read current too large or too small that no reasonable precharge voltage existing" << std::endl;
 					invalid = true;
@@ -309,7 +309,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				voltageMemCellOff = gCell.readVoltage * resMemCellOff / (resMemCellOff + resInSerialForSenseAmp);
 				voltageMemCellOn = gCell.readVoltage * resMemCellOn / (resMemCellOn + resInSerialForSenseAmp);
 				voltagePrecharge = (voltageMemCellOff + voltageMemCellOn) / 2;
-				voltagePrecharge = MIN(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
+				voltagePrecharge = std::min(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
 				if ((voltagePrecharge - voltageMemCellOn) <= senseVoltage) {
 					std::cout <<"Error[Subarray]: Read Voltage too large or too small that no reasonable precharge voltage existing" << std::endl;
 					invalid = true;
@@ -342,14 +342,14 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 					exit(-1);
 				}
 			}
-			capCellAccess = MAX(gCell.capacitanceOn, gCell.capacitanceOff);
-			capWordline += MAX(gCell.capacitanceOff, gCell.capacitanceOn) * numColumn;
-			capBitline += MAX(gCell.capacitanceOff, gCell.capacitanceOn) * numRow;      */
+			capCellAccess = std::max(gCell.capacitanceOn, gCell.capacitanceOff);
+			capWordline += std::max(gCell.capacitanceOff, gCell.capacitanceOn) * numColumn;
+			capBitline += std::max(gCell.capacitanceOff, gCell.capacitanceOn) * numRow;      */
 		} else { // none_access || diode_access
 			resCellAccess = 0;
-			capCellAccess = MAX(gCell.capacitanceOn, gCell.capacitanceOff);
-			capWordline += MAX(gCell.capacitanceOff, gCell.capacitanceOn) * numColumn;  //TO-DO: choose the right capacitance
-			capBitline += MAX(gCell.capacitanceOff, gCell.capacitanceOn) * numRow;      //TO-DO: choose the right capacitance
+			capCellAccess = std::max(gCell.capacitanceOn, gCell.capacitanceOff);
+			capWordline += std::max(gCell.capacitanceOff, gCell.capacitanceOn) * numColumn;  //TO-DO: choose the right capacitance
+			capBitline += std::max(gCell.capacitanceOff, gCell.capacitanceOn) * numRow;      //TO-DO: choose the right capacitance
 		}
 		resMemCellOff = resCellAccess + gCell.resistanceOff;
 		resMemCellOn = resCellAccess + gCell.resistanceOn;
@@ -358,7 +358,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				voltageMemCellOff = gCell.readCurrent * resMemCellOff;
 				voltageMemCellOn = gCell.readCurrent * resMemCellOn;
 				voltagePrecharge = (voltageMemCellOff + voltageMemCellOn) / 2;
-				voltagePrecharge = MIN(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
+				voltagePrecharge = std::min(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
 				if ((voltagePrecharge - voltageMemCellOn) <= senseVoltage) {
 					std::cout <<"Error[Subarray]: Read current too large or too small that no reasonable precharge voltage existing" << std::endl;
 					invalid = true;
@@ -371,7 +371,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				voltageMemCellOff = gCell.readVoltage * resMemCellOff / (resMemCellOff + resInSerialForSenseAmp);
 				voltageMemCellOn = gCell.readVoltage * resMemCellOn / (resMemCellOn + resInSerialForSenseAmp);
 				voltagePrecharge = (voltageMemCellOff + voltageMemCellOn) / 2;
-				voltagePrecharge = MIN(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
+				voltagePrecharge = std::min(gTech.vdd, voltagePrecharge);  /* TO-DO: we can have charge bump to increase SA working point */
 				if ((voltagePrecharge - voltageMemCellOn) <= senseVoltage) {
 					std::cout <<"Error[Subarray]: Read Voltage too large or too small that no reasonable precharge voltage existing" << std::endl;
 					invalid = true;
@@ -531,11 +531,11 @@ void SubArray::CalculateArea() {
 		addHeight += senseAmpMuxLev2.height;
 
 		bitlineMuxDecoder.CalculateArea();
-		addWidth = MAX(addWidth, bitlineMuxDecoder.width);
+		addWidth = std::max(addWidth, bitlineMuxDecoder.width);
 		senseAmpMuxLev1Decoder.CalculateArea();
-		addWidth = MAX(addWidth, senseAmpMuxLev1Decoder.width);
+		addWidth = std::max(addWidth, senseAmpMuxLev1Decoder.width);
 		senseAmpMuxLev2Decoder.CalculateArea();
-		addWidth = MAX(addWidth, senseAmpMuxLev2Decoder.width);
+		addWidth = std::max(addWidth, senseAmpMuxLev2Decoder.width);
 
 		//Qing: add subarray buffer's height
 		//assume the buffer has the same width as the subarray
@@ -549,8 +549,8 @@ void SubArray::CalculateArea() {
 			// monolithic 3D cells fit above peripherals
 			widthPeripherals = (width - lenWordline);
 			heightPeripherals = (height - lenBitline);
-			width = MAX(width, widthPeripherals);
-			height = MAX(height, heightPeripherals);
+			width = std::max(width, widthPeripherals);
+			height = std::max(height, heightPeripherals);
 		}
 		area = width * height;
 	}
@@ -567,8 +567,8 @@ void SubArray::CalculateLatency(double _rampInput) {
 		bitlineMuxDecoder.CalculateLatency(_rampInput);
 		senseAmpMuxLev1Decoder.CalculateLatency(_rampInput);
 		senseAmpMuxLev2Decoder.CalculateLatency(_rampInput);
-		columnDecoderLatency = MAX(MAX(bitlineMuxDecoder.readLatency, senseAmpMuxLev1Decoder.readLatency), senseAmpMuxLev2Decoder.readLatency);
-		double decoderLatency = MAX(rowDecoder.readLatency, columnDecoderLatency);
+		columnDecoderLatency = std::max({bitlineMuxDecoder.readLatency, senseAmpMuxLev1Decoder.readLatency, senseAmpMuxLev2Decoder.readLatency});
+		double decoderLatency = std::max(rowDecoder.readLatency, columnDecoderLatency);
 		/*need a second thought on this equation*/
 		double capPassTransistor = bitlineMux.capNMOSPassTransistor +
 				senseAmpMuxLev1.capNMOSPassTransistor + senseAmpMuxLev2.capNMOSPassTransistor;
@@ -655,7 +655,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 					tau = resMemCellOff * (capCellAccess + capBitline + bitlineMux.capForPreviousDelayCalculation)
 							+ resBitline * (bitlineMux.capForPreviousDelayCalculation + capBitline / 2);  /* time constant of HRS */
 					bitlineDelayOff = tau * log((voltageMemCellOff - voltagePrecharge)/(voltageMemCellOff - voltagePrecharge - senseVoltage));
-					bitlineDelay = MAX(bitlineDelayOn, bitlineDelayOff);
+					bitlineDelay = std::max(bitlineDelayOn, bitlineDelayOff);
 				} else {   /*Voltage-in voltage sensing */
 					double tau = resEquivalentOn * (capCellAccess + capBitline + bitlineMux.capForPreviousDelayCalculation)
 							+ resBitline * (bitlineMux.capForPreviousDelayCalculation + capBitline / 2); /* time constant of LRS */
@@ -664,7 +664,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 					tau = resEquivalentOff * (capCellAccess + capBitline + bitlineMux.capForPreviousDelayCalculation)
 							+ resBitline * (bitlineMux.capForPreviousDelayCalculation + capBitline / 2);  /* time constant of HRS */
 					bitlineDelayOff = tau * log((voltageMemCellOff - voltagePrecharge)/(voltageMemCellOff - voltagePrecharge - senseVoltage));
-					bitlineDelay = MAX(bitlineDelayOn, bitlineDelayOff);
+					bitlineDelay = std::max(bitlineDelayOn, bitlineDelayOff);
 				}
 			}
 			bitlineMux.CalculateLatency(bitlineRamp);
@@ -683,29 +683,29 @@ void SubArray::CalculateLatency(double _rampInput) {
 				if (gInputParameter.writeScheme == write_and_verify) {
 					/*TO-DO: write and verify programming */
 				} else {
-					writeLatency = MAX(rowDecoder.writeLatency, columnDecoderLatency + chargeLatency);	/* TO-DO: why not directly use precharger latency? */
+					writeLatency = std::max(rowDecoder.writeLatency, columnDecoderLatency + chargeLatency);	/* TO-DO: why not directly use precharger latency? */
 					resetLatency = writeLatency + gCell.resetPulse;
 					setLatency = writeLatency + gCell.setPulse;
-					writeLatency += MAX(gCell.resetPulse, gCell.setPulse);
+					writeLatency += std::max(gCell.resetPulse, gCell.setPulse);
 				}
 			} else if (gCell.memCellType == FBRAM) {
-				writeLatency = MAX(rowDecoder.writeLatency, columnDecoderLatency + chargeLatency);
+				writeLatency = std::max(rowDecoder.writeLatency, columnDecoderLatency + chargeLatency);
 				resetLatency = writeLatency + gCell.resetPulse;
 				setLatency = writeLatency + gCell.setPulse;
-				writeLatency += MAX(gCell.resetPulse, gCell.setPulse);
+				writeLatency += std::max(gCell.resetPulse, gCell.setPulse);
 			} else { //memristor and MRAM and FeFET
 				if (gCell.accessType == diode_access || gCell.accessType == none_access) {
 					if (gInputParameter.writeScheme == erase_before_reset || gInputParameter.writeScheme == erase_before_set)
-						writeLatency = MAX(rowDecoder.writeLatency, chargeLatency);
+						writeLatency = std::max(rowDecoder.writeLatency, chargeLatency);
 					else
-						writeLatency = MAX(rowDecoder.writeLatency, columnDecoderLatency + chargeLatency);
+						writeLatency = std::max(rowDecoder.writeLatency, columnDecoderLatency + chargeLatency);
 					writeLatency += chargeLatency;
 					writeLatency += gCell.resetPulse + gCell.setPulse;
 				} else { // CMOS or Bipolar access
-					writeLatency = MAX(rowDecoder.writeLatency, columnDecoderLatency + chargeLatency);
+					writeLatency = std::max(rowDecoder.writeLatency, columnDecoderLatency + chargeLatency);
 					resetLatency = writeLatency + gCell.resetPulse;
 					setLatency = writeLatency + gCell.setPulse;
-					writeLatency += MAX(gCell.resetPulse, gCell.setPulse);
+					writeLatency += std::max(gCell.resetPulse, gCell.setPulse);
 				}
 			}
 		} else if (gCell.memCellType == SLCNAND) {
@@ -724,7 +724,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			double bitlineRamp = 0;
 			bitlineDelay = horowitz(tau, beta, rowDecoder.rampOutput, &bitlineRamp);
 			/* to correct unnecessary horowitz calculation, TO-DO: need to revisit */
-			bitlineDelay = MAX(bitlineDelay, tau * 20);
+			bitlineDelay = std::max(bitlineDelay, tau * 20);
 			bitlineMux.CalculateLatency(bitlineRamp);
 			if (internalSenseAmp) {
 				senseAmp.CalculateLatency();
@@ -737,9 +737,9 @@ void SubArray::CalculateLatency(double _rampInput) {
 			readLatency = decoderLatency + bitlineDelay + bitlineMux.readLatency + senseAmp.readLatency
 					+ senseAmpMuxLev1.readLatency + senseAmpMuxLev2.readLatency;
 			/* calculate the erase time, a.k.a. reset here */
-			resetLatency = MAX(rowDecoder.readLatency, columnDecoderLatency + chargeLatency) + gCell.flashEraseTime;
+			resetLatency = std::max(rowDecoder.readLatency, columnDecoderLatency + chargeLatency) + gCell.flashEraseTime;
 			/* calculate the programming time, a.k.a. set here */
-			setLatency = MAX(rowDecoder.readLatency, columnDecoderLatency + chargeLatency) + gCell.flashProgramTime;
+			setLatency = std::max(rowDecoder.readLatency, columnDecoderLatency + chargeLatency) + gCell.flashProgramTime;
 			/* use the programming latency as the write latency for SLC NAND*/
 			writeLatency = setLatency;
 
@@ -755,7 +755,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 			double bitlineRamp = 0;
 			bitlineDelay = horowitz(tau, beta, rowDecoder.rampOutput, &bitlineRamp);
 			/* to correct unnecessary horowitz calculation, TO-DO: need to revisit */
-			bitlineDelay = MAX(bitlineDelay, tau * 20);
+			bitlineDelay = std::max(bitlineDelay, tau * 20);
 			bitlineMux.CalculateLatency(bitlineRamp);
 			if (internalSenseAmp) {
 				senseAmp.CalculateLatency();
@@ -768,9 +768,9 @@ void SubArray::CalculateLatency(double _rampInput) {
 			readLatency = decoderLatency + bitlineDelay + bitlineMux.readLatency + senseAmp.readLatency
 					+ senseAmpMuxLev1.readLatency + senseAmpMuxLev2.readLatency;
 			/* calculate the erase time, a.k.a. reset here */
-			resetLatency = MAX(rowDecoder.readLatency, columnDecoderLatency + chargeLatency);
+			resetLatency = std::max(rowDecoder.readLatency, columnDecoderLatency + chargeLatency);
 			/* calculate the programming time, a.k.a. set here */
-			setLatency = MAX(rowDecoder.readLatency, columnDecoderLatency + chargeLatency);
+			setLatency = std::max(rowDecoder.readLatency, columnDecoderLatency + chargeLatency);
 			/* use the programming latency as the write latency for SLC NAND*/
 			writeLatency = setLatency;
 
@@ -871,14 +871,14 @@ void SubArray::CalculatePower() {
 					cellSetEnergy = setEnergyPerBit * numColumn / muxSenseAmp / muxOutputLev1 / muxOutputLev2;
 					cellResetEnergy /= SHAPER_EFFICIENCY_CONSERVATIVE;
 					cellSetEnergy /= SHAPER_EFFICIENCY_CONSERVATIVE;  /* Due to the shaper inefficiency */
-					writeDynamicEnergy = MAX(cellResetEnergy, cellSetEnergy);
+					writeDynamicEnergy = std::max(cellResetEnergy, cellSetEnergy);
 				}
 			} else if (gCell.memCellType == FBRAM){ //FBRAM write energy
 				cellResetEnergy = resetEnergyPerBit * numColumn / muxSenseAmp / muxOutputLev1 / muxOutputLev2;
 				cellSetEnergy = setEnergyPerBit * numColumn / muxSenseAmp / muxOutputLev1 / muxOutputLev2;
 				cellResetEnergy /= SHAPER_EFFICIENCY_AGGRESSIVE;
 				cellSetEnergy /= SHAPER_EFFICIENCY_AGGRESSIVE;  /* Due to the shaper inefficiency */
-				writeDynamicEnergy = MAX(cellResetEnergy, cellSetEnergy);
+				writeDynamicEnergy = std::max(cellResetEnergy, cellSetEnergy);
 			} else { //MRAM and memristor write energy
 				if (gCell.accessType == diode_access || gCell.accessType == none_access) {
 					if (gInputParameter.writeScheme == erase_before_reset || gInputParameter.writeScheme == erase_before_set) {
@@ -888,12 +888,12 @@ void SubArray::CalculatePower() {
 					} else { /* write scheme = set_before_reset or reset_before_set */
 						cellResetEnergy = resetEnergyPerBit * numColumn / muxSenseAmp / muxOutputLev1 / muxOutputLev2;
 						cellSetEnergy = setEnergyPerBit * numColumn / muxSenseAmp / muxOutputLev1 / muxOutputLev2;
-						writeDynamicEnergy = MAX(cellResetEnergy, cellSetEnergy);
+						writeDynamicEnergy = std::max(cellResetEnergy, cellSetEnergy);
 					}
 				} else {
 					cellResetEnergy = resetEnergyPerBit * numColumn / muxSenseAmp / muxOutputLev1 / muxOutputLev2;
 					cellSetEnergy = setEnergyPerBit * numColumn / muxSenseAmp / muxOutputLev1 / muxOutputLev2;
-					writeDynamicEnergy = MAX(cellResetEnergy, cellSetEnergy);
+					writeDynamicEnergy = std::max(cellResetEnergy, cellSetEnergy);
 				}
 				cellResetEnergy /= SHAPER_EFFICIENCY_AGGRESSIVE;
 				cellSetEnergy /= SHAPER_EFFICIENCY_AGGRESSIVE;  /* Due to the shaper inefficiency */

@@ -140,7 +140,7 @@ double CalculateGateArea(
 		widthRegionN = widthRegionP = 0;
 	}
 
-	*width = MAX(widthRegionN, widthRegionP);
+	*width = std::max(widthRegionN, widthRegionP);
 	if (widthPMOS > 0 && widthNMOS > 0) {	/* it is a gate */
 		*height = heightRegionN + heightRegionP + tech.featureSize * MIN_GAP_BET_P_AND_N_DIFFS
 					+ 2 * tech.featureSize * MIN_WIDTH_POWER_RAIL;
@@ -297,7 +297,7 @@ double CalculateGateLeakage(
 	case INV:
 		leakageN = widthNMOS * leakN[tempIndex];
 		leakageP = widthPMOS * leakP[tempIndex];
-		return MAX(leakageN, leakageP);
+		return std::max(leakageN, leakageP);
 	case NOR:
 		leakageN = widthNMOS * leakN[tempIndex] * numInput;
 		if (numInput == 2) {
@@ -350,7 +350,7 @@ double CalculateTransconductance(double width, int type, Technology tech) {
 
 	if (type == NMOS) {
 		if (tech.featureSize >= 22 * 1e-9) {
-			vsat = MIN(tech.vdsatNmos, tech.vdd - tech.vth);
+			vsat = std::min(tech.vdsatNmos, tech.vdd - tech.vth);
  			gm = (tech.effectiveElectronMobility * tech.capOx) / 2 * width / tech.phyGateLength * vsat;
         } else {
         gm = tech.gm_oncurrent*widthEff;
@@ -358,7 +358,7 @@ double CalculateTransconductance(double width, int type, Technology tech) {
 
     } else {//type==PMOS
         if (tech.featureSize >= 22 * 1e-9) {
-			vsat = MIN(tech.vdsatPmos, tech.vdd - tech.vth);
+			vsat = std::min(tech.vdsatPmos, tech.vdd - tech.vth);
  			gm = (tech.effectiveHoleMobility * tech.capOx) / 2 * width / tech.phyGateLength * vsat;
         } else {
         gm = tech.gm_oncurrent*widthEff;

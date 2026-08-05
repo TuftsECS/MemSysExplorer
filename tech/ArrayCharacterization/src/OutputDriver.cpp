@@ -55,7 +55,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 	minDriverCurrent = _minDriverCurrent;
 
 	double minNMOSDriverWidth = minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300];
-	minNMOSDriverWidth = MAX(MIN_NMOS_SIZE * gTech.featureSize, minNMOSDriverWidth);
+	minNMOSDriverWidth = std::max(MIN_NMOS_SIZE * gTech.featureSize, minNMOSDriverWidth);
 
 	if (minNMOSDriverWidth > gInputParameter.maxNmosSize * gTech.featureSize) {
 		invalid = true;
@@ -65,8 +65,8 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 	int optimalNumStage;
 
 	if (areaOptimizationLevel == latency_first) {
-		double F = MAX(1, logicEffort * outputCap / inputCap);	/* Total logic effort */
-		optimalNumStage = MAX(0, (int)(log(F) / log(OPT_F) + 0.5) - 1);
+		double F = std::max(1.0, logicEffort * outputCap / inputCap);	/* Total logic effort */
+		optimalNumStage = std::max(0, (int)(log(F) / log(OPT_F) + 0.5) - 1);
 
 		if ((optimalNumStage % 2) ^ inv)	/* If odd, add 1 */
 			optimalNumStage += 1;
@@ -82,7 +82,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 		double f = pow(F, 1.0 / (optimalNumStage + 1));	/* Logic effort per stage */
 		double inputCapLast = outputCap / f;
 
-		widthNMOS[optimalNumStage-1] = MAX(MIN_NMOS_SIZE * gTech.featureSize,
+		widthNMOS[optimalNumStage-1] = std::max(MIN_NMOS_SIZE * gTech.featureSize,
 				inputCapLast / CalculateGateCap(1/*meter*/, gTech) / (1.0 + gTech.pnSizeRatio));
 
 		if (widthNMOS[optimalNumStage-1] > gInputParameter.maxNmosSize * gTech.featureSize) {
@@ -115,8 +115,8 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 
 	if (areaOptimizationLevel == latency_area_trade_off){
 		double newOutputCap = CalculateGateCap(minNMOSDriverWidth, gTech) * (1.0 + gTech.pnSizeRatio);
-		double F = MAX(1, logicEffort * newOutputCap / inputCap);	/* Total logic effort */
-		optimalNumStage = MAX(0, (int)(log(F) / log(OPT_F) + 0.5) - 1);
+		double F = std::max(1.0, logicEffort * newOutputCap / inputCap);	/* Total logic effort */
+		optimalNumStage = std::max(0, (int)(log(F) / log(OPT_F) + 0.5) - 1);
 
 		if (!((optimalNumStage % 2) ^ inv))	/* If even, add 1 */
 			optimalNumStage += 1;
@@ -146,7 +146,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 	} else if (areaOptimizationLevel == area_first) {
 		optimalNumStage = 1;
 		numStage = 1;
-		widthNMOS[optimalNumStage - 1] = MAX(MIN_NMOS_SIZE * gTech.featureSize, minNMOSDriverWidth);
+		widthNMOS[optimalNumStage - 1] = std::max(MIN_NMOS_SIZE * gTech.featureSize, minNMOSDriverWidth);
 		if (widthNMOS[optimalNumStage - 1] > AREA_OPT_CONSTRAIN * gInputParameter.maxNmosSize * gTech.featureSize) {
 			invalid = true;
 			return;
@@ -171,7 +171,7 @@ void OutputDriver::CalculateArea() {
 		double h, w;
 		for (int i = 0; i < numStage; i++) {
 			CalculateGateArea(INV, 1, widthNMOS[i], widthPMOS[i], gTech.featureSize*40, gTech, &h, &w);
-			totalHeight = MAX(totalHeight, h);
+			totalHeight = std::max(totalHeight, h);
 			totalWidth += w;
 		}
 		height = totalHeight;

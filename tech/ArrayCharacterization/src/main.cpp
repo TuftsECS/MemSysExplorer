@@ -324,8 +324,8 @@ int main(int argc, char* argv[])
 			#pragma omp single
 			for (numRowMat = gInputParameter.minNumRowMat; numRowMat <= gInputParameter.maxNumRowMat; numRowMat *= 2)
 			for (numColumnMat = gInputParameter.minNumColumnMat; numColumnMat <= gInputParameter.maxNumColumnMat; numColumnMat *= 2)
-			for (numActiveMatPerRow = MIN(numColumnMat, gInputParameter.minNumActiveMatPerRow); numActiveMatPerRow <= MIN(numColumnMat, gInputParameter.maxNumActiveMatPerRow); numActiveMatPerRow *= 2)
-			for (numActiveMatPerColumn = MIN(numRowMat, gInputParameter.minNumActiveMatPerColumn); numActiveMatPerColumn <= MIN(numRowMat, gInputParameter.maxNumActiveMatPerColumn); numActiveMatPerColumn *= 2)
+			for (numActiveMatPerRow = std::min(numColumnMat, gInputParameter.minNumActiveMatPerRow); numActiveMatPerRow <= std::min(numColumnMat, gInputParameter.maxNumActiveMatPerRow); numActiveMatPerRow *= 2)
+			for (numActiveMatPerColumn = std::min(numRowMat, gInputParameter.minNumActiveMatPerColumn); numActiveMatPerColumn <= std::min(numRowMat, gInputParameter.maxNumActiveMatPerColumn); numActiveMatPerColumn *= 2)
 			for (numRowSubarray = gInputParameter.minNumRowSubarray; numRowSubarray <= gInputParameter.maxNumRowSubarray; numRowSubarray *= 2)
 			for (numColumnSubarray = gInputParameter.minNumColumnSubarray; numColumnSubarray <= gInputParameter.maxNumColumnSubarray; numColumnSubarray *= 2) {
 				#pragma omp task
@@ -335,12 +335,12 @@ int main(int argc, char* argv[])
 						bestTagResultsTask[i].optimizationTarget = (OptimizationTarget)i;
 					long long numSolutionTask = 0;
 
-					for (numActiveSubarrayPerRow = MIN(numColumnSubarray, gInputParameter.minNumActiveSubarrayPerRow); numActiveSubarrayPerRow <= MIN(numColumnSubarray, gInputParameter.maxNumActiveSubarrayPerRow); numActiveSubarrayPerRow *=2)
-					for (numActiveSubarrayPerColumn = MIN(numRowSubarray, gInputParameter.minNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn <= MIN(numRowSubarray, gInputParameter.maxNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn *= 2)
+					for (numActiveSubarrayPerRow = std::min(numColumnSubarray, gInputParameter.minNumActiveSubarrayPerRow); numActiveSubarrayPerRow <= std::min(numColumnSubarray, gInputParameter.maxNumActiveSubarrayPerRow); numActiveSubarrayPerRow *=2)
+					for (numActiveSubarrayPerColumn = std::min(numRowSubarray, gInputParameter.minNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn <= std::min(numRowSubarray, gInputParameter.maxNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn *= 2)
 					for (muxSenseAmp = gInputParameter.minMuxSenseAmp; muxSenseAmp <= gInputParameter.maxMuxSenseAmp; muxSenseAmp *= 2)
 					for (muxOutputLev1 = gInputParameter.minMuxOutputLev1; muxOutputLev1 <= gInputParameter.maxMuxOutputLev1; muxOutputLev1 *= 2)
 					for (muxOutputLev2 = gInputParameter.minMuxOutputLev2; muxOutputLev2 <= gInputParameter.maxMuxOutputLev2; muxOutputLev2 *= 2)
-					for (numRowPerSet = gInputParameter.minNumRowPerSet; numRowPerSet <= MIN(gInputParameter.maxNumRowPerSet, gInputParameter.associativity); numRowPerSet *= 2)
+					for (numRowPerSet = gInputParameter.minNumRowPerSet; numRowPerSet <= std::min(gInputParameter.maxNumRowPerSet, gInputParameter.associativity); numRowPerSet *= 2)
 					for (areaOptimizationLevel = gInputParameter.minAreaOptimizationLevel; areaOptimizationLevel <= gInputParameter.maxAreaOptimizationLevel; areaOptimizationLevel++) {
 						long blockSize = TOTAL_ADDRESS_BIT - numIndexBit - numOffsetBit;
 						blockSize += 2;		/* add dirty bits and valid bits */
@@ -467,8 +467,8 @@ int main(int argc, char* argv[])
 		#pragma omp single
 		for (numRowMat = gInputParameter.minNumRowMat; numRowMat <= gInputParameter.maxNumRowMat; numRowMat *= 2)
 		for (numColumnMat = gInputParameter.minNumColumnMat; numColumnMat <= gInputParameter.maxNumColumnMat; numColumnMat *= 2)
-		for (numActiveMatPerRow = MIN(numColumnMat, gInputParameter.minNumActiveMatPerRow); numActiveMatPerRow <= MIN(numColumnMat, gInputParameter.maxNumActiveMatPerRow); numActiveMatPerRow *= 2)
-		for (numActiveMatPerColumn = MIN(numRowMat, gInputParameter.minNumActiveMatPerColumn); numActiveMatPerColumn <= MIN(numRowMat, gInputParameter.maxNumActiveMatPerColumn); numActiveMatPerColumn *= 2)
+		for (numActiveMatPerRow = std::min(numColumnMat, gInputParameter.minNumActiveMatPerRow); numActiveMatPerRow <= std::min(numColumnMat, gInputParameter.maxNumActiveMatPerRow); numActiveMatPerRow *= 2)
+		for (numActiveMatPerColumn = std::min(numRowMat, gInputParameter.minNumActiveMatPerColumn); numActiveMatPerColumn <= std::min(numRowMat, gInputParameter.maxNumActiveMatPerColumn); numActiveMatPerColumn *= 2)
 		for (numRowSubarray = gInputParameter.minNumRowSubarray; numRowSubarray <= gInputParameter.maxNumRowSubarray; numRowSubarray *= 2)
 		for (numColumnSubarray = gInputParameter.minNumColumnSubarray; numColumnSubarray <= gInputParameter.maxNumColumnSubarray; numColumnSubarray *= 2)
 			#pragma omp task
@@ -478,12 +478,12 @@ int main(int argc, char* argv[])
 					bestDataResultsTask[i].optimizationTarget = (OptimizationTarget)i;
 				long long numSolutionTask = 0;
 
-				for (numActiveSubarrayPerRow = MIN(numColumnSubarray, gInputParameter.minNumActiveSubarrayPerRow); numActiveSubarrayPerRow <= MIN(numColumnSubarray, gInputParameter.maxNumActiveSubarrayPerRow); numActiveSubarrayPerRow *=2)
-				for (numActiveSubarrayPerColumn = MIN(numRowSubarray, gInputParameter.minNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn <= MIN(numRowSubarray, gInputParameter.maxNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn *= 2)
+				for (numActiveSubarrayPerRow = std::min(numColumnSubarray, gInputParameter.minNumActiveSubarrayPerRow); numActiveSubarrayPerRow <= std::min(numColumnSubarray, gInputParameter.maxNumActiveSubarrayPerRow); numActiveSubarrayPerRow *=2)
+				for (numActiveSubarrayPerColumn = std::min(numRowSubarray, gInputParameter.minNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn <= std::min(numRowSubarray, gInputParameter.maxNumActiveSubarrayPerColumn); numActiveSubarrayPerColumn *= 2)
 				for (muxSenseAmp = gInputParameter.minMuxSenseAmp; muxSenseAmp <= gInputParameter.maxMuxSenseAmp; muxSenseAmp *= 2)
 				for (muxOutputLev1 = gInputParameter.minMuxOutputLev1; muxOutputLev1 <= gInputParameter.maxMuxOutputLev1; muxOutputLev1 *= 2)
 				for (muxOutputLev2 = gInputParameter.minMuxOutputLev2; muxOutputLev2 <= gInputParameter.maxMuxOutputLev2; muxOutputLev2 *= 2)
-				for (numRowPerSet = gInputParameter.minNumRowPerSet; numRowPerSet <= MIN(gInputParameter.maxNumRowPerSet, gInputParameter.associativity); numRowPerSet *= 2)
+				for (numRowPerSet = gInputParameter.minNumRowPerSet; numRowPerSet <= std::min(gInputParameter.maxNumRowPerSet, gInputParameter.associativity); numRowPerSet *= 2)
 				for (areaOptimizationLevel = gInputParameter.minAreaOptimizationLevel; areaOptimizationLevel <= gInputParameter.maxAreaOptimizationLevel; areaOptimizationLevel++) {
 					if (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) == 0) {
 						/* To aggressive partitioning */

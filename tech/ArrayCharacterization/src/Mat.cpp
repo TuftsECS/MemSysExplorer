@@ -142,8 +142,8 @@ void Mat::Initialize(int _numRowSubarray, int _numColumnSubarray, int _numAddres
 	rowPredecoderBlock1.Initialize(numAddressRowPredecoderBlock1, capLoadRowPredecoder, 0 /* TO-DO */);
 	rowPredecoderBlock2.Initialize(numAddressRowPredecoderBlock2, capLoadRowPredecoder, 0 /* TO-DO */);
 
-	double capLoadMuxPredecoder = MAX(0, subarray.height * gLocalWire.capWirePerUnit * (numRowSubarray - 2) / 2)
-			+ MAX(0, subarray.width * gLocalWire.capWirePerUnit * (numColumnSubarray - 2) / 2);
+	double capLoadMuxPredecoder = std::max(0.0, subarray.height * gLocalWire.capWirePerUnit * (numRowSubarray - 2) / 2)
+			+ std::max(0.0, subarray.width * gLocalWire.capWirePerUnit * (numColumnSubarray - 2) / 2);
 	int numAddressBitlineMuxPredecoderBlock1 = (int)(log2(muxSenseAmp) + 0.1);
 	int numAddressBitlineMuxPredecoderBlock2 = 0;
 	if (numAddressBitlineMuxPredecoderBlock1 > 3) {		/* Block 2 is needed */
@@ -251,18 +251,17 @@ void Mat::CalculateLatency(double _rampInput) {
 		senseAmpMuxLev2PredecoderBlock1.CalculateLatency(_rampInput);
 		senseAmpMuxLev2PredecoderBlock2.CalculateLatency(_rampInput);
 
-		double rowPredecoderLatency = MAX(rowPredecoderBlock1.readLatency, rowPredecoderBlock2.readLatency);
-		double bitlineMuxPredecoderLatency = MAX(bitlineMuxPredecoderBlock1.readLatency,
+		double rowPredecoderLatency = std::max(rowPredecoderBlock1.readLatency, rowPredecoderBlock2.readLatency);
+		double bitlineMuxPredecoderLatency = std::max(bitlineMuxPredecoderBlock1.readLatency,
 				bitlineMuxPredecoderBlock2.readLatency);
-		double senseAmpMuxLev1PredecoderLatency = MAX(senseAmpMuxLev1PredecoderBlock1.readLatency,
+		double senseAmpMuxLev1PredecoderLatency = std::max(senseAmpMuxLev1PredecoderBlock1.readLatency,
 				senseAmpMuxLev1PredecoderBlock2.readLatency);
-		double senseAmpMuxLev2PredecoderLatency = MAX(senseAmpMuxLev2PredecoderBlock1.readLatency,
+		double senseAmpMuxLev2PredecoderLatency = std::max(senseAmpMuxLev2PredecoderBlock1.readLatency,
 				senseAmpMuxLev2PredecoderBlock2.readLatency);
-		predecoderLatency = MAX(MAX(rowPredecoderLatency, bitlineMuxPredecoderLatency),
-				MAX(senseAmpMuxLev1PredecoderLatency, senseAmpMuxLev2PredecoderLatency));
+		predecoderLatency = std::max({rowPredecoderLatency, bitlineMuxPredecoderLatency, senseAmpMuxLev1PredecoderLatency, senseAmpMuxLev2PredecoderLatency});
 
 		/* Caluclate subarray latency */
-		subarray.CalculateLatency(MIN(rowPredecoderBlock1.rampOutput, rowPredecoderBlock2.rampOutput));
+		subarray.CalculateLatency(std::min(rowPredecoderBlock1.rampOutput, rowPredecoderBlock2.rampOutput));
 
 		/* Add them together */
 		readLatency = predecoderLatency + subarray.readLatency;

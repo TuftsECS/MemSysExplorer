@@ -104,7 +104,7 @@ void RowDecoder::CalculateArea() {
 		} else {
 			double hNand, wNand;
 			CalculateGateArea(NAND, numNandInput, widthNandN, widthNandP, gTech.featureSize*40, gTech, &hNand, &wNand);
-			height = MAX(hNand, outputDriver.height);
+			height = std::max(hNand, outputDriver.height);
 			width = wNand + outputDriver.width;
 		}
 		height *= numRow;

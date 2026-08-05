@@ -560,8 +560,8 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				double resWire = resWirePerUnit * wireLength;
 				double resDriver = ((-8) * delayFO4 / ( log(0.5) * capWire)) / RES_ADJ;
 				double widthNmosDriver = resPullDown * widthNmos / resDriver;
-				widthNmosDriver = MIN(widthNmosDriver, MAX_NMOS_SIZE * gTech.featureSize);
-				widthNmosDriver = MAX(widthNmosDriver, MIN_NMOS_SIZE * gTech.featureSize);
+				widthNmosDriver = std::min(widthNmosDriver, MAX_NMOS_SIZE * gTech.featureSize);
+				widthNmosDriver = std::max(widthNmosDriver, MIN_NMOS_SIZE * gTech.featureSize);
 
 				if(resWire * capWire > 8 * delayFO4)
 				{
@@ -578,7 +578,7 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				double reqCin  = (((2 + gTech.pnSizeRatio) / (1 + gTech.pnSizeRatio)) * capGateDriver) / stageEffort;
 				CalculateGateCapacitance(INV, 1, widthNmos, widthPmos, gTech.featureSize*40, gTech, &capInput, &capOutput);
 				double sizeInverter = reqCin / capInput;
-				sizeInverter = MAX(sizeInverter, 1);
+				sizeInverter = std::max(sizeInverter, 1.0);
 
 				/* nand gate delay */
 				resPullDown *= 2;

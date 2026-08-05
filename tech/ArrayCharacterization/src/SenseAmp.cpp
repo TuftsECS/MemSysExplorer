@@ -75,22 +75,22 @@ void SenseAmp::CalculateArea() {
 
 		CalculateGateArea(INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * gTech.featureSize,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
-		width = MAX(width, tempWidth);
+		width = std::max(width, tempWidth);
 		height += tempHeight;
 
 		CalculateGateArea(INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_P * gTech.featureSize,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
-		width = MAX(width, tempWidth);
+		width = std::max(width, tempWidth);
 		height += 2 * tempHeight;
 
 		CalculateGateArea(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_N * gTech.featureSize, 0,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
-		width = MAX(width, tempWidth);
+		width = std::max(width, tempWidth);
 		height += 2 * tempHeight;
 
 		CalculateGateArea(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * gTech.featureSize, 0,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
-		width = MAX(width, tempWidth);
+		width = std::max(width, tempWidth);
 		height += 2 * tempHeight;
 
                 /* Scale SA area for MLC programming, or defer to ISLPED modeled values for FeFET sensing */

@@ -77,12 +77,12 @@ void Precharger::CalculateArea() {
 		CalculateGateArea(INV, 1, 0, widthPMOSBitlineEqual, gTech.featureSize*40, gTech, &hBitlineEqual, &wBitlineEqual);
 		CalculateGateArea(INV, 1, widthInvNmos, widthInvPmos, gTech.featureSize*40, gTech, &hInverter, &wInverter);
 		width = 2 * wBitlinePrechareger + wBitlineEqual;
-		width = MAX(width, wInverter);
+		width = std::max(width, wInverter);
 		width *= numColumn;
-		width = MAX(width, outputDriver.width);
-		height = MAX(hBitlinePrechareger, hBitlineEqual);
+		width = std::max(width, outputDriver.width);
+		height = std::max(hBitlinePrechareger, hBitlineEqual);
 		height += hInverter;
-		height = MAX(height, outputDriver.height);
+		height = std::max(height, outputDriver.height);
 		area = height * width;
 	}
 }

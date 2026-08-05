@@ -59,9 +59,9 @@ void Mux::Initialize(int _numInput, long long _numMux, double _capLoad, double _
 	    	        if (widthNMOSPassTransistor > gInputParameter.maxNmosSize * gTech.featureSize) {	// Change the transistor size to avoid severe IR drop
 	    		    widthNMOSPassTransistor = gInputParameter.maxNmosSize * gTech.featureSize;
 	    	        }
-			widthNMOSPassTransistor = MAX(MAX(widthNMOSPassTransistor,minNMOSWidth), 6 * MIN_NMOS_SIZE * gTech.featureSize);
+			widthNMOSPassTransistor = std::max({widthNMOSPassTransistor, minNMOSWidth, 6 * MIN_NMOS_SIZE * gTech.featureSize});
 		} else {
-			widthNMOSPassTransistor = MAX(6 * MIN_NMOS_SIZE * gTech.featureSize, minNMOSWidth);
+			widthNMOSPassTransistor = std::max(6 * MIN_NMOS_SIZE * gTech.featureSize, minNMOSWidth);
 		}
 	}
 

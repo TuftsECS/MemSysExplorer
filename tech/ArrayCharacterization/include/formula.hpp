@@ -43,9 +43,6 @@
 
 #include <math.h>
 
-#define MAX(a,b) (((a)> (b))?(a):(b))
-#define MIN(a,b) (((a)< (b))?(a):(b))
-
 bool isPow2(int n);
 
 /* calculate the gate capacitance */

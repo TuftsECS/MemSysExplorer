@@ -364,7 +364,7 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 						writeDynamicEnergy += capGlobalBitline * vpre * vpre * numDataBitRouteToMat;
 					}
 				} else if (gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor || gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
-					double vWrite = MAX(fabs(gCell.resetVoltage), fabs(gCell.setVoltage));
+					double vWrite = std::max(fabs(gCell.resetVoltage), fabs(gCell.setVoltage));
 					double tau, latencyOff, latencyOn;
 					double vPre = mat.subarray.voltagePrecharge;
 					double vOn = mat.subarray.voltageMemCellOn;

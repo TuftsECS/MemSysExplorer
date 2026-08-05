@@ -464,10 +464,10 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 		if (cacheAccessMode == normal_access_mode) {
 			/* Calculate latencies */
 			cacheMissLatency = tagResult.bank->readLatency;		/* only the tag access latency */
-			cacheHitLatency = MAX(tagResult.bank->readLatency, bank->mat.readLatency);	/* access tag and activate data row in parallel */
+			cacheHitLatency = std::max(tagResult.bank->readLatency, bank->mat.readLatency);	/* access tag and activate data row in parallel */
 			cacheHitLatency += bank->mat.subarray.columnDecoderLatency;		/* add column decoder latency after hit signal arrives */
 			cacheHitLatency += bank->readLatency - bank->mat.readLatency;	/* H-tree in and out latency */
-			cacheWriteLatency = MAX(tagResult.bank->writeLatency, bank->writeLatency);	/* Data and tag are written in parallel */
+			cacheWriteLatency = std::max(tagResult.bank->writeLatency, bank->writeLatency);	/* Data and tag are written in parallel */
 			/* Calculate power */
 			cacheMissDynamicEnergy = tagResult.bank->readDynamicEnergy;	/* no matter what tag is always accessed */
 			cacheMissDynamicEnergy += bank->readDynamicEnergy;	/* data is also partially accessed, TO-DO: not accurate here */
@@ -476,8 +476,8 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 		} else if (cacheAccessMode == fast_access_mode) {
 			/* Calculate latencies */
 			cacheMissLatency = tagResult.bank->readLatency;
-			cacheHitLatency = MAX(tagResult.bank->readLatency, bank->readLatency);
-			cacheWriteLatency = MAX(tagResult.bank->writeLatency, bank->writeLatency);
+			cacheHitLatency = std::max(tagResult.bank->readLatency, bank->readLatency);
+			cacheWriteLatency = std::max(tagResult.bank->writeLatency, bank->writeLatency);
 			/* Calculate power */
 			cacheMissDynamicEnergy = tagResult.bank->readDynamicEnergy;	/* no matter what tag is always accessed */
 			cacheMissDynamicEnergy += bank->readDynamicEnergy;	/* data is also partially accessed, TO-DO: not accurate here */
@@ -487,7 +487,7 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 			/* Calculate latencies */
 			cacheMissLatency = tagResult.bank->readLatency;
 			cacheHitLatency = tagResult.bank->readLatency + bank->readLatency;
-			cacheWriteLatency = MAX(tagResult.bank->writeLatency, bank->writeLatency);
+			cacheWriteLatency = std::max(tagResult.bank->writeLatency, bank->writeLatency);
 			/* Calculate power */
 			cacheMissDynamicEnergy = tagResult.bank->readDynamicEnergy;	/* no matter what tag is always accessed */
 			cacheHitDynamicEnergy = tagResult.bank->readDynamicEnergy + bank->readDynamicEnergy;
@@ -513,8 +513,8 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 		std::cout << " - Cache Miss Latency  = " << cacheMissLatency * 1e9 << "ns" << std::endl;
 		std::cout << " - Cache Write Latency = " << cacheWriteLatency * 1e9 << "ns" << std::endl;
         if (gCell.memCellType == eDRAM) {
-            std::cout << " - Cache Refresh Latency = " << MAX(tagResult.bank->refreshLatency, bank->refreshLatency) * 1e6 << "us per bank" << std::endl;
-            std::cout << " - Cache Availability = " << ((gCell.retentionTime - MAX(tagResult.bank->refreshLatency, bank->refreshLatency)) / gCell.retentionTime) * 100.0 << "%" << std::endl;
+            std::cout << " - Cache Refresh Latency = " << std::max(tagResult.bank->refreshLatency, bank->refreshLatency) * 1e6 << "us per bank" << std::endl;
+            std::cout << " - Cache Availability = " << ((gCell.retentionTime - std::max(tagResult.bank->refreshLatency, bank->refreshLatency)) / gCell.retentionTime) * 100.0 << "%" << std::endl;
         }
 		std::cout << "Power:" << std::endl;
 		std::cout << " - Cache Hit Dynamic Energy   = " << cacheHitDynamicEnergy * 1e9 << "nJ per access" << std::endl;
@@ -1067,18 +1067,18 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 
     if (cacheAccessMode == normal_access_mode) {
         cacheMissLatency = tagResult.bank->readLatency;
-        cacheHitLatency = MAX(tagResult.bank->readLatency, bank->mat.readLatency);
+        cacheHitLatency = std::max(tagResult.bank->readLatency, bank->mat.readLatency);
         cacheHitLatency += bank->mat.subarray.columnDecoderLatency;
         cacheHitLatency += bank->readLatency - bank->mat.readLatency;
-        cacheWriteLatency = MAX(tagResult.bank->writeLatency, bank->writeLatency);
+        cacheWriteLatency = std::max(tagResult.bank->writeLatency, bank->writeLatency);
 
         cacheMissDynamicEnergy = tagResult.bank->readDynamicEnergy + bank->readDynamicEnergy;
         cacheHitDynamicEnergy = tagResult.bank->readDynamicEnergy + bank->readDynamicEnergy;
         cacheWriteDynamicEnergy = tagResult.bank->writeDynamicEnergy + bank->writeDynamicEnergy;
     } else if (cacheAccessMode == fast_access_mode) {
         cacheMissLatency = tagResult.bank->readLatency;
-        cacheHitLatency = MAX(tagResult.bank->readLatency, bank->readLatency);
-        cacheWriteLatency = MAX(tagResult.bank->writeLatency, bank->writeLatency);
+        cacheHitLatency = std::max(tagResult.bank->readLatency, bank->readLatency);
+        cacheWriteLatency = std::max(tagResult.bank->writeLatency, bank->writeLatency);
 
         cacheMissDynamicEnergy = tagResult.bank->readDynamicEnergy + bank->readDynamicEnergy;
         cacheHitDynamicEnergy = tagResult.bank->readDynamicEnergy + bank->readDynamicEnergy;
@@ -1086,7 +1086,7 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
     } else {  // sequential_access_mode
         cacheMissLatency = tagResult.bank->readLatency;
         cacheHitLatency = tagResult.bank->readLatency + bank->readLatency;
-        cacheWriteLatency = MAX(tagResult.bank->writeLatency, bank->writeLatency);
+        cacheWriteLatency = std::max(tagResult.bank->writeLatency, bank->writeLatency);
 
         cacheMissDynamicEnergy = tagResult.bank->readDynamicEnergy + bank->readDynamicEnergy;
         cacheHitDynamicEnergy = tagResult.bank->readDynamicEnergy + bank->readDynamicEnergy;
@@ -1147,9 +1147,9 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 
     if (gCell.memCellType == eDRAM) {
         result["CacheDesign"]["Timing"]["CacheRefreshLatency_us"] =
-            MAX(tagResult.bank->refreshLatency, bank->refreshLatency) * 1e6;
+            std::max(tagResult.bank->refreshLatency, bank->refreshLatency) * 1e6;
         result["CacheDesign"]["Timing"]["CacheAvailability_percent"] =
-            ((gCell.retentionTime - MAX(tagResult.bank->refreshLatency, bank->refreshLatency)) /
+            ((gCell.retentionTime - std::max(tagResult.bank->refreshLatency, bank->refreshLatency)) /
              gCell.retentionTime) * 100.0;
     }
 
@@ -1176,9 +1176,9 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
     // Add reset and set pulse durations (using global gCell pointer safely)
     //if (gCell) {
         result["CacheDesign"]["Timing"]["Reset"]["PulseDuration_ns"] =
-            MAX(gCell.resetPulse, gCell.resetPulse) * 1e9;
+            std::max(gCell.resetPulse, gCell.resetPulse) * 1e9;
         result["CacheDesign"]["Timing"]["Set"]["PulseDuration_ns"] =
-            MAX(gCell.setPulse, gCell.setPulse) * 1e9;
+            std::max(gCell.setPulse, gCell.setPulse) * 1e9;
     //} else {
         //result["CacheDesign"]["Timing"]["Reset"]["PulseDuration_ns"] = 0;
         //result["CacheDesign"]["Timing"]["Set"]["PulseDuration_ns"] = 0;
