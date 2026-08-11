@@ -56,7 +56,7 @@ struct UnitAtom {
 
     static constexpr const char* unitString() noexcept {
         if constexpr (type == UnitType::Time) {
-            return "sec";
+            return "s";
         } else if constexpr (type == UnitType::Distance) {
             return "m";
         } else if constexpr (type == UnitType::Feature) {
@@ -115,6 +115,9 @@ public:
     // Explicit constructors prevent implicit conversion from other types
     explicit constexpr Unit() noexcept : _value(0) {}
     explicit constexpr Unit(UnitValueType value) noexcept : _value(value) {}
+
+    // A special implicit constructor just for unitless/Number values
+    constexpr Unit(UnitValueType value) noexcept requires(sizeof...(Atoms) == 0) : _value(value) {}
 
 private:
 
@@ -431,28 +434,37 @@ public:
     // Otherwise if the unit is compound and contains multiple types
     //   The all units are spaced out from each other and the number
     //   An exponent is given to all units even if they have an exponent of 1
-    //   For example 0.08 meters per second squared -> 80m m^1 s^-2
+    //   For example 0.08 meters per second squared -> 0.08 m^1 s^-2
+    //   To keep it simple, no scaling happens for compound units or units with negative exponents
 
-    std::string toString(bool scaleUnit = true) const {
-        std::string num = std::format("{:.3f}", _value);
+    std::string toString(int precision = 3, bool scaleUnit = true) const {
+        std::string num = std::format("{:.{}f}", _value, precision);
 
         std::string scale;
-        if (scaleUnit) {
-            if (_value < 1e-12) {
-                num = std::format("{:.3f}", _value * 1e15);
-                scale = "f";
-            } else if (_value < 1e-9) {
-                num = std::format("{:.3f}", _value * 1e12);
-                scale = "p";
-            } else if (_value < 1e-6) {
-                num = std::format("{:.3f}", _value * 1e9);
-                scale = "n";
-            } else if (_value < 1e-3) {
-                num = std::format("{:.3f}", _value * 1e6);
-                scale = "u";
-            } else if (_value < 1) {
-                num = std::format("{:.3f}", _value * 1e3);
-                scale = "m";
+        // No compound units, no unitless scaling, no scaling for negative exponents
+        // TODO add negative exponent scaling for non-compound units
+        if constexpr (sizeof...(Atoms) == 1 && AtomAt<Unit, 0>::type::exponent >= 1) {
+            if (scaleUnit) {
+                constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
+                if (_value < std::pow(1e-15, exponent)) {
+                    num = std::format("{:.{}f}", _value * std::pow(1e18, exponent), precision);
+                    scale = "a";
+                } else if (_value < std::pow(1e-12, exponent)) {
+                    num = std::format("{:.{}f}", _value * std::pow(1e15, exponent), precision);
+                    scale = "f";
+                } else if (_value < std::pow(1e-9, exponent)) {
+                    num = std::format("{:.{}f}", _value * std::pow(1e12, exponent), precision);
+                    scale = "p";
+                } else if (_value < std::pow(1e-6, exponent)) {
+                    num = std::format("{:.{}f}", _value * std::pow(1e9, exponent), precision);
+                    scale = "n";
+                } else if (_value < std::pow(1e-3, exponent)) {
+                    num = std::format("{:.{}f}", _value * std::pow(1e6, exponent), precision);
+                    scale = "u";
+                } else if (_value < 1) {
+                    num = std::format("{:.{}f}", _value * std::pow(1e3, exponent), precision);
+                    scale = "m";
+                }
             }
         }
 
@@ -647,10 +659,10 @@ UnitConversion2Atoms(CurrentAtom, ResistanceAtom, VoltageAtom)
 // Instead of writing Volt(1.5), these literals allow 1.5_V instead for better readability
 //
 // Seconds:
-//   _sec
-//   _msec
-//   _usec
-//   _psec
+//   _s
+//   _ms
+//   _us
+//   _ps
 // Meters:
 //   _m
 //   _mm
@@ -698,34 +710,34 @@ UnitConversion2Atoms(CurrentAtom, ResistanceAtom, VoltageAtom)
 // Celsius:
 //   _degC
 
-constexpr Second operator""_sec(long double value) noexcept {
+constexpr Second operator""_s(long double value) noexcept {
     return Second(value);
 }
-constexpr Second operator""_sec(unsigned long long int value) noexcept {
+constexpr Second operator""_s(unsigned long long int value) noexcept {
     return Second(value);
 }
-constexpr Second operator""_msec(long double value) noexcept {
+constexpr Second operator""_ms(long double value) noexcept {
     return Second(value * 1e-3);
 }
-constexpr Second operator""_msec(unsigned long long int value) noexcept {
+constexpr Second operator""_ms(unsigned long long int value) noexcept {
     return Second(value * 1e-3);
 }
-constexpr Second operator""_usec(long double value) noexcept {
+constexpr Second operator""_us(long double value) noexcept {
     return Second(value * 1e-6);
 }
-constexpr Second operator""_usec(unsigned long long int value) noexcept {
+constexpr Second operator""_us(unsigned long long int value) noexcept {
     return Second(value * 1e-6);
 }
-constexpr Second operator""_nsec(long double value) noexcept {
+constexpr Second operator""_ns(long double value) noexcept {
     return Second(value * 1e-9);
 }
-constexpr Second operator""_nsec(unsigned long long int value) noexcept {
+constexpr Second operator""_ns(unsigned long long int value) noexcept {
     return Second(value * 1e-9);
 }
-constexpr Second operator""_psec(long double value) noexcept {
+constexpr Second operator""_ps(long double value) noexcept {
     return Second(value * 1e-12);
 }
-constexpr Second operator""_psec(unsigned long long int value) noexcept {
+constexpr Second operator""_ps(unsigned long long int value) noexcept {
     return Second(value * 1e-12);
 }
 
