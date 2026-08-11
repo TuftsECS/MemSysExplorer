@@ -18,7 +18,7 @@
 #ifndef MSE_INPUT_HH
 #define MSE_INPUT_HH
 
-#include "Unit.hpp"
+#include "unit.hpp"
 #include "enumInfo.hpp"
 #include "log.hpp"
 #include "utility.hpp"

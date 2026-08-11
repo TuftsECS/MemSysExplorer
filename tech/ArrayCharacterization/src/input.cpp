@@ -1,7 +1,7 @@
 #include "input.hpp"
 
 #include "log.hpp"
-#include "Unit.hpp"
+#include "unit.hpp"
 
 //==================================================
 // Terminates the program if not all fields in the input file were accessed
