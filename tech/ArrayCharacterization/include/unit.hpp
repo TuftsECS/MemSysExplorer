@@ -30,17 +30,21 @@ namespace mse::unit {
 // Units with different UnitType values wont mix
 
 enum class UnitType {
-    Time,
-    Distance,
+    Second,
+    Meter,
     Feature,
-    Voltage,
-    Resistance,
-    Capacitance,
-    Current,
-    Conductance,
-    Energy,
-    Power,
-    Temperature
+    Volt,
+    Ohm,
+    Farad,
+    Ampere,
+    Siemens,
+    Joule,
+    Watt,
+    DegreeC,
+    // "Bits" instead of "Bit" to avoid confusing in syntax
+    // ex does Bit b; mean b is the value of a single bit or a unit of a number of bits?
+    Bits,
+    Bytes
 };
 
 //==================================================
@@ -55,30 +59,42 @@ struct UnitAtom {
     static constexpr int exponent = Exponent;
 
     static constexpr const char* unitString() noexcept {
-        if constexpr (type == UnitType::Time) {
+        if constexpr (type == UnitType::Second) {
             return "s";
-        } else if constexpr (type == UnitType::Distance) {
+        } else if constexpr (type == UnitType::Meter) {
             return "m";
         } else if constexpr (type == UnitType::Feature) {
             return "feat";
-        } else if constexpr (type == UnitType::Voltage) {
+        } else if constexpr (type == UnitType::Volt) {
             return "V";
-        } else if constexpr (type == UnitType::Resistance) {
+        } else if constexpr (type == UnitType::Ohm) {
             return "Ohm";
-        } else if constexpr (type == UnitType::Capacitance) {
+        } else if constexpr (type == UnitType::Farad) {
             return "F";
-        } else if constexpr (type == UnitType::Current) {
+        } else if constexpr (type == UnitType::Ampere) {
             return "A";
-        } else if constexpr (type == UnitType::Conductance) {
+        } else if constexpr (type == UnitType::Siemens) {
             return "S";
-        } else if constexpr (type == UnitType::Energy) {
+        } else if constexpr (type == UnitType::Joule) {
             return "J";
-        } else if constexpr (type == UnitType::Power) {
+        } else if constexpr (type == UnitType::Watt) {
             return "W";
-        } else if constexpr (type == UnitType::Temperature) {
+        } else if constexpr (type == UnitType::DegreeC) {
             return "degC";
+        } else if constexpr (type == UnitType::Bits) {
+            return "b";
+        } else if constexpr (type == UnitType::Bytes) {
+            return "B";
         } else {
             static_assert(false);
+        }
+    }
+
+    static constexpr const char* unitFractionSeparator() noexcept {
+        if constexpr (exponent < 0) {
+            return "/";
+        } else {
+            return "*";
         }
     }
 };
@@ -366,7 +382,11 @@ public:
     requires (!containsEquivalentAtoms<Ts...>()) &&
              (UnitConversion<DifferentAtomsType<Ts...>>::type::containsEquivalentAtoms(typename Unit<Ts...>::template DifferentAtomsType<Atoms...>{}))
     constexpr operator Unit<Ts...>() const noexcept {
-        return Unit<Ts...>(_value);
+        if constexpr ( requires { UnitConversion<DifferentAtomsType<Ts...>>::convert; } ) {
+            return Unit<Ts...>(UnitConversion<DifferentAtomsType<Ts...>>::convert(_value));
+        } else {
+            return Unit<Ts...>(_value);
+        }
     }
 
     //==================================================
@@ -406,7 +426,7 @@ public:
     // Use like featureLength.toMeters(featureSize)
     // This function also accounts for exponents in the feature Unit type (so square features go to square meters)
 
-    constexpr auto toMeters(Unit<UnitAtom<UnitType::Distance, 1>> featureSizeInMeters) const noexcept
+    constexpr auto toMeters(Unit<UnitAtom<UnitType::Meter, 1>> featureSizeInMeters) const noexcept
     requires (sizeof...(Atoms) == 1 && AtomAt<Unit, 0>::type::type == UnitType::Feature) {
         // No constexpr std::pow yet so manually do this with a loop
         UnitValueType factor = 1.0;
@@ -414,9 +434,9 @@ public:
             factor *= featureSizeInMeters._value;
         }
         if constexpr (AtomAt<Unit, 0>::type::exponent >= 0) {
-            return Unit<UnitAtom<UnitType::Distance, AtomAt<Unit, 0>::type::exponent>>(_value * factor);
+            return Unit<UnitAtom<UnitType::Meter, AtomAt<Unit, 0>::type::exponent>>(_value * factor);
         } else {
-            return Unit<UnitAtom<UnitType::Distance, AtomAt<Unit, 0>::type::exponent>>(_value / factor);
+            return Unit<UnitAtom<UnitType::Meter, AtomAt<Unit, 0>::type::exponent>>(_value / factor);
         }
     }
 
@@ -427,58 +447,77 @@ public:
     //   And 0.0005 farads -> "500.000uF"
     // Otherwise the true value at a scale of 1 is used
     //   For example 0.0005 volts -> "0.0005V"
-    // If the unit is simple and only contains one type
-    //   The unit is placed directly aginst the number
-    //   No exponent is shown for exponents of 1
-    //   For example 10 square meters -> "10m^2"
-    // Otherwise if the unit is compound and contains multiple types
-    //   The all units are spaced out from each other and the number
-    //   An exponent is given to all units even if they have an exponent of 1
-    //   For example 0.08 meters per second squared -> 0.08 m^1 s^-2
-    //   To keep it simple, no scaling happens for compound units or units with negative exponents
+    // The unit is placed directly aginst the number
+    // No exponent is shown for exponents of 1
+    // To keep it simple, no scaling happens for units with negative exponents
 
     std::string toString(int precision = 3, bool scaleUnit = true) const {
-        std::string num = std::format("{:.{}f}", _value, precision);
-
+        UnitValueType v = _value;
+        std::string num;
         std::string scale;
-        // No compound units, no unitless scaling, no scaling for negative exponents
-        // TODO add negative exponent scaling for non-compound units
-        if constexpr (sizeof...(Atoms) == 1 && AtomAt<Unit, 0>::type::exponent >= 1) {
-            if (scaleUnit) {
-                constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
-                if (_value < std::pow(1e-15, exponent)) {
-                    num = std::format("{:.{}f}", _value * std::pow(1e18, exponent), precision);
-                    scale = "a";
-                } else if (_value < std::pow(1e-12, exponent)) {
-                    num = std::format("{:.{}f}", _value * std::pow(1e15, exponent), precision);
-                    scale = "f";
-                } else if (_value < std::pow(1e-9, exponent)) {
-                    num = std::format("{:.{}f}", _value * std::pow(1e12, exponent), precision);
-                    scale = "p";
-                } else if (_value < std::pow(1e-6, exponent)) {
-                    num = std::format("{:.{}f}", _value * std::pow(1e9, exponent), precision);
-                    scale = "n";
-                } else if (_value < std::pow(1e-3, exponent)) {
-                    num = std::format("{:.{}f}", _value * std::pow(1e6, exponent), precision);
-                    scale = "u";
-                } else if (_value < 1) {
-                    num = std::format("{:.{}f}", _value * std::pow(1e3, exponent), precision);
-                    scale = "m";
+        if (_value != 0) {
+            // No unitless scaling, no scaling for negative exponents
+            // TODO add negative exponent scaling for non-compound units
+            if constexpr (sizeof...(Atoms) > 0 && AtomAt<Unit, 0>::type::exponent >= 1) {
+                if (scaleUnit) {
+                    constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
+                    if (_value < std::pow(1e-15, exponent)) {
+                        v *= std::pow(1e18, exponent);
+                        scale = "a";
+                    } else if (_value < std::pow(1e-12, exponent)) {
+                        v *= std::pow(1e15, exponent);
+                        scale = "f";
+                    } else if (_value < std::pow(1e-9, exponent)) {
+                        v *= std::pow(1e12, exponent);
+                        scale = "p";
+                    } else if (_value < std::pow(1e-6, exponent)) {
+                        v *= std::pow(1e9, exponent);
+                        scale = "n";
+                    } else if (_value < std::pow(1e-3, exponent)) {
+                        v *= std::pow(1e6, exponent);
+                        scale = "u";
+                    } else if (_value < std::pow(1e0, exponent)) {
+                        v *= std::pow(1e3, exponent);
+                        scale = "m";
+                    } else if (_value < std::pow(1e3, exponent)) {
+                        //v *= std::pow(1e0, exponent);
+                        scale = "";
+                    } else if (_value < std::pow(1e6, exponent)) {
+                        v *= std::pow(1e-3, exponent);
+                        scale = "K";
+                    } else if (_value < std::pow(1e9, exponent)) {
+                        v *= std::pow(1e-6, exponent);
+                        scale = "M";
+                    } else if (_value < std::pow(1e12, exponent)) {
+                        v *= std::pow(1e-9, exponent);
+                        scale = "G";
+                    } else if (_value < std::pow(1e15, exponent)) {
+                        v *= std::pow(1e-12, exponent);
+                        scale = "T";
+                    }
                 }
             }
+            num = std::format("{:.{}f}", v, precision);
+        } else {
+            num = "0";
         }
 
         constexpr std::array<const char*, sizeof...(Atoms)> units{ Atoms::unitString()... };
+        constexpr std::array<const char*, sizeof...(Atoms)> separators{ Atoms::unitFractionSeparator()... };
         constexpr std::array<int, sizeof...(Atoms)> exponents{ Atoms::exponent... };
 
         std::string allUnits;
         for (size_t i = 0; i < sizeof...(Atoms); ++i) {
-            if constexpr (sizeof...(Atoms) > 1) {
-                allUnits += " ";
+            if (i > 0) {
+                allUnits += separators[i];
             }
             allUnits += units[i];
-            if constexpr (sizeof...(Atoms) != 1 || exponents[0] != 1) {
-                allUnits += "^" + std::to_string(exponents[i]);
+            if (exponents[i] != 1 && exponents[i] != -1 && exponents[i] != 0) {
+                int exp = exponents[i];
+                if (i > 0 && exp < 0) {
+                    exp *= -1;
+                }
+                allUnits += "^" + std::to_string(exp);
             }
         }
 
@@ -500,106 +539,100 @@ std::ostream& operator<<(std::ostream& stream, Unit<Ts...> u) {
 // Shorthand types for writing each UnitType in a UnitAtom to make compound units
 
 template <int Exponent = 1>
-using TimeAtom = UnitAtom<UnitType::Time, Exponent>;
-template <int Exponent = 1>
-using SecondAtom = TimeAtom<Exponent>;
+using SecondAtom = UnitAtom<UnitType::Second, Exponent>;
 
 template <int Exponent = 1>
-using DistanceAtom = UnitAtom<UnitType::Distance, Exponent>;
-template <int Exponent = 1>
-using MeterAtom = DistanceAtom<Exponent>;
+using MeterAtom = UnitAtom<UnitType::Meter, Exponent>;
 
 template <int Exponent = 1>
 using FeatureAtom = UnitAtom<UnitType::Feature, Exponent>;
 
 template <int Exponent = 1>
-using VoltageAtom = UnitAtom<UnitType::Voltage, Exponent>;
-template <int Exponent = 1>
-using VoltAtom = VoltageAtom<Exponent>;
+using VoltAtom = UnitAtom<UnitType::Volt, Exponent>;
 
 template <int Exponent = 1>
-using ResistanceAtom = UnitAtom<UnitType::Resistance, Exponent>;
-template <int Exponent = 1>
-using OhmAtom = ResistanceAtom<Exponent>;
+using OhmAtom = UnitAtom<UnitType::Ohm, Exponent>;
 
 template <int Exponent = 1>
-using CapacitanceAtom = UnitAtom<UnitType::Capacitance, Exponent>;
-template <int Exponent = 1>
-using FaradAtom = CapacitanceAtom<Exponent>;
+using FaradAtom = UnitAtom<UnitType::Farad, Exponent>;
 
 template <int Exponent = 1>
-using CurrentAtom = UnitAtom<UnitType::Current, Exponent>;
-template <int Exponent = 1>
-using AmpereAtom = CurrentAtom<Exponent>;
+using AmpereAtom = UnitAtom<UnitType::Ampere, Exponent>;
 
 template <int Exponent = 1>
-using ConductanceAtom = UnitAtom<UnitType::Conductance, Exponent>;
-template <int Exponent = 1>
-using SiemensAtom = ConductanceAtom<Exponent>;
+using SiemensAtom = UnitAtom<UnitType::Siemens, Exponent>;
 
 template <int Exponent = 1>
-using EnergyAtom = UnitAtom<UnitType::Energy, Exponent>;
-template <int Exponent = 1>
-using JouleAtom = EnergyAtom<Exponent>;
+using JouleAtom = UnitAtom<UnitType::Joule, Exponent>;
 
 template <int Exponent = 1>
-using PowerAtom = UnitAtom<UnitType::Power, Exponent>;
-template <int Exponent = 1>
-using WattAtom = PowerAtom<Exponent>;
+using WattAtom = UnitAtom<UnitType::Watt, Exponent>;
 
 template <int Exponent = 1>
-using TemperatureAtom = UnitAtom<UnitType::Temperature, Exponent>;
+using DegreeCAtom = UnitAtom<UnitType::DegreeC, Exponent>;
+
 template <int Exponent = 1>
-using CelsiusAtom = TemperatureAtom<Exponent>;
+using BitsAtom = UnitAtom<UnitType::Bits, Exponent>;
+
+template <int Exponent = 1>
+using BytesAtom = UnitAtom<UnitType::Bytes, Exponent>;
 
 //==================================================
 // Shorthand types for common units to use instead of writing out Unit<...>
 
 using Number = Unit<>::UnitValueType;
 
-using Second = Unit<TimeAtom<>>;
+using Second = Unit<SecondAtom<>>;
 template <int Exponent>
-using SecondExp = Unit<TimeAtom<Exponent>>;
+using SecondExp = Unit<SecondAtom<Exponent>>;
 
-using Meter = Unit<DistanceAtom<>>;
+using Meter = Unit<MeterAtom<>>;
 template <int Exponent>
-using MeterExp = Unit<DistanceAtom<Exponent>>;
+using MeterExp = Unit<MeterAtom<Exponent>>;
 
 using Feature = Unit<FeatureAtom<>>;
 template <int Exponent>
 using FeatureExp = Unit<FeatureAtom<Exponent>>;
 
-using Volt = Unit<VoltageAtom<>>;
+using Volt = Unit<VoltAtom<>>;
 template <int Exponent>
-using VoltExp = Unit<VoltageAtom<Exponent>>;
+using VoltExp = Unit<VoltAtom<Exponent>>;
 
-using Ohm = Unit<ResistanceAtom<>>;
+using Ohm = Unit<OhmAtom<>>;
 template <int Exponent>
-using OhmExp = Unit<ResistanceAtom<Exponent>>;
+using OhmExp = Unit<OhmAtom<Exponent>>;
 
-using Farad = Unit<CapacitanceAtom<>>;
+using Farad = Unit<FaradAtom<>>;
 template <int Exponent>
-using FaradExp = Unit<CapacitanceAtom<Exponent>>;
+using FaradExp = Unit<FaradAtom<Exponent>>;
 
-using Ampere = Unit<CurrentAtom<>>;
+using Ampere = Unit<AmpereAtom<>>;
 template <int Exponent>
-using AmpereExp = Unit<CurrentAtom<Exponent>>;
+using AmpereExp = Unit<AmpereAtom<Exponent>>;
 
-using Siemens = Unit<ConductanceAtom<>>;
+using Siemens = Unit<SiemensAtom<>>;
 template <int Exponent>
-using SiemensExp = Unit<ConductanceAtom<Exponent>>;
+using SiemensExp = Unit<SiemensAtom<Exponent>>;
 
-using Joule = Unit<EnergyAtom<>>;
+using Joule = Unit<JouleAtom<>>;
 template <int Exponent>
-using JouleExp = Unit<EnergyAtom<Exponent>>;
+using JouleExp = Unit<JouleAtom<Exponent>>;
 
-using Watt = Unit<PowerAtom<>>;
+using Watt = Unit<WattAtom<>>;
 template <int Exponent>
-using WattExp = Unit<PowerAtom<Exponent>>;
+using WattExp = Unit<WattAtom<Exponent>>;
 
-using Celsius = Unit<TemperatureAtom<>>;
+using DegreeC = Unit<DegreeCAtom<>>;
 template <int Exponent>
-using CelsiusExp = Unit<TemperatureAtom<Exponent>>;
+using DegreeCExp = Unit<DegreeCAtom<Exponent>>;
+
+using Bits = Unit<BitsAtom<>>;
+template <int Exponent>
+using BitsExp = Unit<BitsAtom<Exponent>>;
+
+using Bytes = Unit<BytesAtom<>>;
+template <int Exponent>
+using BytesExp = Unit<BytesAtom<Exponent>>;
 
 //==================================================
 // Conversion rules for units to allow basic physical equivalencies to exist in Unit operations
@@ -635,6 +668,23 @@ template <int Exponent> struct UnitConversion<Unit<Atom2<Exponent>, Atom1<Expone
     using type = Unit<>; \
 }; \
 
+// For f(Atom1) = Atom2 relationships
+// Unit<Atom1<E>> -> Unit<Atom2<-E>>
+// Unit<Atom1<E>, Atom2<-E>> -> Unit<>
+#define UnitConversionSimilarAtoms(Atom1, Atom2, f) \
+template <int Exponent> struct UnitConversion<Unit<Atom1<Exponent>>> { \
+    using type = Unit<Atom2<Exponent>>; \
+    static Unit<>::UnitValueType convert(Unit<>::UnitValueType value) { \
+        return f(value); \
+    } \
+}; \
+template <int Exponent> struct UnitConversion<Unit<Atom1<Exponent>, Atom2<-Exponent>>> { \
+    using type = Unit<>; \
+    static Unit<>::UnitValueType convert(Unit<>::UnitValueType value) { \
+        return f(value); \
+    } \
+}; \
+
 // For Atom1 * Atom2 = ResultAtom relationships
 // Unit<Atom1<E>, Atom2<E>> -> Unit<ResultAtom<E>>
 // Unit<Atom2<E>, Atom1<E>> -> Unit<ResultAtom<E>>
@@ -646,13 +696,30 @@ template <int Exponent> struct UnitConversion<Unit<Atom2<Exponent>, Atom1<Expone
     using type = Unit<ResultAtom<Exponent>>; \
 };
 
-UnitConversionReciprocalAtoms(ResistanceAtom, ConductanceAtom)
+// For Atom1 * Atom2 = ResultAtom relationships with differing exponents
+// Unit<Atom1<E1>, Atom2<E2>> -> Unit<ResultAtom<ER>>
+// Unit<Atom2<E2>, Atom1<E1>> -> Unit<ResultAtom<ER>>
+#define UnitConversion2AtomsExponents(Atom1, E1, Atom2, E2, ResultAtom, ER) \
+template <> struct UnitConversion<Unit<Atom1<E1>, Atom2<E2>>> { \
+    using type = Unit<ResultAtom<ER>>; \
+}; \
+template <> struct UnitConversion<Unit<Atom2<E2>, Atom1<E1>>> { \
+    using type = Unit<ResultAtom<ER>>; \
+};
 
-UnitConversion2Atoms(ResistanceAtom, CapacitanceAtom, TimeAtom)
-UnitConversion2Atoms(CurrentAtom, ResistanceAtom, VoltageAtom)
+UnitConversionReciprocalAtoms(OhmAtom, SiemensAtom)
 
-#undef UnitConversionReciprocalAtoms
+UnitConversion2Atoms(OhmAtom, FaradAtom, SecondAtom)
+UnitConversion2Atoms(AmpereAtom, OhmAtom, VoltAtom)
+UnitConversion2AtomsExponents(FaradAtom, 1, VoltAtom, 2, JouleAtom, 1)
+
+UnitConversionSimilarAtoms(BitsAtom, BytesAtom, [](auto bits) { return bits / 8; })
+UnitConversionSimilarAtoms(BytesAtom, BitsAtom, [](auto bytes) { return bytes * 8; })
+
+#undef UnitConversion2AtomsExponents
 #undef UnitConversion2Atoms
+#undef UnitConversionSimilarAtoms
+#undef UnitConversionReciprocalAtoms
 
 //==================================================
 // Literal value definitions for easy ways to write out constant unit values
@@ -707,8 +774,20 @@ UnitConversion2Atoms(CurrentAtom, ResistanceAtom, VoltageAtom)
 //   _mW
 //   _uW
 //   _nW
-// Celsius:
+// DegreeCs:
 //   _degC
+// Bits:
+//   _b
+//   _Kb
+//   _Mb
+//   _Gb
+//   _Tb
+// Bytes:
+//   _B
+//   _KB
+//   _MB
+//   _GB
+//   _TB
 
 constexpr Second operator""_s(long double value) noexcept {
     return Second(value);
@@ -960,11 +1039,73 @@ constexpr Watt operator""_nW(unsigned long long int value) noexcept {
     return Watt(value * 1e-9);
 }
 
-constexpr Celsius operator""_degC(long double value) noexcept {
-    return Celsius(value);
+constexpr DegreeC operator""_degC(long double value) noexcept {
+    return DegreeC(value);
 }
-constexpr Celsius operator""_degC(unsigned long long int value) noexcept {
-    return Celsius(value);
+constexpr DegreeC operator""_degC(unsigned long long int value) noexcept {
+    return DegreeC(value);
+}
+
+constexpr Bits operator""_b(long double value) noexcept {
+    return Bits(value);
+}
+constexpr Bits operator""_b(unsigned long long int value) noexcept {
+    return Bits(value);
+}
+constexpr Bits operator""_Kb(long double value) noexcept {
+    return Bits(value * 1e3);
+}
+constexpr Bits operator""_Kb(unsigned long long int value) noexcept {
+    return Bits(value * 1e3);
+}
+constexpr Bits operator""_Mb(long double value) noexcept {
+    return Bits(value * 1e6);
+}
+constexpr Bits operator""_Mb(unsigned long long int value) noexcept {
+    return Bits(value * 1e6);
+}
+constexpr Bits operator""_Gb(long double value) noexcept {
+    return Bits(value * 1e9);
+}
+constexpr Bits operator""_Gb(unsigned long long int value) noexcept {
+    return Bits(value * 1e9);
+}
+constexpr Bits operator""_Tb(long double value) noexcept {
+    return Bits(value * 1e12);
+}
+constexpr Bits operator""_Tb(unsigned long long int value) noexcept {
+    return Bits(value * 1e12);
+}
+
+constexpr Bytes operator""_B(long double value) noexcept {
+    return Bytes(value);
+}
+constexpr Bytes operator""_B(unsigned long long int value) noexcept {
+    return Bytes(value);
+}
+constexpr Bytes operator""_KB(long double value) noexcept {
+    return Bytes(value * 1e3);
+}
+constexpr Bytes operator""_KB(unsigned long long int value) noexcept {
+    return Bytes(value * 1e3);
+}
+constexpr Bytes operator""_MB(long double value) noexcept {
+    return Bytes(value * 1e6);
+}
+constexpr Bytes operator""_MB(unsigned long long int value) noexcept {
+    return Bytes(value * 1e6);
+}
+constexpr Bytes operator""_GB(long double value) noexcept {
+    return Bytes(value * 1e9);
+}
+constexpr Bytes operator""_GB(unsigned long long int value) noexcept {
+    return Bytes(value * 1e9);
+}
+constexpr Bytes operator""_TB(long double value) noexcept {
+    return Bytes(value * 1e12);
+}
+constexpr Bytes operator""_TB(unsigned long long int value) noexcept {
+    return Bytes(value * 1e12);
 }
 
 } // namespace mse::unit
