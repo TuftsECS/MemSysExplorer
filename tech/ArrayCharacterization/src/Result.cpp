@@ -40,6 +40,7 @@
 #include "formula.hpp"
 #include "macros.hpp"
 #include "enumInfo.hpp"
+#include "unit.hpp"
 
 #include "yaml-cpp/yaml.h"
 
@@ -129,6 +130,8 @@ void Result::compareAndUpdate(Result& newResult) {
 }
 
 void Result::print() {
+    using namespace mse::unit;
+
 	std::cout << "\n=============\n"
               << "CONFIGURATION\n"
               << "=============\n";
@@ -170,289 +173,291 @@ void Result::print() {
 
 	std::cout << "Area:\n";
 
-	std::cout << " - Total Area = " << TO_METER(bank->height) << " x " << TO_METER(bank->width)
-			<< " = " << TO_SQM(bank->area) << "\n";
-	std::cout << " |--- Mat Area      = " << TO_METER(bank->mat.height) << " x " << TO_METER(bank->mat.width)
-			<< " = " << TO_SQM(bank->mat.area) << "   (" << gCell.area * gTech.featureSize * gTech.featureSize
+	std::cout << " - Total Area = " << Meter(bank->height) << " x " << Meter(bank->width)
+			<< " = " << MeterExp<2>(bank->area) << "\n";
+	std::cout << " |--- Mat Area      = " << Meter(bank->mat.height) << " x " << Meter(bank->mat.width)
+			<< " = " << MeterExp<2>(bank->mat.area) << "   (" << gCell.area * gTech.featureSize * gTech.featureSize
 			* bank->capacity / bank->numRowMat / bank->numColumnMat / bank->mat.area * 100 << "%)\n";
-	std::cout << " |--- Subarray Area = " << TO_METER(bank->mat.subarray.height) << " x "
-			<< TO_METER(bank->mat.subarray.width) << " = " << TO_SQM(bank->mat.subarray.area) << "   ("
+	std::cout << " |--- Subarray Area = " << Meter(bank->mat.subarray.height) << " x "
+			<< Meter(bank->mat.subarray.width) << " = " << MeterExp<2>(bank->mat.subarray.area) << "   ("
 			<< gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / bank->numRowMat
 			/ bank->numColumnMat / bank->numRowSubarray / bank->numColumnSubarray
 			/ bank->mat.subarray.area * 100 << "%)\n";
 	//Qing: subarray buffer area
-	std::cout << " |--- Subarray Buffer Area = " << TO_METER(bank->mat.subarray.subarrayBuffer.height) << " x "
-			<< TO_METER(bank->mat.subarray.subarrayBuffer.width) << " = " << TO_SQM(bank->mat.subarray.subarrayBuffer.area) << "\n";
+	std::cout << " |--- Subarray Buffer Area = " << Meter(bank->mat.subarray.subarrayBuffer.height) << " x "
+			<< Meter(bank->mat.subarray.subarrayBuffer.width) << " = " << MeterExp<2>(bank->mat.subarray.subarrayBuffer.area) << "\n";
 	//Qing.
 	std::cout << " - Area Efficiency = " << gCell.area * gTech.featureSize * gTech.featureSize
 			* bank->capacity / bank->area * 100 << "%\n";
 
 	std::cout << "Timing:\n";
 
-	std::cout << " -  Read Latency = " << TO_SECOND(bank->readLatency) << "\n";
+	std::cout << " -  Read Latency = " << Second(bank->readLatency) << "\n";
 	if (gInputParameter.routingMode == h_tree)
-		std::cout << " |--- H-Tree Latency = " << TO_SECOND(bank->readLatency - bank->mat.readLatency) << "\n";
+		std::cout << " |--- H-Tree Latency = " << Second(bank->readLatency - bank->mat.readLatency) << "\n";
 	else
-		std::cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->readLatency - bank->mat.readLatency) << "\n";
-	std::cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.readLatency) << "\n";
-	std::cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << "\n";
-	std::cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.readLatency) << "\n";
-	std::cout << "       |--- Row Decoder Latency = " << TO_SECOND(bank->mat.subarray.rowDecoder.readLatency) << "\n";
+		std::cout << " |--- Non-H-Tree Latency = " << Second(bank->readLatency - bank->mat.readLatency) << "\n";
+	std::cout << " |--- Mat Latency    = " << Second(bank->mat.readLatency) << "\n";
+	std::cout << "    |--- Predecoder Latency = " << Second(bank->mat.predecoderLatency) << "\n";
+	std::cout << "    |--- Subarray Latency   = " << Second(bank->mat.subarray.readLatency) << "\n";
+	std::cout << "       |--- Row Decoder Latency = " << Second(bank->mat.subarray.rowDecoder.readLatency) << "\n";
 	if (gCell.memCellType != eDRAM3T333 && gCell.memCellType != eDRAM3T)
-		std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelay) << "\n";
+		std::cout << "       |--- Bitline Latency     = " << Second(bank->mat.subarray.bitlineDelay) << "\n";
 	else
-		std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelayR) << "\n";
+		std::cout << "       |--- Bitline Latency     = " << Second(bank->mat.subarray.bitlineDelayR) << "\n";
 	if (gInputParameter.internalSensing)
-		std::cout << "       |--- Senseamp Latency    = " << TO_SECOND(bank->mat.subarray.senseAmp.readLatency) << "\n";
-	std::cout << "       |--- Mux Latency         = " << TO_SECOND(bank->mat.subarray.bitlineMux.readLatency
+		std::cout << "       |--- Senseamp Latency    = " << Second(bank->mat.subarray.senseAmp.readLatency) << "\n";
+	std::cout << "       |--- Mux Latency         = " << Second(bank->mat.subarray.bitlineMux.readLatency
 													+ bank->mat.subarray.senseAmpMuxLev1.readLatency
 													+ bank->mat.subarray.senseAmpMuxLev2.readLatency) << "\n";
-	std::cout << "       |--- Precharge Latency   = " << TO_SECOND(bank->mat.subarray.precharger.readLatency) << "\n";
+	std::cout << "       |--- Precharge Latency   = " << Second(bank->mat.subarray.precharger.readLatency) << "\n";
 	if (bank->mat.memoryType == tag && bank->mat.internalSenseAmp)
-		std::cout << "    |--- Comparator Latency  = " << TO_SECOND(bank->mat.comparator.readLatency) << "\n";
+		std::cout << "    |--- Comparator Latency  = " << Second(bank->mat.comparator.readLatency) << "\n";
 
 	if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM ||
 			(gCell.memCellType == memristor && (gCell.accessType == CMOS_access || gCell.accessType == BJT_access))) {
-		std::cout << " - RESET Latency = " << TO_SECOND(bank->resetLatency) << "\n";
+		std::cout << " - RESET Latency = " << Second(bank->resetLatency) << "\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Latency = " << TO_SECOND(bank->resetLatency - bank->mat.resetLatency) << "\n";
+			std::cout << " |--- H-Tree Latency = " << Second(bank->resetLatency - bank->mat.resetLatency) << "\n";
 		else
-			std::cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->resetLatency - bank->mat.resetLatency) << "\n";
-		std::cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.resetLatency) << "\n";
-		std::cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << "\n";
-		std::cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.resetLatency) << "\n";
-		std::cout << "       |--- RESET Pulse Duration = " << TO_SECOND(gCell.resetPulse) << "\n";
-		std::cout << "       |--- Row Decoder Latency  = " << TO_SECOND(bank->mat.subarray.rowDecoder.writeLatency) << "\n";
-		std::cout << "       |--- Charge Latency   = " << TO_SECOND(bank->mat.subarray.chargeLatency) << "\n";
-		std::cout << " - SET Latency   = " << TO_SECOND(bank->setLatency) << "\n";
+			std::cout << " |--- Non-H-Tree Latency = " << Second(bank->resetLatency - bank->mat.resetLatency) << "\n";
+		std::cout << " |--- Mat Latency    = " << Second(bank->mat.resetLatency) << "\n";
+		std::cout << "    |--- Predecoder Latency = " << Second(bank->mat.predecoderLatency) << "\n";
+		std::cout << "    |--- Subarray Latency   = " << Second(bank->mat.subarray.resetLatency) << "\n";
+		std::cout << "       |--- RESET Pulse Duration = " << Second(gCell.resetPulse) << "\n";
+		std::cout << "       |--- Row Decoder Latency  = " << Second(bank->mat.subarray.rowDecoder.writeLatency) << "\n";
+		std::cout << "       |--- Charge Latency   = " << Second(bank->mat.subarray.chargeLatency) << "\n";
+		std::cout << " - SET Latency   = " << Second(bank->setLatency) << "\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Latency = " << TO_SECOND(bank->setLatency - bank->mat.setLatency) << "\n";
+			std::cout << " |--- H-Tree Latency = " << Second(bank->setLatency - bank->mat.setLatency) << "\n";
 		else
-			std::cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->setLatency - bank->mat.setLatency) << "\n";
-		std::cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.setLatency) << "\n";
-		std::cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << "\n";
-		std::cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.setLatency) << "\n";
-		std::cout << "       |--- SET Pulse Duration   = " << TO_SECOND(gCell.setPulse) << "\n";
-		std::cout << "       |--- Row Decoder Latency  = " << TO_SECOND(bank->mat.subarray.rowDecoder.writeLatency) << "\n";
-		std::cout << "       |--- Charger Latency      = " << TO_SECOND(bank->mat.subarray.chargeLatency) << "\n";
+			std::cout << " |--- Non-H-Tree Latency = " << Second(bank->setLatency - bank->mat.setLatency) << "\n";
+		std::cout << " |--- Mat Latency    = " << Second(bank->mat.setLatency) << "\n";
+		std::cout << "    |--- Predecoder Latency = " << Second(bank->mat.predecoderLatency) << "\n";
+		std::cout << "    |--- Subarray Latency   = " << Second(bank->mat.subarray.setLatency) << "\n";
+		std::cout << "       |--- SET Pulse Duration   = " << Second(gCell.setPulse) << "\n";
+		std::cout << "       |--- Row Decoder Latency  = " << Second(bank->mat.subarray.rowDecoder.writeLatency) << "\n";
+		std::cout << "       |--- Charger Latency      = " << Second(bank->mat.subarray.chargeLatency) << "\n";
 	} else if (gCell.memCellType == SLCNAND) {
-		std::cout << " - Erase Latency = " << TO_SECOND(bank->resetLatency) << "\n";
+		std::cout << " - Erase Latency = " << Second(bank->resetLatency) << "\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Latency = " << TO_SECOND(bank->resetLatency - bank->mat.resetLatency) << "\n";
+			std::cout << " |--- H-Tree Latency = " << Second(bank->resetLatency - bank->mat.resetLatency) << "\n";
 		else
-			std::cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->resetLatency - bank->mat.resetLatency) << "\n";
-		std::cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.resetLatency) << "\n";
-		std::cout << " - Programming Latency   = " << TO_SECOND(bank->setLatency) << "\n";
+			std::cout << " |--- Non-H-Tree Latency = " << Second(bank->resetLatency - bank->mat.resetLatency) << "\n";
+		std::cout << " |--- Mat Latency    = " << Second(bank->mat.resetLatency) << "\n";
+		std::cout << " - Programming Latency   = " << Second(bank->setLatency) << "\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Latency = " << TO_SECOND(bank->setLatency - bank->mat.setLatency) << "\n";
+			std::cout << " |--- H-Tree Latency = " << Second(bank->setLatency - bank->mat.setLatency) << "\n";
 		else
-			std::cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->setLatency - bank->mat.setLatency) << "\n";
-		std::cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.setLatency) << "\n";
+			std::cout << " |--- Non-H-Tree Latency = " << Second(bank->setLatency - bank->mat.setLatency) << "\n";
+		std::cout << " |--- Mat Latency    = " << Second(bank->mat.setLatency) << "\n";
 	} else {
-		std::cout << " - Write Latency = " << TO_SECOND(bank->writeLatency) << "\n";
+		std::cout << " - Write Latency = " << Second(bank->writeLatency) << "\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Latency = " << TO_SECOND(bank->writeLatency - bank->mat.writeLatency) << "\n";
+			std::cout << " |--- H-Tree Latency = " << Second(bank->writeLatency - bank->mat.writeLatency) << "\n";
 		else
-			std::cout << " |--- Non-H-Tree Latency = " << TO_SECOND(bank->writeLatency - bank->mat.writeLatency) << "\n";
-		std::cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.writeLatency) << "\n";
-		std::cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << "\n";
-		std::cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.writeLatency) << "\n";
+			std::cout << " |--- Non-H-Tree Latency = " << Second(bank->writeLatency - bank->mat.writeLatency) << "\n";
+		std::cout << " |--- Mat Latency    = " << Second(bank->mat.writeLatency) << "\n";
+		std::cout << "    |--- Predecoder Latency = " << Second(bank->mat.predecoderLatency) << "\n";
+		std::cout << "    |--- Subarray Latency   = " << Second(bank->mat.subarray.writeLatency) << "\n";
 		if (gCell.memCellType == MRAM)
-			std::cout << "       |--- Write Pulse Duration = " << TO_SECOND(gCell.resetPulse) << "\n";	// MRAM reset/set is equal
-		std::cout << "       |--- Row Decoder Latency = " << TO_SECOND(bank->mat.subarray.rowDecoder.writeLatency) << "\n";
-		std::cout << "       |--- Charge Latency      = " << TO_SECOND(bank->mat.subarray.chargeLatency) << "\n";
+			std::cout << "       |--- Write Pulse Duration = " << Second(gCell.resetPulse) << "\n";	// MRAM reset/set is equal
+		std::cout << "       |--- Row Decoder Latency = " << Second(bank->mat.subarray.rowDecoder.writeLatency) << "\n";
+		std::cout << "       |--- Charge Latency      = " << Second(bank->mat.subarray.chargeLatency) << "\n";
 		if (gCell.memCellType != eDRAM3T333 && gCell.memCellType != eDRAM3T)
-			std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelay) << "\n";
+			std::cout << "       |--- Bitline Latency     = " << Second(bank->mat.subarray.bitlineDelay) << "\n";
 		else
-			std::cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelayW) << "\n";
+			std::cout << "       |--- Bitline Latency     = " << Second(bank->mat.subarray.bitlineDelayW) << "\n";
 		}
 
 	//Qing: subarray buffer latency
-	std::cout << "- Subarray Buf R/W Latency  = " << TO_SECOND(bank->mat.subarray.subarrayBuffer.readLatency) << "\n";
-	std::cout << "- Subarray Buf XOR Latency  = " << TO_SECOND(bank->mat.subarray.subarrayBuffer.xorLatency) << "\n";
+	std::cout << "- Subarray Buf R/W Latency  = " << Second(bank->mat.subarray.subarrayBuffer.readLatency) << "\n";
+	std::cout << "- Subarray Buf XOR Latency  = " << Second(bank->mat.subarray.subarrayBuffer.xorLatency) << "\n";
 	//Qing.
     //bank->mat.subarray.PrintProperty();	
-	double readBandwidth = (double)bank->blockSize /
+	Unit<BytesAtom<>, SecondAtom<-1>> readBandwidth((double)bank->blockSize /
 			(bank->mat.subarray.readLatency - bank->mat.subarray.rowDecoder.readLatency
-			+ bank->mat.subarray.precharger.readLatency) / 8;
+			+ bank->mat.subarray.precharger.readLatency) / 8);
 	if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
             readBandwidth *= log2(gCell.nLvl);
         }
-        std::cout << " - Read Bandwidth  = " << TO_BPS(readBandwidth) << "\n";
+        std::cout << " - Read Bandwidth  = " << readBandwidth << "\n";
 
-	double writeBandwidth = (double)bank->blockSize /
-			(bank->mat.subarray.writeLatency) / 8;
-	std::cout << " - Write Bandwidth = " << TO_BPS(writeBandwidth) << "\n";
+	Unit<BytesAtom<>, SecondAtom<-1>> writeBandwidth((double)bank->blockSize /
+			(bank->mat.subarray.writeLatency) / 8);
+	std::cout << " - Write Bandwidth = " << writeBandwidth << "\n";
 
 	std::cout << "Power:\n";
 
-	std::cout << " -  Read Dynamic Energy = " << TO_JOULE(bank->readDynamicEnergy) << "\n";
+	std::cout << " -  Read Dynamic Energy = " << Joule(bank->readDynamicEnergy) << "\n";
 	if (gInputParameter.routingMode == h_tree)
-		std::cout << " |--- H-Tree Read Dynamic Energy = " << TO_JOULE(bank->readDynamicEnergy - bank->mat.readDynamicEnergy
+		std::cout << " |--- H-Tree Read Dynamic Energy = " << Joule(bank->readDynamicEnergy - bank->mat.readDynamicEnergy
 													* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 													<< "\n";
 	else
-		std::cout << " |--- Non-H-Tree Read Dynamic Energy = " << TO_JOULE(bank->readDynamicEnergy - bank->mat.readDynamicEnergy
+		std::cout << " |--- Non-H-Tree Read Dynamic Energy = " << Joule(bank->readDynamicEnergy - bank->mat.readDynamicEnergy
 													* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 													<< "\n";
-	std::cout << " |--- Mat Dynamic Energy    = " << TO_JOULE(bank->mat.readDynamicEnergy) << " per mat\n";
-	std::cout << "    |--- Predecoder Dynamic Energy = " << TO_JOULE(bank->mat.readDynamicEnergy - bank->mat.subarray.readDynamicEnergy
+	std::cout << " |--- Mat Dynamic Energy    = " << Joule(bank->mat.readDynamicEnergy) << " per mat\n";
+	std::cout << "    |--- Predecoder Dynamic Energy = " << Joule(bank->mat.readDynamicEnergy - bank->mat.subarray.readDynamicEnergy
 														* bank->numActiveSubarrayPerRow * bank->numActiveSubarrayPerColumn)
 														<< "\n";
-	std::cout << "    |--- Subarray Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.readDynamicEnergy) << " per active subarray\n";
-	std::cout << "       |--- Row Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.rowDecoder.readDynamicEnergy) << "\n";
-	std::cout << "       |--- Mux Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.bitlineMuxDecoder.readDynamicEnergy
+	std::cout << "    |--- Subarray Dynamic Energy   = " << Joule(bank->mat.subarray.readDynamicEnergy) << " per active subarray\n";
+	std::cout << "       |--- Row Decoder Dynamic Energy = " << Joule(bank->mat.subarray.rowDecoder.readDynamicEnergy) << "\n";
+	std::cout << "       |--- Mux Decoder Dynamic Energy = " << Joule(bank->mat.subarray.bitlineMuxDecoder.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev1Decoder.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev2Decoder.readDynamicEnergy) << "\n";
 	if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || gCell.memCellType == MRAM || gCell.memCellType == memristor || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
-		std::cout << "       |--- Bitline & Cell Read Energy = " << TO_JOULE(bank->mat.subarray.cellReadEnergy) << "\n";
+		std::cout << "       |--- Bitline & Cell Read Energy = " << Joule(bank->mat.subarray.cellReadEnergy) << "\n";
 	}
 	if (gInputParameter.internalSensing)
-		std::cout << "       |--- Senseamp Dynamic Energy    = " << TO_JOULE(bank->mat.subarray.senseAmp.readDynamicEnergy) << "\n";
-	std::cout << "       |--- Mux Dynamic Energy         = " << TO_JOULE(bank->mat.subarray.bitlineMux.readDynamicEnergy
+		std::cout << "       |--- Senseamp Dynamic Energy    = " << Joule(bank->mat.subarray.senseAmp.readDynamicEnergy) << "\n";
+	std::cout << "       |--- Mux Dynamic Energy         = " << Joule(bank->mat.subarray.bitlineMux.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev1.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev2.readDynamicEnergy) << "\n";
-	std::cout << "       |--- Precharge Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.precharger.readDynamicEnergy) << "\n";
+	std::cout << "       |--- Precharge Dynamic Energy   = " << Joule(bank->mat.subarray.precharger.readDynamicEnergy) << "\n";
 
 	if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM ||
 			(gCell.memCellType == memristor && (gCell.accessType == CMOS_access || gCell.accessType == BJT_access))) {
-		std::cout << " - RESET Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy) << "\n";
+		std::cout << " - RESET Dynamic Energy = " << Joule(bank->resetDynamicEnergy) << "\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
+			std::cout << " |--- H-Tree Write Dynamic Energy = " << Joule(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
 		else
-			std::cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
+			std::cout << " |--- H-Tree Write Dynamic Energy = " << Joule(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
-		std::cout << " |--- Mat Dynamic Energy    = " << TO_JOULE(bank->mat.resetDynamicEnergy) << " per mat\n";
-		std::cout << "    |--- Predecoder Dynamic Energy = " << TO_JOULE(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
+		std::cout << " |--- Mat Dynamic Energy    = " << Joule(bank->mat.resetDynamicEnergy) << " per mat\n";
+		std::cout << "    |--- Predecoder Dynamic Energy = " << Joule(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
 															* bank->numActiveSubarrayPerRow * bank->numActiveSubarrayPerColumn)
 															<< "\n";
-		std::cout << "    |--- Subarray Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
-		std::cout << "       |--- Row Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
+		std::cout << "    |--- Subarray Dynamic Energy   = " << Joule(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
+		std::cout << "       |--- Row Decoder Dynamic Energy = " << Joule(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
+		std::cout << "       |--- Mux Decoder Dynamic Energy = " << Joule(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1Decoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2Decoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Dynamic Energy         = " << TO_JOULE(bank->mat.subarray.bitlineMux.writeDynamicEnergy
+		std::cout << "       |--- Mux Dynamic Energy         = " << Joule(bank->mat.subarray.bitlineMux.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Cell RESET Dynamic Energy  = " << TO_JOULE(bank->mat.subarray.cellResetEnergy) << "\n";
-		std::cout << " - SET Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy) << "\n";
+		std::cout << "       |--- Cell RESET Dynamic Energy  = " << Joule(bank->mat.subarray.cellResetEnergy) << "\n";
+		std::cout << " - SET Dynamic Energy = " << Joule(bank->setDynamicEnergy) << "\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
+			std::cout << " |--- H-Tree Write Dynamic Energy = " << Joule(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
 		else
-			std::cout << " |--- Non-H-Tree Write Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
+			std::cout << " |--- Non-H-Tree Write Dynamic Energy = " << Joule(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
-		std::cout << " |--- Mat Dynamic Energy    = " << TO_JOULE(bank->mat.setDynamicEnergy) << " per mat\n";
-		std::cout << "    |--- Predecoder Dynamic Energy = " << TO_JOULE(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
+		std::cout << " |--- Mat Dynamic Energy    = " << Joule(bank->mat.setDynamicEnergy) << " per mat\n";
+		std::cout << "    |--- Predecoder Dynamic Energy = " << Joule(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
 															* bank->numActiveSubarrayPerRow * bank->numActiveSubarrayPerColumn)
 															<< "\n";
-		std::cout << "    |--- Subarray Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
-		std::cout << "       |--- Row Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
+		std::cout << "    |--- Subarray Dynamic Energy   = " << Joule(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
+		std::cout << "       |--- Row Decoder Dynamic Energy = " << Joule(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
+		std::cout << "       |--- Mux Decoder Dynamic Energy = " << Joule(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1Decoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2Decoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Dynamic Energy         = " << TO_JOULE(bank->mat.subarray.bitlineMux.writeDynamicEnergy
+		std::cout << "       |--- Mux Dynamic Energy         = " << Joule(bank->mat.subarray.bitlineMux.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Cell SET Dynamic Energy    = " << TO_JOULE(bank->mat.subarray.cellSetEnergy) << "\n";
+		std::cout << "       |--- Cell SET Dynamic Energy    = " << Joule(bank->mat.subarray.cellSetEnergy) << "\n";
 	} else if (gCell.memCellType == SLCNAND) {
-		std::cout << " - Erase Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy) << " per block\n";
+		std::cout << " - Erase Dynamic Energy = " << Joule(bank->resetDynamicEnergy) << " per block\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
+			std::cout << " |--- H-Tree Write Dynamic Energy = " << Joule(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
 		else
-			std::cout << " |--- Non-H-Tree Write Dynamic Energy = " << TO_JOULE(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
+			std::cout << " |--- Non-H-Tree Write Dynamic Energy = " << Joule(bank->resetDynamicEnergy - bank->mat.resetDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
-		std::cout << " |--- Mat Dynamic Energy    = " << TO_JOULE(bank->mat.resetDynamicEnergy) << " per mat\n";
-		std::cout << "    |--- Predecoder Dynamic Energy = " << TO_JOULE(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
+		std::cout << " |--- Mat Dynamic Energy    = " << Joule(bank->mat.resetDynamicEnergy) << " per mat\n";
+		std::cout << "    |--- Predecoder Dynamic Energy = " << Joule(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
 															* bank->numActiveSubarrayPerRow * bank->numActiveSubarrayPerColumn)
 															<< "\n";
-		std::cout << "    |--- Subarray Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
-		std::cout << "       |--- Row Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
+		std::cout << "    |--- Subarray Dynamic Energy   = " << Joule(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
+		std::cout << "       |--- Row Decoder Dynamic Energy = " << Joule(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
+		std::cout << "       |--- Mux Decoder Dynamic Energy = " << Joule(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1Decoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2Decoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Dynamic Energy         = " << TO_JOULE(bank->mat.subarray.bitlineMux.writeDynamicEnergy
+		std::cout << "       |--- Mux Dynamic Energy         = " << Joule(bank->mat.subarray.bitlineMux.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << "\n";
-		std::cout << " - Programming Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy) << " per page\n";
+		std::cout << " - Programming Dynamic Energy = " << Joule(bank->setDynamicEnergy) << " per page\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
+			std::cout << " |--- H-Tree Write Dynamic Energy = " << Joule(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
 		else
-			std::cout << " |--- Non-H-Tree Write Dynamic Energy = " << TO_JOULE(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
+			std::cout << " |--- Non-H-Tree Write Dynamic Energy = " << Joule(bank->setDynamicEnergy - bank->mat.setDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
-		std::cout << " |--- Mat Dynamic Energy    = " << TO_JOULE(bank->mat.setDynamicEnergy) << " per mat\n";
-		std::cout << "    |--- Predecoder Dynamic Energy = " << TO_JOULE(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
+		std::cout << " |--- Mat Dynamic Energy    = " << Joule(bank->mat.setDynamicEnergy) << " per mat\n";
+		std::cout << "    |--- Predecoder Dynamic Energy = " << Joule(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
 															* bank->numActiveSubarrayPerRow * bank->numActiveSubarrayPerColumn)
 															<< "\n";
-		std::cout << "    |--- Subarray Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
-		std::cout << "       |--- Row Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
+		std::cout << "    |--- Subarray Dynamic Energy   = " << Joule(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
+		std::cout << "       |--- Row Decoder Dynamic Energy = " << Joule(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
+		std::cout << "       |--- Mux Decoder Dynamic Energy = " << Joule(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1Decoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2Decoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Dynamic Energy         = " << TO_JOULE(bank->mat.subarray.bitlineMux.writeDynamicEnergy
+		std::cout << "       |--- Mux Dynamic Energy         = " << Joule(bank->mat.subarray.bitlineMux.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << "\n";
 	} else {
-		std::cout << " - Write Dynamic Energy = " << TO_JOULE(bank->writeDynamicEnergy) << "\n";
+		std::cout << " - Write Dynamic Energy = " << Joule(bank->writeDynamicEnergy) << "\n";
 		if (gInputParameter.routingMode == h_tree)
-			std::cout << " |--- H-Tree Write Dynamic Energy = " << TO_JOULE(bank->writeDynamicEnergy - bank->mat.writeDynamicEnergy
+			std::cout << " |--- H-Tree Write Dynamic Energy = " << Joule(bank->writeDynamicEnergy - bank->mat.writeDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
 		else
-			std::cout << " |--- Non-H-Tree Write Dynamic Energy = " << TO_JOULE(bank->writeDynamicEnergy - bank->mat.writeDynamicEnergy
+			std::cout << " |--- Non-H-Tree Write Dynamic Energy = " << Joule(bank->writeDynamicEnergy - bank->mat.writeDynamicEnergy
 														* bank->numActiveMatPerColumn * bank->numActiveMatPerRow)
 														<< "\n";
-		std::cout << " |--- Mat Dynamic Energy    = " << TO_JOULE(bank->mat.writeDynamicEnergy) << " per mat\n";
-		std::cout << "    |--- Predecoder Dynamic Energy = " << TO_JOULE(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
+		std::cout << " |--- Mat Dynamic Energy    = " << Joule(bank->mat.writeDynamicEnergy) << " per mat\n";
+		std::cout << "    |--- Predecoder Dynamic Energy = " << Joule(bank->mat.writeDynamicEnergy - bank->mat.subarray.writeDynamicEnergy
 															* bank->numActiveSubarrayPerRow * bank->numActiveSubarrayPerColumn)
 															<< "\n";
-		std::cout << "    |--- Subarray Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
-		std::cout << "       |--- Row Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
+		std::cout << "    |--- Subarray Dynamic Energy   = " << Joule(bank->mat.subarray.writeDynamicEnergy) << " per active subarray\n";
+		std::cout << "       |--- Row Decoder Dynamic Energy = " << Joule(bank->mat.subarray.rowDecoder.writeDynamicEnergy) << "\n";
+		std::cout << "       |--- Mux Decoder Dynamic Energy = " << Joule(bank->mat.subarray.bitlineMuxDecoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1Decoder.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2Decoder.writeDynamicEnergy) << "\n";
-		std::cout << "       |--- Mux Dynamic Energy         = " << TO_JOULE(bank->mat.subarray.bitlineMux.writeDynamicEnergy
+		std::cout << "       |--- Mux Dynamic Energy         = " << Joule(bank->mat.subarray.bitlineMux.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev1.writeDynamicEnergy
 														+ bank->mat.subarray.senseAmpMuxLev2.writeDynamicEnergy) << "\n";
 		if (gCell.memCellType == MRAM) {
-			std::cout << "       |--- Bitline & Cell Write Energy= " << TO_JOULE(bank->mat.subarray.cellResetEnergy) << "\n";
+			std::cout << "       |--- Bitline & Cell Write Energy= " << Joule(bank->mat.subarray.cellResetEnergy) << "\n";
 		}
 	}
 
 	//Qing: subarray buffer energy
-	std::cout << "- Subarray Buf R/W Energy = " << TO_JOULE(bank->mat.subarray.subarrayBuffer.readDynamicEnergy) << "\n";
-	std::cout << "- Subarray Buf XOR Energy = " << TO_JOULE(bank->mat.subarray.subarrayBuffer.xorDynamicEnergy) << "\n";
+	std::cout << "- Subarray Buf R/W Energy = " << Joule(bank->mat.subarray.subarrayBuffer.readDynamicEnergy) << "\n";
+	std::cout << "- Subarray Buf XOR Energy = " << Joule(bank->mat.subarray.subarrayBuffer.xorDynamicEnergy) << "\n";
 	//Qing.
 
-	std::cout << " - Leakage Power = " << TO_WATT(bank->leakage) << "\n";
+	std::cout << " - Leakage Power = " << Watt(bank->leakage) << "\n";
 	if (gInputParameter.routingMode == h_tree)
-		std::cout << " |--- H-Tree Leakage Power = " << TO_WATT(bank->leakage - bank->mat.leakage
+		std::cout << " |--- H-Tree Leakage Power = " << Watt(bank->leakage - bank->mat.leakage
 													* bank->numColumnMat * bank->numRowMat)
 													<< "\n";
 	else
-		std::cout << " |--- Non-H-Tree Leakage Power = " << TO_WATT(bank->leakage - bank->mat.leakage
+		std::cout << " |--- Non-H-Tree Leakage Power = " << Watt(bank->leakage - bank->mat.leakage
 													* bank->numColumnMat * bank->numRowMat)
 													<< "\n";
-	std::cout << " |--- Mat Leakage Power    = " << TO_WATT(bank->mat.leakage) << " per mat\n";
+	std::cout << " |--- Mat Leakage Power    = " << Watt(bank->mat.leakage) << " per mat\n";
 	if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
 		// David Note: refresh period could be shorter than retention time 
-        std::cout << " - Refresh Power = " << TO_WATT(bank->refreshDynamicEnergy / (gCell.retentionTime)) << "\n";
+        std::cout << " - Refresh Power = " << Watt(bank->refreshDynamicEnergy / (gCell.retentionTime)) << "\n";
     }
 }
 
 
 void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
+    using namespace mse::unit;
+
 	if (bank->memoryType != dataT || tagResult.bank->memoryType != tag) {
 		std::cout << "This is not a valid cache configuration.\n";
 		return;
@@ -527,7 +532,7 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 		std::cout << " |--- Cache Data Array Leakage Power = " << bank->leakage * 1e3 << "mW" << std::endl;
 		std::cout << " |--- Cache Tag Array Leakage Power  = " << tagResult.bank->leakage * 1e3 << "mW" << std::endl;
 		if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
-            std::cout << " - Cache Refresh Power = " << TO_WATT(bank->refreshDynamicEnergy / (gCell.retentionTime)) << " per bank" << std::endl;
+            std::cout << " - Cache Refresh Power = " << Watt(bank->refreshDynamicEnergy / (gCell.retentionTime)) << " per bank" << std::endl;
 			std::cout << " - Cache Retention Time = " << (gCell.retentionTime)*1e9 << "ns" << std::endl;
         }
 		std::cout << std::endl << "CACHE DATA ARRAY";

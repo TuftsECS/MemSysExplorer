@@ -40,6 +40,7 @@
 #include "global.hpp"
 #include "macros.hpp"
 #include "enumInfo.hpp"
+#include "unit.hpp"
 
 #include <math.h>
 
@@ -534,6 +535,8 @@ double MemCell::CalculateReadPower() { /* TO-DO consider charge pumped read volt
 }
 
 void MemCell::PrintCell() {
+    using namespace mse::unit;
+
     std::cout << "Memory Cell: " << memCellType << "\n";
 
 	std::cout << "Cell Area (F^2)    : " << area << " (" << heightInFeatureSize << "Fx" << widthInFeatureSize << "F)\n";
@@ -581,7 +584,7 @@ void MemCell::PrintCell() {
 			std::cout << "Reset Mode: Current\n";
 			std::cout << "  - Reset Current: " << resetCurrent * 1e6 << "uA\n";
 		}
-		std::cout << "  - Reset Pulse: " << TO_SECOND(resetPulse) << "\n";
+		std::cout << "  - Reset Pulse: " << Second(resetPulse) << "\n";
 
 		if (setMode) {
 			std::cout << "Set Mode: Voltage\n";
@@ -590,7 +593,7 @@ void MemCell::PrintCell() {
 			std::cout << "Set Mode: Current\n";
 			std::cout << "  - Set Current: " << setCurrent * 1e6 << "uA\n";
 		}
-		std::cout << "  - Set Pulse: " << TO_SECOND(setPulse) << "\n";
+		std::cout << "  - Set Pulse: " << Second(setPulse) << "\n";
 
         std::cout << "Access Type: " << accessType << "\n";
 	} else if (memCellType == SRAM) {
@@ -624,8 +627,8 @@ void MemCell::PrintCell() {
 		std::cout << "Pass Voltage       : " << flashPassVoltage << "V\n";
 		std::cout << "Programming Voltage: " << flashProgramVoltage << "V\n";
 		std::cout << "Erase Voltage      : " << flashEraseVoltage << "V\n";
-		std::cout << "Programming Time   : " << TO_SECOND(flashProgramTime) << "\n";
-		std::cout << "Erase Time         : " << TO_SECOND(flashEraseTime) << "\n";
+		std::cout << "Programming Time   : " << Second(flashProgramTime) << "\n";
+		std::cout << "Erase Time         : " << Second(flashEraseTime) << "\n";
 		std::cout << "Gate Coupling Ratio: " << gateCouplingRatio << "\n";
 	} 
 	if (memCellType == MLCCTT || memCellType == MLCFeFET || memCellType == MLCRRAM) {
