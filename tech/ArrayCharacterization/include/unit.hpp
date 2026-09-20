@@ -458,42 +458,44 @@ public:
         if (_value != 0) {
             // No unitless scaling, no scaling for negative exponents
             // TODO add negative exponent scaling for non-compound units
-            if constexpr (sizeof...(Atoms) > 0 && AtomAt<Unit, 0>::type::exponent >= 1) {
-                if (scaleUnit) {
-                    constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
-                    if (_value < std::pow(1e-15, exponent)) {
-                        v *= std::pow(1e18, exponent);
-                        scale = "a";
-                    } else if (_value < std::pow(1e-12, exponent)) {
-                        v *= std::pow(1e15, exponent);
-                        scale = "f";
-                    } else if (_value < std::pow(1e-9, exponent)) {
-                        v *= std::pow(1e12, exponent);
-                        scale = "p";
-                    } else if (_value < std::pow(1e-6, exponent)) {
-                        v *= std::pow(1e9, exponent);
-                        scale = "n";
-                    } else if (_value < std::pow(1e-3, exponent)) {
-                        v *= std::pow(1e6, exponent);
-                        scale = "u";
-                    } else if (_value < std::pow(1e0, exponent)) {
-                        v *= std::pow(1e3, exponent);
-                        scale = "m";
-                    } else if (_value < std::pow(1e3, exponent)) {
-                        //v *= std::pow(1e0, exponent);
-                        scale = "";
-                    } else if (_value < std::pow(1e6, exponent)) {
-                        v *= std::pow(1e-3, exponent);
-                        scale = "K";
-                    } else if (_value < std::pow(1e9, exponent)) {
-                        v *= std::pow(1e-6, exponent);
-                        scale = "M";
-                    } else if (_value < std::pow(1e12, exponent)) {
-                        v *= std::pow(1e-9, exponent);
-                        scale = "G";
-                    } else if (_value < std::pow(1e15, exponent)) {
-                        v *= std::pow(1e-12, exponent);
-                        scale = "T";
+            if constexpr (sizeof...(Atoms) > 0) {
+                if constexpr (AtomAt<Unit, 0>::type::exponent >= 1) {
+                    if (scaleUnit) {
+                        constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
+                        if (_value < std::pow(1e-15, exponent)) {
+                            v *= std::pow(1e18, exponent);
+                            scale = "a";
+                        } else if (_value < std::pow(1e-12, exponent)) {
+                            v *= std::pow(1e15, exponent);
+                            scale = "f";
+                        } else if (_value < std::pow(1e-9, exponent)) {
+                            v *= std::pow(1e12, exponent);
+                            scale = "p";
+                        } else if (_value < std::pow(1e-6, exponent)) {
+                            v *= std::pow(1e9, exponent);
+                            scale = "n";
+                        } else if (_value < std::pow(1e-3, exponent)) {
+                            v *= std::pow(1e6, exponent);
+                            scale = "u";
+                        } else if (_value < std::pow(1e0, exponent)) {
+                            v *= std::pow(1e3, exponent);
+                            scale = "m";
+                        } else if (_value < std::pow(1e3, exponent)) {
+                            //v *= std::pow(1e0, exponent);
+                            scale = "";
+                        } else if (_value < std::pow(1e6, exponent)) {
+                            v *= std::pow(1e-3, exponent);
+                            scale = "K";
+                        } else if (_value < std::pow(1e9, exponent)) {
+                            v *= std::pow(1e-6, exponent);
+                            scale = "M";
+                        } else if (_value < std::pow(1e12, exponent)) {
+                            v *= std::pow(1e-9, exponent);
+                            scale = "G";
+                        } else if (_value < std::pow(1e15, exponent)) {
+                            v *= std::pow(1e-12, exponent);
+                            scale = "T";
+                        }
                     }
                 }
             }
@@ -523,15 +525,12 @@ public:
 
         return num + scale + allUnits;
     }
-
-    // Simple operator overload to let units implicitly convert to strings
-    operator std::string() const { return toString(); }
 };
 
 // Custom stream insertion operator to print units naturally
 template<typename... Ts>
 std::ostream& operator<<(std::ostream& stream, Unit<Ts...> u) {
-    stream << u.toString();
+    stream << u.toString(stream.precision());
     return stream;
 }
 

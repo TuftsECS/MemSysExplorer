@@ -66,11 +66,9 @@ mse::CmosTransistor::CmosTransistor(const Technology& tech, unit::Feature gateWi
         Volt vsat = std::min(vdsat, Volt(tech.vdd - tech.vth));
         _transconductance = Siemens((mobility * tech.capOx) / 2 * width.value() / tech.phyGateLength * vsat.value());
 	} else if ((featureSize <= 14_m * 1e-9) && (featureSize >= 3_m * 1e-9)) {
-		width /= 2.0;
-	    _transconductance = Siemens(tech.gm_oncurrent * static_cast<int>(std::ceil(width.value())) * (2.0 * tech.heightFin + tech.widthFin) / tech.PitchFin);
+	    _transconductance = Siemens(tech.gm_oncurrent * static_cast<int>(std::ceil(gateWidth.value() / 2.0)) * (2.0 * tech.heightFin + tech.widthFin) / tech.PitchFin);
 	} else {
-		width /= 2.0;
-	    _transconductance = Siemens(tech.gm_oncurrent * static_cast<int>(std::ceil(width.value())) * tech.effective_width * tech.max_sheet_num / tech.max_fin_per_GAA);
+	    _transconductance = Siemens(tech.gm_oncurrent * static_cast<int>(std::ceil(gateWidth.value() / 2.0)) * tech.effective_width * tech.max_sheet_num / tech.max_fin_per_GAA);
     }
 
     _leakageCurrent = Ampere(gateWidth.toMeters(featureSize).value() * offCurrent[tempIndex]);
