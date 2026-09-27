@@ -1,6 +1,6 @@
 #include "input.hpp"
 
-#include "output.hpp"
+#include "log.hpp"
 #include "unit.hpp"
 
 //==================================================
@@ -9,7 +9,7 @@
 bool mse::YamlInputFile::verifyStrictAccess() const noexcept {
     bool result = strictlyAccessed();
     if (!result) {
-        output(PrintStyle::Warn, "Error parsing YAML file \"", _filePath, "\": strict access check failed, ensure there are no unused fields in the file\n");
+        log::warn("Error parsing YAML file \"{}\": strict access check failed, ensure there are no unused fields in the file", _filePath);
     }
     return result;
 }
@@ -42,7 +42,7 @@ bool mse::YamlInputFile::strictlyAccessed() const {
     for (const auto& kv : _fileRoot) {
         std::string key = kv.first.as<std::string>();
         if (_touchedKeys.find(key) == _touchedKeys.cend()) {
-            output(PrintStyle::Warn, "Key \"", key, "\" not accessed in YAML input file \"", _filePath, "\"\n");
+            log::warn("Key \"{}\" not accessed in YAML input file \"{}\"", key, _filePath);
             return false;
         }
     }

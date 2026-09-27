@@ -20,7 +20,7 @@
 
 #include "unit.hpp"
 #include "enumInfo.hpp"
-#include "output.hpp"
+#include "log.hpp"
 #include "utility.hpp"
 
 #include "yaml-cpp/yaml.h"
@@ -447,11 +447,9 @@ public:
             (touchKey(parameters.key), ...); // Mark key as seen in this input file
             return result;
         } catch (const YAML::Exception& e) {
-            output(PrintStyle::Fatal, "Error parsing YAML file \"", _filePath, "\": ", e.what(), "\n");
-            mse::exit(ExitCode::Failure);
+            log::fatal("Error parsing YAML file \"{}\": {}", _filePath, e.what());
         } catch (const std::exception& e) {
-            output(PrintStyle::Fatal, "Error reading file \"", _filePath, "\": ", e.what(), "\n");
-            mse::exit(ExitCode::Failure);
+            log::fatal("Error reading file \"{}\": {}", _filePath, e.what());
         }
     }
 

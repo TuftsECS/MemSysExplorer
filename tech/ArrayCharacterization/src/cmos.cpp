@@ -1,6 +1,6 @@
 #include "cmos.hpp"
 #include "constants.hpp"
-#include "output.hpp"
+#include "log.hpp"
 #include "utility.hpp"
 #include "Technology.hpp"
 #include "global.hpp"
@@ -19,8 +19,7 @@ static int calcFoldDegree(mse::unit::Feature regionHeight, mse::unit::Feature ma
     if (regionHeight > maxRegionHeight) {
         // Need to fold
         if (maxRegionHeight < 3.0_feat) {
-            mse::output(mse::PrintStyle::Fatal, "Unable to do CMOS folding because CMOS size limitation is less than 3F\n");
-            mse::exit(mse::ExitCode::Failure);
+            mse::log::fatal("Unable to do CMOS folding because CMOS size limitation is less than 3F");
         }
         return static_cast<int>(std::ceil(regionHeight / (maxRegionHeight - 3.0_feat))); // 3F for folding overhead
     }
@@ -55,8 +54,7 @@ mse::CmosTransistor::CmosTransistor(const Technology& tech, unit::Feature gateWi
 
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
-        output(PrintStyle::Fatal, "Temperature is out of range\n");
-        exit(ExitCode::Failure);
+        log::fatal("Temperature is out of range");
     }
 
     _channelResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * gateWidth.toMeters(featureSize).value()));
@@ -165,8 +163,7 @@ mse::CmosGate<Derived, Inputs>::CmosGate(const Technology& tech, unit::Feature u
 
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
-        output(PrintStyle::Fatal, "Temperature is out of range\n");
-        exit(ExitCode::Failure);
+        log::fatal("Temperature is out of range");
     }
 
     _nmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * nmosGateWidth.toMeters(featureSize).value()));
@@ -265,8 +262,7 @@ mse::CmosGate<Derived, 0>::CmosGate(const Technology& tech, int inputs, unit::Fe
 
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
-        output(PrintStyle::Fatal, "Temperature is out of range\n");
-        exit(ExitCode::Failure);
+        log::fatal("Temperature is out of range");
     }
 
     _nmosResistance = Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * nmosGateWidth.toMeters(featureSize).value()));
@@ -283,8 +279,7 @@ mse::CmosInverter::CmosInverter(const Technology& tech, unit::Feature unitNmosGa
         : CmosGate<CmosInverter, 1>(tech, unitNmosGateWidth, unitPmosGateWidth, gateRegionHeight) {
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
-        output(PrintStyle::Fatal, "Temperature is out of range\n");
-        exit(ExitCode::Failure);
+        log::fatal("Temperature is out of range");
     }
     _leakageCurrent = unit::Ampere(std::max(unitNmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffNmos[tempIndex], unitPmosGateWidth.toMeters(unit::Meter(tech.featureSize)).value() * tech.currentOffPmos[tempIndex]));
 }
@@ -296,8 +291,7 @@ mse::CmosNand<Inputs>::CmosNand(const Technology& tech, unit::Feature unitNmosGa
 
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
-        output(PrintStyle::Fatal, "Temperature is out of range\n");
-        exit(ExitCode::Failure);
+        log::fatal("Temperature is out of range");
     }
 
     // OK to use unit PMOS width here instead of scaled one since NAND PMOS doesnt scale
@@ -316,8 +310,7 @@ mse::CmosNand<0>::CmosNand(const Technology& tech, int inputs, unit::Feature uni
 
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
-        output(PrintStyle::Fatal, "Temperature is out of range\n");
-        exit(ExitCode::Failure);
+        log::fatal("Temperature is out of range");
     }
 
     // OK to use unit PMOS width here instead of scaled one since NAND PMOS doesnt scale
@@ -336,8 +329,7 @@ mse::CmosNor<Inputs>::CmosNor(const Technology& tech, unit::Feature unitNmosGate
 
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
-        output(PrintStyle::Fatal, "Temperature is out of range\n");
-        exit(ExitCode::Failure);
+        log::fatal("Temperature is out of range");
     }
 
     // OK to use unit NMOS width here instead of scaled one since NAND PMOS doesnt scale
@@ -355,8 +347,7 @@ mse::CmosNor<0>::CmosNor(const Technology& tech, int inputs, unit::Feature unitN
     assert(inputs == 2 || inputs == 3);
     int tempIndex = gInputParameter.temperature - 300;
     if (tempIndex > 100 || tempIndex < 0) {
-        output(PrintStyle::Fatal, "Temperature is out of range\n");
-        exit(ExitCode::Failure);
+        log::fatal("Temperature is out of range");
     }
 
     // OK to use unit NMOS width here instead of scaled one since NAND PMOS doesnt scale
