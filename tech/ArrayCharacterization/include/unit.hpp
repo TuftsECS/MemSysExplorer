@@ -41,6 +41,7 @@ enum class UnitType {
     Joule,
     Watt,
     DegreeC,
+    Kelvin,
     // "Bits" instead of "Bit" to avoid confusing in syntax
     // ex does Bit b; mean b is the value of a single bit or a unit of a number of bits?
     Bits,
@@ -81,6 +82,8 @@ struct UnitAtom {
             return "W";
         } else if constexpr (type == UnitType::DegreeC) {
             return "degC";
+        } else if constexpr (type == UnitType::Kelvin) {
+            return "K";
         } else if constexpr (type == UnitType::Bits) {
             return "b";
         } else if constexpr (type == UnitType::Bytes) {
@@ -571,6 +574,9 @@ template <int Exponent = 1>
 using DegreeCAtom = UnitAtom<UnitType::DegreeC, Exponent>;
 
 template <int Exponent = 1>
+using KelvinAtom = UnitAtom<UnitType::Kelvin, Exponent>;
+
+template <int Exponent = 1>
 using BitsAtom = UnitAtom<UnitType::Bits, Exponent>;
 
 template <int Exponent = 1>
@@ -624,6 +630,10 @@ using WattExp = Unit<WattAtom<Exponent>>;
 using DegreeC = Unit<DegreeCAtom<>>;
 template <int Exponent>
 using DegreeCExp = Unit<DegreeCAtom<Exponent>>;
+
+using Kelvin = Unit<KelvinAtom<>>;
+template <int Exponent>
+using KelvinExp = Unit<KelvinAtom<Exponent>>;
 
 using Bits = Unit<BitsAtom<>>;
 template <int Exponent>
@@ -715,6 +725,9 @@ UnitConversion2AtomsExponents(FaradAtom, 1, VoltAtom, 2, JouleAtom, 1)
 UnitConversionSimilarAtoms(BitsAtom, BytesAtom, [](auto bits) { return bits / 8; })
 UnitConversionSimilarAtoms(BytesAtom, BitsAtom, [](auto bytes) { return bytes * 8; })
 
+UnitConversionSimilarAtoms(DegreeCAtom, KelvinAtom, [](auto degC) { return degC + 273.15; })
+UnitConversionSimilarAtoms(KelvinAtom, DegreeCAtom, [](auto kelvin) { return kelvin - 273.15; })
+
 #undef UnitConversion2AtomsExponents
 #undef UnitConversion2Atoms
 #undef UnitConversionSimilarAtoms
@@ -775,6 +788,8 @@ UnitConversionSimilarAtoms(BytesAtom, BitsAtom, [](auto bytes) { return bytes * 
 //   _nW
 // DegreeCs:
 //   _degC
+// Kelvins:
+//   _K
 // Bits:
 //   _b
 //   _Kb
@@ -1043,6 +1058,13 @@ constexpr DegreeC operator""_degC(long double value) noexcept {
 }
 constexpr DegreeC operator""_degC(unsigned long long int value) noexcept {
     return DegreeC(value);
+}
+
+constexpr Kelvin operator""_K(long double value) noexcept {
+    return Kelvin(value);
+}
+constexpr Kelvin operator""_K(unsigned long long int value) noexcept {
+    return Kelvin(value);
 }
 
 constexpr Bits operator""_b(long double value) noexcept {
