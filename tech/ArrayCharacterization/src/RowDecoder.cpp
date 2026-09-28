@@ -67,20 +67,20 @@ void RowDecoder::Initialize(int _numRow, double _capLoad, double _resLoad,
 		double logicEffortNand;
 		double capNand;
 		if (numNandInput == 2) {	/* NAND2 */
-			widthNandN = 2 * MIN_NMOS_SIZE * gTech.featureSize;
+			widthNandN = 2 * mse::constant::minNmosSize.value() * gTech.featureSize;
 			logicEffortNand = (2+gTech.pnSizeRatio) / (1+gTech.pnSizeRatio);
 		} else {					/* NAND3 */
-			widthNandN = 3 * MIN_NMOS_SIZE * gTech.featureSize;
+			widthNandN = 3 * mse::constant::minNmosSize.value() * gTech.featureSize;
 			logicEffortNand = (3+gTech.pnSizeRatio) / (1+gTech.pnSizeRatio);
 		}
-		widthNandP = gTech.pnSizeRatio * MIN_NMOS_SIZE * gTech.featureSize;
+		widthNandP = gTech.pnSizeRatio * mse::constant::minNmosSize.value() * gTech.featureSize;
 		capNand = CalculateGateCap(widthNandN, gTech) + CalculateGateCap(widthNandP, gTech);
 		outputDriver.Initialize(logicEffortNand, capNand, capLoad, resLoad, true, areaOptimizationLevel, minDriverCurrent);
 	} else {
 		/* we only need an 1-level output buffer to driver the wordline */
 		double capInv;
-		widthNandN = MIN_NMOS_SIZE * gTech.featureSize;
-		widthNandP = gTech.pnSizeRatio * MIN_NMOS_SIZE * gTech.featureSize;
+		widthNandN = mse::constant::minNmosSize.value() * gTech.featureSize;
+		widthNandP = gTech.pnSizeRatio * mse::constant::minNmosSize.value() * gTech.featureSize;
 		capInv = CalculateGateCap(widthNandN, gTech) + CalculateGateCap(widthNandP, gTech);
 		outputDriver.Initialize(1, capInv, capLoad, resLoad, true, areaOptimizationLevel, minDriverCurrent);
 	}
@@ -103,7 +103,7 @@ void RowDecoder::CalculateArea() {
 			width = outputDriver.width;
 		} else {
 			double hNand, wNand;
-			CalculateGateArea(NAND, numNandInput, widthNandN, widthNandP, gTech.featureSize*40, gTech, &hNand, &wNand);
+			CalculateGateArea(GateType::NAND, numNandInput, widthNandN, widthNandP, gTech.featureSize*40, gTech, &hNand, &wNand);
 			height = std::max(hNand, outputDriver.height);
 			width = wNand + outputDriver.width;
 		}
@@ -120,7 +120,7 @@ void RowDecoder::CalculateRC() {
 		if (numNandInput == 0) {	/* no circuit needed, use predecoder outputs directly */
 			capNandInput = capNandOutput = 0;
 		} else {
-            CalculateGateCapacitance(NAND, numNandInput, widthNandN, widthNandP, gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech, &capNandInput, &capNandOutput);
+            CalculateGateCapacitance(GateType::NAND, numNandInput, widthNandN, widthNandP, gTech.featureSize * mse::constant::maxTransistorHeight.value(), gTech, &capNandInput, &capNandOutput);
 		}
 	}
 }
@@ -143,10 +143,10 @@ void RowDecoder::CalculateLatency(double _rampInput) {
 			double beta;	/* for horowitz calculation */
 			double rampInputForDriver;
 
-			resPullDown = CalculateOnResistance(widthNandN, NMOS, gInputParameter.temperature, gTech) * numNandInput;
+			resPullDown = CalculateOnResistance(widthNandN, CmosType::NMOS, gInputParameter.temperature, gTech) * numNandInput;
 			capLoad = capNandOutput + outputDriver.capInput[0];
 			tr = resPullDown * capLoad;
-			gm = CalculateTransconductance(widthNandN, NMOS, gTech);
+			gm = CalculateTransconductance(widthNandN, CmosType::NMOS, gTech);
 			beta = 1 / (resPullDown * gm);
 			readLatency = horowitz(tr, beta, rampInput, &rampInputForDriver);
 
@@ -168,7 +168,7 @@ void RowDecoder::CalculatePower() {
 			readDynamicEnergy = writeDynamicEnergy = outputDriver.readDynamicEnergy;
 		} else {
 			/* Leakage power */
-			leakage += CalculateGateLeakage(NAND, numNandInput, widthNandN, widthNandP,
+			leakage += CalculateGateLeakage(GateType::NAND, numNandInput, widthNandN, widthNandP,
 					gInputParameter.temperature, gTech) * gTech.vdd;
 			/* Dynamic energy */
 			double capLoad = capNandOutput + outputDriver.capInput[0];

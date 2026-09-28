@@ -55,7 +55,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 	minDriverCurrent = _minDriverCurrent;
 
 	double minNMOSDriverWidth = minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300];
-	minNMOSDriverWidth = std::max(MIN_NMOS_SIZE * gTech.featureSize, minNMOSDriverWidth);
+	minNMOSDriverWidth = std::max(mse::constant::minNmosSize.value() * gTech.featureSize, minNMOSDriverWidth);
 
 	if (minNMOSDriverWidth > gInputParameter.maxNmosSize * gTech.featureSize) {
 		invalid = true;
@@ -66,15 +66,15 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 
 	if (areaOptimizationLevel == latency_first) {
 		double F = std::max(1.0, logicEffort * outputCap / inputCap);	/* Total logic effort */
-		optimalNumStage = std::max(0, (int)(log(F) / log(OPT_F) + 0.5) - 1);
+		optimalNumStage = std::max(0, (int)(log(F) / log(mse::constant::optimalStageEffort) + 0.5) - 1);
 
 		if ((optimalNumStage % 2) ^ inv)	/* If odd, add 1 */
 			optimalNumStage += 1;
 
-		if (optimalNumStage > MAX_INV_CHAIN_LEN) {/* Exceed maximum stages */
-			if (WARNING)
+		if (optimalNumStage > mse::constant::maxInvChainLength) {/* Exceed maximum stages */
+			if (mse::constant::debugWarningsEnabled)
 				std::cout << "[WARNING] Exceed maximum inverter chain length!" << std::endl;
-			optimalNumStage = MAX_INV_CHAIN_LEN;
+			optimalNumStage = mse::constant::maxInvChainLength;
 		}
 
 		numStage = optimalNumStage;
@@ -82,11 +82,11 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 		double f = pow(F, 1.0 / (optimalNumStage + 1));	/* Logic effort per stage */
 		double inputCapLast = outputCap / f;
 
-		widthNMOS[optimalNumStage-1] = std::max(MIN_NMOS_SIZE * gTech.featureSize,
+		widthNMOS[optimalNumStage-1] = std::max(mse::constant::minNmosSize.value() * gTech.featureSize,
 				inputCapLast / CalculateGateCap(1/*meter*/, gTech) / (1.0 + gTech.pnSizeRatio));
 
 		if (widthNMOS[optimalNumStage-1] > gInputParameter.maxNmosSize * gTech.featureSize) {
-			if (WARNING)
+			if (mse::constant::debugWarningsEnabled)
 				std::cout << "[WARNING] Exceed maximum NMOS size!" << std::endl;
 			widthNMOS[optimalNumStage-1] = gInputParameter.maxNmosSize * gTech.featureSize;
 			/* re-Calculate the logic effort */
@@ -103,10 +103,10 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 
 			for (int i = optimalNumStage-2; i >= 0; i--) {
 				widthNMOS[i] = widthNMOS[i+1] / f;
-				if (widthNMOS[i] < MIN_NMOS_SIZE * gTech.featureSize) {
-					if (WARNING)
+				if (widthNMOS[i] < mse::constant::minNmosSize.value() * gTech.featureSize) {
+					if (mse::constant::debugWarningsEnabled)
 						std::cout << "[WARNING] Exceed minimum NMOS size!" << std::endl;
-					widthNMOS[i] = MIN_NMOS_SIZE * gTech.featureSize;
+					widthNMOS[i] = mse::constant::minNmosSize.value() * gTech.featureSize;
 				}
 				widthPMOS[i] = widthNMOS[i] * gTech.pnSizeRatio;
 			}
@@ -116,15 +116,15 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 	if (areaOptimizationLevel == latency_area_trade_off){
 		double newOutputCap = CalculateGateCap(minNMOSDriverWidth, gTech) * (1.0 + gTech.pnSizeRatio);
 		double F = std::max(1.0, logicEffort * newOutputCap / inputCap);	/* Total logic effort */
-		optimalNumStage = std::max(0, (int)(log(F) / log(OPT_F) + 0.5) - 1);
+		optimalNumStage = std::max(0, (int)(log(F) / log(mse::constant::optimalStageEffort) + 0.5) - 1);
 
 		if (!((optimalNumStage % 2) ^ inv))	/* If even, add 1 */
 			optimalNumStage += 1;
 
-		if (optimalNumStage > MAX_INV_CHAIN_LEN) {/* Exceed maximum stages */
-			if (WARNING)
+		if (optimalNumStage > mse::constant::maxInvChainLength) {/* Exceed maximum stages */
+			if (mse::constant::debugWarningsEnabled)
 				std::cout << "[WARNING] Exceed maximum inverter chain length!" << std::endl;
-			optimalNumStage = MAX_INV_CHAIN_LEN;
+			optimalNumStage = mse::constant::maxInvChainLength;
 		}
 
 		numStage = optimalNumStage + 1;
@@ -136,18 +136,18 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 
 		for (int i = optimalNumStage - 1; i >= 0; i--) {
 			widthNMOS[i] = widthNMOS[i+1] / f;
-			if (widthNMOS[i] < MIN_NMOS_SIZE * gTech.featureSize) {
-				if (WARNING)
+			if (widthNMOS[i] < mse::constant::minNmosSize.value() * gTech.featureSize) {
+				if (mse::constant::debugWarningsEnabled)
 					std::cout << "[WARNING] Exceed minimum NMOS size!" << std::endl;
-				widthNMOS[i] = MIN_NMOS_SIZE * gTech.featureSize;
+				widthNMOS[i] = mse::constant::minNmosSize.value() * gTech.featureSize;
 			}
 			widthPMOS[i] = widthNMOS[i] * gTech.pnSizeRatio;
 		}
 	} else if (areaOptimizationLevel == area_first) {
 		optimalNumStage = 1;
 		numStage = 1;
-		widthNMOS[optimalNumStage - 1] = std::max(MIN_NMOS_SIZE * gTech.featureSize, minNMOSDriverWidth);
-		if (widthNMOS[optimalNumStage - 1] > AREA_OPT_CONSTRAIN * gInputParameter.maxNmosSize * gTech.featureSize) {
+		widthNMOS[optimalNumStage - 1] = std::max(mse::constant::minNmosSize.value() * gTech.featureSize, minNMOSDriverWidth);
+		if (widthNMOS[optimalNumStage - 1] > mse::constant::areaOptimizationConstraint * gInputParameter.maxNmosSize * gTech.featureSize) {
 			invalid = true;
 			return;
 		}
@@ -164,13 +164,13 @@ void OutputDriver::CalculateArea() {
 	if (!initialized) {
 		std::cout << "[Output Driver] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		height = width = area = invalid_value;
+		height = width = area = mse::constant::invalidValue;
 	} else {
 		double totalHeight = 0;
 		double totalWidth = 0;
 		double h, w;
 		for (int i = 0; i < numStage; i++) {
-			CalculateGateArea(INV, 1, widthNMOS[i], widthPMOS[i], gTech.featureSize*40, gTech, &h, &w);
+			CalculateGateArea(GateType::INV, 1, widthNMOS[i], widthPMOS[i], gTech.featureSize*40, gTech, &h, &w);
 			totalHeight = std::max(totalHeight, h);
 			totalWidth += w;
 		}
@@ -189,7 +189,7 @@ void OutputDriver::CalculateRC() {
 		capInput[0] = 0;
 	} else {
 		for (int i = 0; i < numStage; i++) {
-			CalculateGateCapacitance(INV, 1, widthNMOS[i], widthPMOS[i], gTech.featureSize * MAX_TRANSISTOR_HEIGHT, gTech, &(capInput[i]), &(capOutput[i]));
+			CalculateGateCapacitance(GateType::INV, 1, widthNMOS[i], widthPMOS[i], gTech.featureSize * mse::constant::maxTransistorHeight.value(), gTech, &(capInput[i]), &(capOutput[i]));
 		}
 	}
 }
@@ -198,7 +198,7 @@ void OutputDriver::CalculateLatency(double _rampInput) {
 	if (!initialized) {
 		std::cout << "[Output Driver] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		readLatency = writeLatency = invalid_value;
+		readLatency = writeLatency = mse::constant::invalidValue;
 	} else {
 		rampInput = _rampInput;
 		double resPullDown;
@@ -209,19 +209,19 @@ void OutputDriver::CalculateLatency(double _rampInput) {
 		double temp;
 		readLatency = 0;
 		for (int i = 0; i < numStage - 1; i++) {
-			resPullDown = CalculateOnResistance(widthNMOS[i], NMOS, gInputParameter.temperature, gTech);
+			resPullDown = CalculateOnResistance(widthNMOS[i], CmosType::NMOS, gInputParameter.temperature, gTech);
 			capLoad = capOutput[i] + capInput[i+1];
 			tr = resPullDown * capLoad;
-			gm = CalculateTransconductance(widthNMOS[i], NMOS, gTech);
+			gm = CalculateTransconductance(widthNMOS[i], CmosType::NMOS, gTech);
 			beta = 1 / (resPullDown * gm);
 			readLatency += horowitz(tr, beta, rampInput, &temp);
 			rampInput = temp;	/* for next stage */
 		}
 		/* Last level inverter */
-		resPullDown = CalculateOnResistance(widthNMOS[numStage-1], NMOS, gInputParameter.temperature, gTech);
+		resPullDown = CalculateOnResistance(widthNMOS[numStage-1], CmosType::NMOS, gInputParameter.temperature, gTech);
 		capLoad = capOutput[numStage-1] + outputCap;
 		tr = resPullDown * capLoad + outputCap * outputRes / 2;
-		gm = CalculateTransconductance(widthNMOS[numStage-1], NMOS, gTech);
+		gm = CalculateTransconductance(widthNMOS[numStage-1], CmosType::NMOS, gTech);
 		beta = 1 / (resPullDown * gm);
 		readLatency += horowitz(tr, beta, rampInput, &rampOutput);
 		rampInput = _rampInput;
@@ -233,12 +233,12 @@ void OutputDriver::CalculatePower() {
 	if (!initialized) {
 		std::cout << "[Output Driver] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		readDynamicEnergy = writeDynamicEnergy = leakage = invalid_value;
+		readDynamicEnergy = writeDynamicEnergy = leakage = mse::constant::invalidValue;
 	} else {
 		/* Leakage power */
 		leakage = 0;
 		for (int i = 0; i < numStage; i++) {
-			leakage += CalculateGateLeakage(INV, 1, widthNMOS[i], widthPMOS[i], gInputParameter.temperature, gTech)
+			leakage += CalculateGateLeakage(GateType::INV, 1, widthNMOS[i], widthPMOS[i], gInputParameter.temperature, gTech)
 					* gTech.vdd;
 		}
 		/* Dynamic energy */

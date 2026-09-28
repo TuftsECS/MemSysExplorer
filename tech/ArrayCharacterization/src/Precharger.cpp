@@ -49,14 +49,14 @@ void Precharger::Initialize(double _voltagePrecharge, int _numColumn, double _ca
 	resBitline = _resBitline;
 	capWireLoadPerColumn = gCell.widthInFeatureSize * gTech.featureSize * gLocalWire.capWirePerUnit;
 	resWireLoadPerColumn = gCell.widthInFeatureSize * gTech.featureSize * gLocalWire.resWirePerUnit;
-	widthInvNmos = MIN_NMOS_SIZE * gTech.featureSize;
+	widthInvNmos = mse::constant::minNmosSize.value() * gTech.featureSize;
 	widthInvPmos = widthInvNmos * gTech.pnSizeRatio;
-	widthPMOSBitlineEqual      = MIN_NMOS_SIZE * gTech.featureSize;
+	widthPMOSBitlineEqual      = mse::constant::minNmosSize.value() * gTech.featureSize;
 	widthPMOSBitlinePrecharger = 6 * gTech.featureSize;
 	capLoadInv  = CalculateGateCap(widthPMOSBitlineEqual, gTech) + 2 * CalculateGateCap(widthPMOSBitlinePrecharger, gTech)
-			+ CalculateDrainCap(widthInvNmos, NMOS, gTech.featureSize*40, gTech)
-			+ CalculateDrainCap(widthInvPmos, PMOS, gTech.featureSize*40, gTech);
-	capOutputBitlinePrecharger = CalculateDrainCap(widthPMOSBitlinePrecharger, PMOS, gTech.featureSize*40, gTech) + CalculateDrainCap(widthPMOSBitlineEqual, PMOS, gTech.featureSize*40, gTech);
+			+ CalculateDrainCap(widthInvNmos, CmosType::NMOS, gTech.featureSize*40, gTech)
+			+ CalculateDrainCap(widthInvPmos, CmosType::PMOS, gTech.featureSize*40, gTech);
+	capOutputBitlinePrecharger = CalculateDrainCap(widthPMOSBitlinePrecharger, CmosType::PMOS, gTech.featureSize*40, gTech) + CalculateDrainCap(widthPMOSBitlineEqual, CmosType::PMOS, gTech.featureSize*40, gTech);
 	double capInputInv         = CalculateGateCap(widthInvNmos, gTech) + CalculateGateCap(widthInvPmos, gTech);
 	capLoadPerColumn           = capInputInv + capWireLoadPerColumn;
 	double capLoadOutputDriver = numColumn * capLoadPerColumn;
@@ -73,9 +73,9 @@ void Precharger::CalculateArea() {
 		double hBitlinePrechareger, wBitlinePrechareger;
 		double hBitlineEqual, wBitlineEqual;
 		double hInverter, wInverter;
-		CalculateGateArea(INV, 1, 0, widthPMOSBitlinePrecharger, gTech.featureSize*40, gTech, &hBitlinePrechareger, &wBitlinePrechareger);
-		CalculateGateArea(INV, 1, 0, widthPMOSBitlineEqual, gTech.featureSize*40, gTech, &hBitlineEqual, &wBitlineEqual);
-		CalculateGateArea(INV, 1, widthInvNmos, widthInvPmos, gTech.featureSize*40, gTech, &hInverter, &wInverter);
+		CalculateGateArea(GateType::INV, 1, 0, widthPMOSBitlinePrecharger, gTech.featureSize*40, gTech, &hBitlinePrechareger, &wBitlinePrechareger);
+		CalculateGateArea(GateType::INV, 1, 0, widthPMOSBitlineEqual, gTech.featureSize*40, gTech, &hBitlineEqual, &wBitlineEqual);
+		CalculateGateArea(GateType::INV, 1, widthInvNmos, widthInvPmos, gTech.featureSize*40, gTech, &hInverter, &wInverter);
 		width = 2 * wBitlinePrechareger + wBitlineEqual;
 		width = std::max(width, wInverter);
 		width *= numColumn;
@@ -108,16 +108,16 @@ void Precharger::CalculateLatency(double _rampInput){
 		double gm;	/* transconductance */
 		double beta;	/* for horowitz calculation */
 		double temp;
-		resPullDown = CalculateOnResistance(widthInvNmos, NMOS, gInputParameter.temperature, gTech);
+		resPullDown = CalculateOnResistance(widthInvNmos, CmosType::NMOS, gInputParameter.temperature, gTech);
 		tr = resPullDown * capLoadInv;
-		gm = CalculateTransconductance(widthInvNmos, NMOS, gTech);
+		gm = CalculateTransconductance(widthInvNmos, CmosType::NMOS, gTech);
 		beta = 1 / (resPullDown * gm);
 		enableLatency += horowitz(tr, beta, outputDriver.rampOutput, &temp);
 		readLatency = 0;
-		double resPullUp = CalculateOnResistance(widthPMOSBitlinePrecharger, PMOS,
+		double resPullUp = CalculateOnResistance(widthPMOSBitlinePrecharger, CmosType::PMOS,
 				gInputParameter.temperature, gTech);
 		double tau = resPullUp * (capBitline + capOutputBitlinePrecharger) + resBitline * capBitline / 2;
-		gm = CalculateTransconductance(widthPMOSBitlinePrecharger, PMOS, gTech);
+		gm = CalculateTransconductance(widthPMOSBitlinePrecharger, CmosType::PMOS, gTech);
 		beta = 1 / (resPullUp * gm);
 		readLatency += horowitz(tau, beta, temp, &rampOutput);
 		writeLatency = readLatency;
@@ -132,8 +132,8 @@ void Precharger::CalculatePower() {
 		outputDriver.CalculatePower();
 		/* Leakage power */
 		leakage = outputDriver.leakage;
-		leakage += numColumn * gTech.vdd * CalculateGateLeakage(INV, 1, widthInvNmos, widthInvPmos, gInputParameter.temperature, gTech);
-		leakage += numColumn * voltagePrecharge * CalculateGateLeakage(INV, 1, 0, widthPMOSBitlinePrecharger,
+		leakage += numColumn * gTech.vdd * CalculateGateLeakage(GateType::INV, 1, widthInvNmos, widthInvPmos, gInputParameter.temperature, gTech);
+		leakage += numColumn * voltagePrecharge * CalculateGateLeakage(GateType::INV, 1, 0, widthPMOSBitlinePrecharger,
 				gInputParameter.temperature, gTech);
 
 		/* Dynamic energy */

@@ -43,13 +43,24 @@
 
 #include <math.h>
 
+enum class GateType {
+    INV,
+    NOR,
+    NAND
+};
+
+enum class CmosType {
+    NMOS,
+    PMOS
+};
+
 bool isPow2(int n);
 
 /* calculate the gate capacitance */
 double CalculateGateCap(double width, Technology tech);
 
 double CalculateGateArea(
-		int gateType, int numInput,
+		GateType type, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
 		double* height, double* width);
@@ -59,13 +70,13 @@ double CalculateFeFETGateCap(double width, Technology tech);
 
 /* calculate the capacitance of a gate */
 void CalculateGateCapacitance(
-		int gateType, int numInput,
+		GateType type, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
 		double* capInput, double* capOutput);
 
 double CalculateDrainCap(
-		double width, int type,
+		double width, CmosType type,
 		double heightTransistorRegion, Technology tech);
 
 /* calculate the capacitance of a FBRAM */
@@ -74,13 +85,13 @@ double CalculateFBRAMGateCap(double width, double thicknessFactor, Technology te
 double CalculateFBRAMDrainCap(double width, Technology tech);
 
 double CalculateGateLeakage(
-		int gateType, int numInput,
+		GateType type, int numInput,
 		double widthNMOS, double widthPMOS,
 		double temperature, Technology tech);
 
-double CalculateOnResistance(double width, int type, double temperature, Technology tech);
+double CalculateOnResistance(double width, CmosType type, double temperature, Technology tech);
 
-double CalculateTransconductance(double width, int type, Technology tech);
+double CalculateTransconductance(double width, CmosType type, Technology tech);
 
 double horowitz(double tr, double beta, double rampInput, double* rampOutput);
 

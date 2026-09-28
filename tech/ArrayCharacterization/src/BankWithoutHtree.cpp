@@ -233,7 +233,7 @@ void BankWithoutHtree::CalculateArea() {
 	if (!initialized) {
 		std::cout << "[BankWithoutHtree] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		height = width = area = invalid_value;
+		height = width = area = mse::constant::invalidValue;
 	} else {
 		height = mat.height * numRowMat;
 		width = mat.width * numColumnMat;
@@ -264,10 +264,10 @@ void BankWithoutHtree::CalculateArea() {
 
 		/* Determine if the aspect ratio meets the constraint */
 		if (memoryType == dataT)
-			if (height / width > CONSTRAINT_ASPECT_RATIO_BANK || width / height > CONSTRAINT_ASPECT_RATIO_BANK) {
+			if (height / width > mse::constant::bankAspectRatioConstraint || width / height > mse::constant::bankAspectRatioConstraint) {
 				/* illegal */
 				invalid = true;
-				height = width = area = invalid_value;
+				height = width = area = mse::constant::invalidValue;
 				return;
 			}
 
@@ -293,15 +293,15 @@ void BankWithoutHtree::CalculateLatencyAndPower() {
 	if (!initialized) {
 		std::cout << "[BankWithoutHtree] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		readLatency = writeLatency = invalid_value;
-		readDynamicEnergy = writeDynamicEnergy = invalid_value;
-		leakage = invalid_value;
+		readLatency = writeLatency = mse::constant::invalidValue;
+		readDynamicEnergy = writeDynamicEnergy = mse::constant::invalidValue;
+		leakage = mse::constant::invalidValue;
 	} else {
 		double latency = 0;
 		double energy = 0;
 		double leakageWire = 0;
 
-		mat.CalculateLatency(infinite_ramp);
+		mat.CalculateLatency(mse::constant::infiniteRamp.value());
 		mat.CalculatePower();
 		readLatency = resetLatency = setLatency = writeLatency = 0;
         refreshLatency = mat.refreshLatency * numColumnMat; // TOTAL refresh time for all Mats

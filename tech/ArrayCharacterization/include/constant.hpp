@@ -1,115 +1,79 @@
-/*******************************************************************************
-* Copyright (c) 2012-2013, The Microsystems Design Labratory (MDL)
-* Department of Computer Science and Engineering, The Pennsylvania State University
-* Exascale Computing Lab, Hewlett-Packard Company
-* All rights reserved.
-* 
-* This source code is part of NVSim - An area, timing and power model for both 
-* volatile (e.g., SRAM, DRAM) and non-volatile memory (e.g., PCRAM, STT-RAM, ReRAM, 
-* SLC NAND Flash). The source code is free and you can redistribute and/or modify it
-* by providing that the following conditions are met:
-* 
-*  1) Redistributions of source code must retain the above copyright notice,
-*     this list of conditions and the following disclaimer.
-* 
-*  2) Redistributions in binary form must reproduce the above copyright notice,
-*     this list of conditions and the following disclaimer in the documentation
-*     and/or other materials provided with the distribution.
-* 
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
-* Author list: 
-*   Cong Xu	    ( Email: czx102 at psu dot edu 
-*                     Website: http://www.cse.psu.edu/~czx102/ )
-*   Xiangyu Dong    ( Email: xydong at cse dot psu dot edu
-*                     Website: http://www.cse.psu.edu/~xydong/ )
-*******************************************************************************/
+#ifndef MSE_CONSTANTS_HPP
+#define MSE_CONSTANTS_HPP
 
+#include "unit.hpp"
 
-#ifndef MSE_CONSTANT_HPP
-#define MSE_CONSTANT_HPP
+namespace mse::constant {
 
-#define WARNING	0
+// TODO replace with log interface
+inline constexpr bool debugWarningsEnabled = false;
 
-#define INV		0
-#define NOR		1
-#define NAND	2
+using namespace mse::unit;
 
-#define NMOS	0
-#define PMOS	1
+inline constexpr double invalidValue = 1e41;
 
-#define MAX_INV_CHAIN_LEN	20
-#define OPT_F				4
+inline constexpr SecondExp<-1> infiniteRamp{1e41};
 
-#define COMPARATOR_INV_CHAIN_LEN 4
+inline constexpr Feature minimumGapBetweenPandNDiffusions{2};
+inline constexpr Feature minimumGapBetweenSameDiffusions{1.5};
+inline constexpr Feature minimumGapBetweenPoly{1.5};
+inline constexpr Feature minimumGapBetweenContactAndPoly{0.75};
+inline constexpr Feature minimumPowerRailWidth{2};
+inline constexpr Feature contactSize{1};
 
-#define MAX_NMOS_SIZE	100
-#define MIN_NMOS_SIZE	1.5
+inline constexpr double averageLeakRatioNand2 = 0.48;
+inline constexpr double averageLeakRatioNand3 = 0.31;
+inline constexpr double averageLeakRatioNor2 = 0.95;
+inline constexpr double averageLeakRatioNor3 = 0.62;
 
-#define AREA_OPT_CONSTRAIN 1
+inline constexpr int comparatorInvChainLength = 4;
+inline constexpr int maxInvChainLength = 20;
 
-#define MAX_TRANSISTOR_HEIGHT 20
+inline constexpr Feature maxNmosSize{100};
+inline constexpr Feature minNmosSize{1.5};
+inline constexpr Feature maxTransistorHeight{20};
 
-#define MIN_GAP_BET_P_AND_N_DIFFS	2
-#define MIN_GAP_BET_SAME_TYPE_DIFFS	1.5
-#define MIN_GAP_BET_POLY			1.5
-#define MIN_GAP_BET_CONTACT_POLY	0.75
-#define CONTACT_SIZE				1
-#define MIN_WIDTH_POWER_RAIL		2
+inline constexpr double optimalStageEffort = 4;
+inline constexpr double areaOptimizationConstraint = 1;
 
-#define AVG_RATIO_LEAK_2INPUT_NAND 0.48
-#define AVG_RATIO_LEAK_3INPUT_NAND 0.31
-#define AVG_RATIO_LEAK_2INPUT_NOR  0.95
-#define AVG_RATIO_LEAK_3INPUT_NOR  0.62
+inline constexpr Feature senseAmpWidthP{7.5};
+inline constexpr Feature senseAmpWidthN{3.75};
+inline constexpr Feature senseAmpWidthIsolation{12.5};
+inline constexpr Feature senseAmpWidthEnable{5};
+inline constexpr Feature senseAmpWidthMux{9};
 
-#define W_SENSE_P       7.5
-#define W_SENSE_N       3.75
-#define W_SENSE_ISO     12.5
-#define W_SENSE_EN      5.0
-#define W_SENSE_MUX     9.0
-//Qing: new S/A numbers
-#define W_SA_TOP        40
-#define W_SA_P          2
-#define W_SA_N          2
-#define W_SA_BOT        20
-//Qing.
-#define VBITSENSEMIN	0.08
-#define IV_CONVERTER_AREA 50000 /*TO-DO: technology and design dependent parameter, 649606 is used in PCRAMSim*/
+inline constexpr Feature senseAmpAltWidthTop{40};
+inline constexpr Feature senseAmpAltWidthP{2};
+inline constexpr Feature senseAmpAltWidthN{2};
+inline constexpr Feature senseAmpAltWidthBottom{20};
 
-#define STITCHING_OVERHEAD	7.5
+inline constexpr Volt minBitlineSenseVoltage{0.08};
+inline constexpr FeatureExp<2> ivConverterArea{50000};
 
-#define DRAM_REFRESH_PERIOD	64e-3
+inline constexpr Feature stitchingOverhead{7.5};
 
-#define SHAPER_EFFICIENCY_CONSERVATIVE	0.2
-#define SHAPER_EFFICIENCY_AGGRESSIVE	1.0
+inline constexpr Second dramRefreshPeriod{64_ms};
 
-#define COPPER_RESISTIVITY	2.2e-8			/* Unit: ohm*m at 20 celcius degree */
-#define COPPER_RESISTIVITY_TEMPERATURE_COEFFICIENT	0.0039
-#define PERMITTIVITY		8.85e-12		/* Unit: F/m */
+inline constexpr double shaperEfficiencyConservative = 0.2;
+inline constexpr double shaperEfficiencyAggressive = 1;
 
-#define TUNNEL_CURRENT_FLOW 10				/* Unit: A/m^2 */
-#define DELTA_V_TH 5.0						/* Unit: V, Threshold difference of floating gate */
+inline constexpr Unit<OhmAtom<1>, MeterAtom<1>> copperResistivity{2.2e-8};
+inline constexpr KelvinExp<-1> copperResistivityTemperatureCoefficient{0.0039};
+inline constexpr Unit<FaradAtom<1>, MeterAtom<-1>> vacuumPermittivity{8.85e-12};
 
-#define RES_ADJ 8.6
-#define VOL_SWING .1
+inline constexpr Unit<AmpereAtom<1>, MeterAtom<-2>> tunnelCurrentFlow{10};
+inline constexpr Volt floatingGateThresholdDelta{5};
 
-#define CONSTRAINT_ASPECT_RATIO_BANK	3
+inline constexpr double resistanceAdjustment = 8.6;
+inline constexpr Volt voltageSwing{0.1};
 
-#define BITLINE_LEAKAGE_TOLERANCE	1
-#define IR_DROP_TOLERANCE 			0.2
+inline constexpr double bankAspectRatioConstraint = 3;
 
-#define TOTAL_ADDRESS_BIT	48
+inline constexpr double bitlineLeakageTolerance = 1;
+inline constexpr double irDropTolerance = 0.2;
 
-inline constexpr double invalid_value = 1e41;
-inline constexpr double infinite_ramp = 1e41;
+inline constexpr int totalAddressBit = 48;
 
-#endif /* MSE_CONSTANT_HPP */
+}
+
+#endif

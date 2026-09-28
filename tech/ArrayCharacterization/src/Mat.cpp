@@ -182,7 +182,7 @@ void Mat::CalculateArea() {
 	if (!initialized) {
 		std::cout << "[Mat] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		height = width = area = invalid_value;
+		height = width = area = mse::constant::invalidValue;
 	} else {
 		/* subarray CalculateArea() is already called during the initialization */
 		rowPredecoderBlock1.CalculateArea();
@@ -239,7 +239,7 @@ void Mat::CalculateLatency(double _rampInput) {
 	if (!initialized) {
 		std::cout << "[Mat] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		readLatency = writeLatency = invalid_value;
+		readLatency = writeLatency = mse::constant::invalidValue;
 	} else {
 		/* Calculate the predecoder blocks latency */
 		rowPredecoderBlock1.CalculateLatency(_rampInput);
@@ -284,7 +284,7 @@ void Mat::CalculatePower() {
 	if (!initialized) {
 		std::cout << "[Mat] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		readDynamicEnergy = writeDynamicEnergy = leakage = invalid_value;
+		readDynamicEnergy = writeDynamicEnergy = leakage = mse::constant::invalidValue;
 	} else {
 		rowPredecoderBlock1.CalculatePower();
 		rowPredecoderBlock2.CalculatePower();

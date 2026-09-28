@@ -66,14 +66,14 @@ public:
 	int temperature;				/* The ambient temperature, Unit: K */
 	double maxDriverCurrent = 0;        /* The maximum driving current that the wordline/bitline driver can provide */
 	WriteScheme writeScheme = normal_write;		/* The write scheme */
-	double readLatencyConstraint = invalid_value;	/* The allowed variation to the best read latency */
-	double writeLatencyConstraint = invalid_value;	/* The allowed variation to the best write latency */
-	double readDynamicEnergyConstraint = invalid_value;		/* The allowed variation to the best read dynamic energy */
-	double writeDynamicEnergyConstraint = invalid_value;	/* The allowed variation to the best write dynamic energy */
-	double leakageConstraint = invalid_value;		/* The allowed variation to the best leakage energy */
-	double areaConstraint = invalid_value;			/* The allowed variation to the best leakage energy */
-	double readEdpConstraint = invalid_value;		/* The allowed variation to the best read EDP */
-	double writeEdpConstraint = invalid_value;		/* The allowed variation to the best write EDP */
+	double readLatencyConstraint = mse::constant::invalidValue;	/* The allowed variation to the best read latency */
+	double writeLatencyConstraint = mse::constant::invalidValue;	/* The allowed variation to the best write latency */
+	double readDynamicEnergyConstraint = mse::constant::invalidValue;		/* The allowed variation to the best read dynamic energy */
+	double writeDynamicEnergyConstraint = mse::constant::invalidValue;	/* The allowed variation to the best write dynamic energy */
+	double leakageConstraint = mse::constant::invalidValue;		/* The allowed variation to the best leakage energy */
+	double areaConstraint = mse::constant::invalidValue;			/* The allowed variation to the best leakage energy */
+	double readEdpConstraint = mse::constant::invalidValue;		/* The allowed variation to the best read EDP */
+	double writeEdpConstraint = mse::constant::invalidValue;		/* The allowed variation to the best write EDP */
 	bool isConstraintApplied = false;		/* If any design constraint is applied */
 	bool isPruningEnabled = false;			/* Whether to prune the results during the exploration */
 	bool useCactiAssumption = false;		/* Use the CACTI assumptions on the array organization */
@@ -87,7 +87,7 @@ public:
 	RoutingMode routingMode = h_tree;
 	bool internalSensing = true;
 
-	double maxNmosSize = MAX_NMOS_SIZE;				/* Default value is MAX_NMOS_SIZE in constant.h, however, user might change it, Unit: F */
+	double maxNmosSize = mse::constant::maxNmosSize.value();
 
 	std::string outputFilePrefix = "output";
 	std::string outputDirectory = "results/";

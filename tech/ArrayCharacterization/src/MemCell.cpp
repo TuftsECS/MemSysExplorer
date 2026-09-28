@@ -336,7 +336,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
 
 void MemCell::ApplyPVT() {
 	temperature = gInputParameter.temperature;
-    if (retentionTime == invalid_value) {
+    if (retentionTime == mse::constant::invalidValue) {
 		// Calculate retention time if not given
 		double leakageCurrent = 0;
 		double effWidthAccessCMOS = 0;

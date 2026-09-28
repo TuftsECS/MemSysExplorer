@@ -63,32 +63,32 @@ void SenseAmp::CalculateArea() {
 	if (!initialized) {
 		std::cout << "[Sense Amp] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		height = width = area = invalid_value;
+		height = width = area = mse::constant::invalidValue;
 	} else {
 		height = width = area = 0;
 		if (currentSense) {	/* current-sensing needs IV converter */
-			area += IV_CONVERTER_AREA * gTech.featureSize * gTech.featureSize;
+			area += mse::constant::ivConverterArea.value() * gTech.featureSize * gTech.featureSize;
 		}
 		/* the following codes are transformed from CACTI 6.5 */
 		double tempHeight = 0;
 		double tempWidth = 0;
 
-		CalculateGateArea(INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * gTech.featureSize,
+		CalculateGateArea(GateType::INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpAltWidthTop.value() * gTech.featureSize,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = std::max(width, tempWidth);
 		height += tempHeight;
 
-		CalculateGateArea(INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_P * gTech.featureSize,
+		CalculateGateArea(GateType::INV, 1, 0, ((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpAltWidthP.value() * gTech.featureSize,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = std::max(width, tempWidth);
 		height += 2 * tempHeight;
 
-		CalculateGateArea(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_N * gTech.featureSize, 0,
+		CalculateGateArea(GateType::INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpAltWidthN.value() * gTech.featureSize, 0,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = std::max(width, tempWidth);
 		height += 2 * tempHeight;
 
-		CalculateGateArea(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * gTech.featureSize, 0,
+		CalculateGateArea(GateType::INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpAltWidthBottom.value() * gTech.featureSize, 0,
 				pitchSenseAmp, gTech, &tempWidth, &tempHeight);
 		width = std::max(width, tempWidth);
 		height += 2 * tempHeight;
@@ -137,13 +137,13 @@ void SenseAmp::CalculateRC() {
 	if (!initialized) {
 		std::cout << "[Sense Amp] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		readLatency = writeLatency = invalid_value;
+		readLatency = writeLatency = mse::constant::invalidValue;
 	} else {
-	    capLoad = CalculateGateCap(((gTech.featureSize <= 14*1e-9)? 2:1)*(W_SA_P + W_SA_N) * gTech.featureSize, gTech)
-				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_N * gTech.featureSize, NMOS, pitchSenseAmp, gTech)
-				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_P * gTech.featureSize, PMOS, pitchSenseAmp, gTech)
-				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * gTech.featureSize, PMOS, pitchSenseAmp, gTech)
-				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * gTech.featureSize, NMOS, pitchSenseAmp, gTech);
+	    capLoad = CalculateGateCap(((gTech.featureSize <= 14*1e-9)? 2:1)*(mse::constant::senseAmpAltWidthP.value() + mse::constant::senseAmpAltWidthN.value()) * gTech.featureSize, gTech)
+				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpAltWidthN.value() * gTech.featureSize, CmosType::NMOS, pitchSenseAmp, gTech)
+				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpAltWidthP.value() * gTech.featureSize, CmosType::PMOS, pitchSenseAmp, gTech)
+				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpAltWidthTop.value() * gTech.featureSize, CmosType::PMOS, pitchSenseAmp, gTech)
+				+ CalculateDrainCap(((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpAltWidthBottom.value() * gTech.featureSize, CmosType::NMOS, pitchSenseAmp, gTech);
             /* Scale SA capload for MLC programming, or defer to ISLPED modeled values for FeFET sensing */
             if (mlc && (gCell.memCellType == MLCCTT || gCell.memCellType == MLCRRAM)) {
                 if (numF == 8)
@@ -193,8 +193,8 @@ void SenseAmp::CalculateLatency() {
 		}
 		else {
 		    /* Voltage sense amplifier */
-		    double gm = CalculateTransconductance(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SENSE_N * gTech.featureSize, NMOS, gTech)
-				+ CalculateTransconductance(((gTech.featureSize <= 14*1e-9)? 2:1)*W_SENSE_P * gTech.featureSize, PMOS, gTech);
+		    double gm = CalculateTransconductance(((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpWidthN.value() * gTech.featureSize, CmosType::NMOS, gTech)
+				+ CalculateTransconductance(((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpWidthP.value() * gTech.featureSize, CmosType::PMOS, gTech);
                     /* Scale gm for MLC programming, or defer to ISLPED modeled values for FeFET sensing */
                     if (mlc && (gCell.memCellType == MLCCTT || gCell.memCellType == MLCRRAM)) { 
                         if (numF == 8)     
@@ -235,7 +235,7 @@ void SenseAmp::CalculatePower() {
 	if (!initialized) {
 		std::cout << "[Sense Amp] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		readDynamicEnergy = writeDynamicEnergy = leakage = invalid_value;
+		readDynamicEnergy = writeDynamicEnergy = leakage = mse::constant::invalidValue;
 	} else {
 		readDynamicEnergy = writeDynamicEnergy = 0;
 		leakage = 0;
@@ -269,7 +269,7 @@ void SenseAmp::CalculatePower() {
 		else {
 		    /* Voltage sense amplifier */
 		    readDynamicEnergy += capLoad * gTech.vdd * gTech.vdd;
-		    double idleCurrent =  CalculateGateLeakage(INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*W_SENSE_EN * gTech.featureSize, 0,
+		    double idleCurrent =  CalculateGateLeakage(GateType::INV, 1, ((gTech.featureSize <= 14*1e-9)? 2:1)*mse::constant::senseAmpWidthEnable.value() * gTech.featureSize, 0,
 				gInputParameter.temperature, gTech) * gTech.vdd;
 		    if (mlc)
                         idleCurrent = 1.35E-11 * (numLvl - 1.0);

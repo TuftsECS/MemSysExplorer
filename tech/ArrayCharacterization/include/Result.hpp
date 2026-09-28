@@ -67,14 +67,14 @@ public:
 	std::unique_ptr<Wire> localWire;		/* TO-DO: this one has the same name as one of the global variables */
 	std::unique_ptr<Wire> globalWire;
 
-	double limitReadLatency = invalid_value;			/* The maximum allowable read latency, Unit: s */
-	double limitWriteLatency = invalid_value;			/* The maximum allowable write latency, Unit: s */
-	double limitReadDynamicEnergy = invalid_value;		/* The maximum allowable read dynamic energy, Unit: J */
-	double limitWriteDynamicEnergy = invalid_value;		/* The maximum allowable write dynamic energy, Unit: J */
-	double limitReadEdp = invalid_value;				/* The maximum allowable read EDP, Unit: s-J */
-	double limitWriteEdp = invalid_value;				/* The maximum allowable write EDP, Unit: s-J */
-	double limitArea = invalid_value;					/* The maximum allowable area, Unit: m^2 */
-	double limitLeakage = invalid_value;				/* The maximum allowable leakage power, Unit: W */
+	double limitReadLatency = mse::constant::invalidValue;			/* The maximum allowable read latency, Unit: s */
+	double limitWriteLatency = mse::constant::invalidValue;			/* The maximum allowable write latency, Unit: s */
+	double limitReadDynamicEnergy = mse::constant::invalidValue;		/* The maximum allowable read dynamic energy, Unit: J */
+	double limitWriteDynamicEnergy = mse::constant::invalidValue;		/* The maximum allowable write dynamic energy, Unit: J */
+	double limitReadEdp = mse::constant::invalidValue;				/* The maximum allowable read EDP, Unit: s-J */
+	double limitWriteEdp = mse::constant::invalidValue;				/* The maximum allowable write EDP, Unit: s-J */
+	double limitArea = mse::constant::invalidValue;					/* The maximum allowable area, Unit: m^2 */
+	double limitLeakage = mse::constant::invalidValue;				/* The maximum allowable leakage power, Unit: W */
 };
 
 #endif /* MSE_RESULT_HPP */

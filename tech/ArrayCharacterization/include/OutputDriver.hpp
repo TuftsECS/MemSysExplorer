@@ -64,10 +64,10 @@ public:
 	int numStage;		/* Number of inverter chain stages */
 	BufferDesignTarget areaOptimizationLevel; /* 0 for latency, 2 for area */
 	double minDriverCurrent; /* Minimum driving current should be provided */
-	double widthNMOS[MAX_INV_CHAIN_LEN];
-	double widthPMOS[MAX_INV_CHAIN_LEN];
-	double capInput[MAX_INV_CHAIN_LEN];
-	double capOutput[MAX_INV_CHAIN_LEN];
+	double widthNMOS[mse::constant::maxInvChainLength];
+	double widthPMOS[mse::constant::maxInvChainLength];
+	double capInput[mse::constant::maxInvChainLength];
+	double capOutput[mse::constant::maxInvChainLength];
 	double rampInput;
     double rampOutput;
 };

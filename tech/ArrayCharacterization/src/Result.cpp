@@ -67,14 +67,14 @@ Result::Result(const Result& other) : Result() {
 }
 
 void Result::reset() {
-	bank->readLatency = invalid_value;
-	bank->writeLatency = invalid_value;
-	bank->readDynamicEnergy = invalid_value;
-	bank->writeDynamicEnergy = invalid_value;
-	bank->leakage = invalid_value;
-	bank->height = invalid_value;
-	bank->width = invalid_value;
-	bank->area = invalid_value;
+	bank->readLatency = mse::constant::invalidValue;
+	bank->writeLatency = mse::constant::invalidValue;
+	bank->readDynamicEnergy = mse::constant::invalidValue;
+	bank->writeDynamicEnergy = mse::constant::invalidValue;
+	bank->leakage = mse::constant::invalidValue;
+	bank->height = mse::constant::invalidValue;
+	bank->width = mse::constant::invalidValue;
+	bank->area = mse::constant::invalidValue;
 }
 
 void Result::compareAndUpdate(Result& newResult) {

@@ -67,7 +67,7 @@ double CalculateFBRAMDrainCap(double width, Technology tech) {
 }
 
 double CalculateGateArea(
-		int gateType, int numInput,
+		GateType type, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
 		double* height, double* width) {
@@ -85,7 +85,7 @@ double CalculateGateArea(
 		maxWidthPMOS = heightTransistorRegion;
 		maxWidthNMOS = 0;
 	} else {
-		maxWidthPMOS = ratio * (heightTransistorRegion - MIN_GAP_BET_P_AND_N_DIFFS * tech.featureSize);
+		maxWidthPMOS = ratio * (heightTransistorRegion - mse::constant::minimumGapBetweenPandNDiffusions.value() * tech.featureSize);
 		maxWidthNMOS = maxWidthPMOS / ratio * (1 - ratio);
 	}
 
@@ -95,7 +95,7 @@ double CalculateGateArea(
 			heightRegionP = widthPMOS;
 		} else {	/* Folding */
 			int numFoldedPMOS = (int)(ceil(widthPMOS / (maxWidthPMOS - 3 * tech.featureSize)));	/* 3F for folding overhead */
-			unitWidthRegionP = numFoldedPMOS * tech.featureSize + (numFoldedPMOS-1) * tech.featureSize * MIN_GAP_BET_POLY;
+			unitWidthRegionP = numFoldedPMOS * tech.featureSize + (numFoldedPMOS-1) * tech.featureSize * mse::constant::minimumGapBetweenPoly.value();
 			heightRegionP = maxWidthPMOS;
 		}
 	} else {
@@ -109,7 +109,7 @@ double CalculateGateArea(
 			heightRegionN = widthNMOS;
 		} else {	/* Folding */
 			int numFoldedNMOS = (int)(ceil(widthNMOS / (maxWidthNMOS - 3 * tech.featureSize)));	/* 3F for folding overhead */
-			unitWidthRegionN = numFoldedNMOS * tech.featureSize + (numFoldedNMOS-1) * tech.featureSize * MIN_GAP_BET_POLY;
+			unitWidthRegionN = numFoldedNMOS * tech.featureSize + (numFoldedNMOS-1) * tech.featureSize * mse::constant::minimumGapBetweenPoly.value();
 			heightRegionN = maxWidthNMOS;
 		}
 	} else {
@@ -117,24 +117,24 @@ double CalculateGateArea(
 		heightRegionN = 0;
 	}
 
-	switch (gateType) {
-	case INV:
-		widthRegionP = 2 * tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2) + unitWidthRegionP;
-		widthRegionN = 2 * tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2) + unitWidthRegionN;
+	switch (type) {
+	case GateType::INV:
+		widthRegionP = 2 * tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthRegionP;
+		widthRegionN = 2 * tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthRegionN;
 		break;
-	case NOR:
-		widthRegionP = 2 * tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2)
-						+ unitWidthRegionP * numInput + (numInput - 1) * tech.featureSize * MIN_GAP_BET_POLY;
-		widthRegionN = 2 * tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2)
+	case GateType::NOR:
+		widthRegionP = 2 * tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+						+ unitWidthRegionP * numInput + (numInput - 1) * tech.featureSize * mse::constant::minimumGapBetweenPoly.value();
+		widthRegionN = 2 * tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
 						+ unitWidthRegionN * numInput
-						+ (numInput - 1) * tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2);
+						+ (numInput - 1) * tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2);
 		break;
-	case NAND:
-		widthRegionN = 2 * tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2)
-						+ unitWidthRegionN * numInput + (numInput - 1) * tech.featureSize * MIN_GAP_BET_POLY;
-		widthRegionP = 2 * tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2)
+	case GateType::NAND:
+		widthRegionN = 2 * tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+						+ unitWidthRegionN * numInput + (numInput - 1) * tech.featureSize * mse::constant::minimumGapBetweenPoly.value();
+		widthRegionP = 2 * tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
 						+ unitWidthRegionP * numInput
-						+ (numInput - 1) * tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2);
+						+ (numInput - 1) * tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2);
 		break;
 	default:
 		widthRegionN = widthRegionP = 0;
@@ -142,8 +142,8 @@ double CalculateGateArea(
 
 	*width = std::max(widthRegionN, widthRegionP);
 	if (widthPMOS > 0 && widthNMOS > 0) {	/* it is a gate */
-		*height = heightRegionN + heightRegionP + tech.featureSize * MIN_GAP_BET_P_AND_N_DIFFS
-					+ 2 * tech.featureSize * MIN_WIDTH_POWER_RAIL;
+		*height = heightRegionN + heightRegionP + tech.featureSize * mse::constant::minimumGapBetweenPandNDiffusions.value()
+					+ 2 * tech.featureSize * mse::constant::minimumPowerRailWidth.value();
 	} else {	/* it is a transistor */
 		*height = heightRegionN + heightRegionP;	/* one of them is zero, and no power rail is added */
 	}
@@ -152,7 +152,7 @@ double CalculateGateArea(
 }
 
 void CalculateGateCapacitance(
-		int gateType, int numInput,
+		GateType type, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
 		double* capInput, double* capOutput) {
@@ -174,7 +174,7 @@ void CalculateGateCapacitance(
 		maxWidthPMOS = heightTransistorRegion;
 		maxWidthNMOS = 0;
 	} else {
-		maxWidthPMOS = ratio * (heightTransistorRegion - MIN_GAP_BET_P_AND_N_DIFFS * tech.featureSize);
+		maxWidthPMOS = ratio * (heightTransistorRegion - mse::constant::minimumGapBetweenPandNDiffusions.value() * tech.featureSize);
 		maxWidthNMOS = maxWidthPMOS / ratio * (1 - ratio);
 	}
 
@@ -188,7 +188,7 @@ void CalculateGateCapacitance(
 				exit(-1);
 			}
 			numFoldedPMOS = (int)(ceil(widthPMOS / (maxWidthPMOS - 3 * tech.featureSize)));	/* 3F for folding overhead */
-			unitWidthDrainP = (numFoldedPMOS-1) * tech.featureSize * MIN_GAP_BET_POLY;
+			unitWidthDrainP = (numFoldedPMOS-1) * tech.featureSize * mse::constant::minimumGapBetweenPoly.value();
 			heightDrainP = maxWidthPMOS;
 		}
 	} else {
@@ -206,7 +206,7 @@ void CalculateGateCapacitance(
 				exit(-1);
 			}
 			numFoldedNMOS = (int)(ceil(widthNMOS / (maxWidthNMOS - 3 * tech.featureSize)));	/* 3F for folding overhead */
-			unitWidthDrainN = (numFoldedNMOS-1) * tech.featureSize * MIN_GAP_BET_POLY;
+			unitWidthDrainN = (numFoldedNMOS-1) * tech.featureSize * mse::constant::minimumGapBetweenPoly.value();
 			heightDrainN = maxWidthNMOS;
 		}
 	} else {
@@ -214,31 +214,31 @@ void CalculateGateCapacitance(
 		heightDrainN = 0;
 	}
 
-	switch (gateType) {
-	case INV:
+	switch (type) {
+	case GateType::INV:
 		if (widthPMOS > 0)
-			widthDrainP = tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2) + unitWidthDrainP;
+			widthDrainP = tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthDrainP;
 		if (widthNMOS > 0)
-			widthDrainN = tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2) + unitWidthDrainN;
+			widthDrainN = tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthDrainN;
 		break;
-	case NOR:
+	case GateType::NOR:
 		/* PMOS is in series, worst case capacitance is below */
 		if (widthPMOS > 0)
-			widthDrainP = tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2)
-						+ unitWidthDrainP * numInput + (numInput - 1) * tech.featureSize * MIN_GAP_BET_POLY;
+			widthDrainP = tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+						+ unitWidthDrainP * numInput + (numInput - 1) * tech.featureSize * mse::constant::minimumGapBetweenPoly.value();
 		/* NMOS is parallel, capacitance is multiplied as below */
 		if (widthNMOS > 0)
-			widthDrainN = (tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2)
+			widthDrainN = (tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
 						+ unitWidthDrainN) * numInput;
 		break;
-	case NAND:
+	case GateType::NAND:
 		/* NMOS is in series, worst case capacitance is below */
 		if (widthNMOS > 0)
-			widthDrainN = tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2)
-						+ unitWidthDrainN * numInput + (numInput - 1) * tech.featureSize * MIN_GAP_BET_POLY;
+			widthDrainN = tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+						+ unitWidthDrainN * numInput + (numInput - 1) * tech.featureSize * mse::constant::minimumGapBetweenPoly.value();
 		/* PMOS is parallel, capacitance is multiplied as below */
 		if (widthPMOS > 0)
-			widthDrainP = (tech.featureSize * (CONTACT_SIZE + MIN_GAP_BET_CONTACT_POLY * 2)
+			widthDrainP = (tech.featureSize * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
 						+ unitWidthDrainP) * numInput;
 		break;
 	default:
@@ -271,18 +271,19 @@ void CalculateGateCapacitance(
 }
 
 double CalculateDrainCap(
-		double width, int type,
+		double width, CmosType type,
 		double heightTransistorRegion, Technology tech) {
 	double drainCap = 0;
-	if (type == NMOS)
-		CalculateGateCapacitance(INV, 1, width, 0, heightTransistorRegion, tech, nullptr, &drainCap);
-	else
-		CalculateGateCapacitance(INV, 1, 0, width, heightTransistorRegion, tech, nullptr, &drainCap);
+	if (type == CmosType::NMOS) {
+		CalculateGateCapacitance(GateType::INV, 1, width, 0, heightTransistorRegion, tech, nullptr, &drainCap);
+	} else {
+		CalculateGateCapacitance(GateType::INV, 1, 0, width, heightTransistorRegion, tech, nullptr, &drainCap);
+    }
 	return drainCap;
 }
 
 double CalculateGateLeakage(
-		int gateType, int numInput,
+		GateType type, int numInput,
 		double widthNMOS, double widthPMOS,
 		double temperature, Technology tech) {
 	int tempIndex = (int)temperature - 300;
@@ -293,47 +294,47 @@ double CalculateGateLeakage(
 	double* leakN = tech.currentOffNmos;
 	double* leakP = tech.currentOffPmos;
 	double leakageN, leakageP;
-	switch (gateType) {
-	case INV:
+	switch (type) {
+	case GateType::INV:
 		leakageN = widthNMOS * leakN[tempIndex];
 		leakageP = widthPMOS * leakP[tempIndex];
 		return std::max(leakageN, leakageP);
-	case NOR:
+	case GateType::NOR:
 		leakageN = widthNMOS * leakN[tempIndex] * numInput;
 		if (numInput == 2) {
-			return AVG_RATIO_LEAK_2INPUT_NOR * leakageN;
+			return mse::constant::averageLeakRatioNor2 * leakageN;
 		}
 		else {
-			return AVG_RATIO_LEAK_3INPUT_NOR * leakageN;
+			return mse::constant::averageLeakRatioNor3 * leakageN;
 		}
-	case NAND:
+	case GateType::NAND:
 		leakageP = widthPMOS * leakP[tempIndex] * numInput;
 		if (numInput == 2) {
-			return AVG_RATIO_LEAK_2INPUT_NAND * leakageP;
+			return mse::constant::averageLeakRatioNand2 * leakageP;
 		}
 		else {
-			return AVG_RATIO_LEAK_3INPUT_NAND * leakageP;
+			return mse::constant::averageLeakRatioNand3 * leakageP;
 		}
 	default:
 		return 0.0;
 	}
 }
 
-double CalculateOnResistance(double width, int type, double temperature, Technology tech) {
+double CalculateOnResistance(double width, CmosType type, double temperature, Technology tech) {
 	double r;
 	int tempIndex = (int)temperature - 300;
 	if ((tempIndex > 100) || (tempIndex < 0)) {
 		std::cout<<"Error: Temperature is out of range"<< std::endl;
 		exit(-1);
 	}
-	if (type == NMOS)
+	if (type == CmosType::NMOS)
 		r = tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * width);
 	else
 		r = tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnPmos[tempIndex] * width);
 	return r;
 }
 
-double CalculateTransconductance(double width, int type, Technology tech) {
+double CalculateTransconductance(double width, CmosType type, Technology tech) {
 	double gm;
 	double vsat;
 	double widthEff = 0;
@@ -348,7 +349,7 @@ double CalculateTransconductance(double width, int type, Technology tech) {
 		widthEff = int(ceil(width))*tech.effective_width*tech.max_sheet_num/tech.max_fin_per_GAA;       
     }
 
-	if (type == NMOS) {
+	if (type == CmosType::NMOS) {
 		if (tech.featureSize >= 22 * 1e-9) {
 			vsat = std::min(tech.vdsatNmos, tech.vdd - tech.vth);
  			gm = (tech.effectiveElectronMobility * tech.capOx) / 2 * width / tech.phyGateLength * vsat;

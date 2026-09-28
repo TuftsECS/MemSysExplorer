@@ -122,7 +122,7 @@ public:
 	double gateCouplingRatio;		/* The ratio of control gate to total floating gate capacitance */
 
     /* For eDRAM. */
-    double retentionTime = invalid_value;           /* Cell time to data loss (us) */
+    double retentionTime = mse::constant::invalidValue;           /* Cell time to data loss (us) */
     double temperature;             /* Temperature for which the cell input values are valid. */
 	double maxStorageNodeDrop;
 };

@@ -385,7 +385,7 @@ void BankWithHtree::CalculateArea() {
 	if (!initialized) {
 		std::cout << "[Bank] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		height = width = area = invalid_value;
+		height = width = area = mse::constant::invalidValue;
 	} else {
 		mat.CalculateArea();
 		height = mat.height * numRowMat;
@@ -415,10 +415,10 @@ void BankWithHtree::CalculateArea() {
 
 		/* Determine if the aspect ratio meets the constraint */
 		if (memoryType == dataT)
-			if (height / width > CONSTRAINT_ASPECT_RATIO_BANK || width / height > CONSTRAINT_ASPECT_RATIO_BANK) {
+			if (height / width > mse::constant::bankAspectRatioConstraint || width / height > mse::constant::bankAspectRatioConstraint) {
 				/* illegal */
 				invalid = true;
-				height = width = area = invalid_value;
+				height = width = area = mse::constant::invalidValue;
 				return;
 			}
 
@@ -488,16 +488,16 @@ void BankWithHtree::CalculateLatencyAndPower() {
 	if (!initialized) {
 		std::cout << "[Bank] Error: Require initialization first!" << std::endl;
 	} else if (invalid) {
-		readLatency = writeLatency = invalid_value;
-		readDynamicEnergy = writeDynamicEnergy = invalid_value;
-		leakage = invalid_value;
+		readLatency = writeLatency = mse::constant::invalidValue;
+		readDynamicEnergy = writeDynamicEnergy = mse::constant::invalidValue;
+		leakage = mse::constant::invalidValue;
 	} else {
 		double latency;
 		double energy;
 		double leakageWire;
 		int beta = 1;	/* Default value is 1. For fast access mode cache, this value is equal to associativity, which means only 1/beta interconnect wires are activated */
 
-		mat.CalculateLatency(infinite_ramp);
+		mat.CalculateLatency(mse::constant::infiniteRamp.value());
 		mat.CalculatePower();
 		readLatency = mat.readLatency;
 		writeLatency = mat.writeLatency;

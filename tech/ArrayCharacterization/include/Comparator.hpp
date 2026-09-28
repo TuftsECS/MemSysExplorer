@@ -55,12 +55,12 @@ public:
 	bool initialized = false;	/* Initialization flag */
 	int numTagBits;     /* Number of tag bits */
 	double capLoad = 0;     /* Load Capacitance */
-	double widthNMOSInv[COMPARATOR_INV_CHAIN_LEN];
-	double widthPMOSInv[COMPARATOR_INV_CHAIN_LEN];
+	double widthNMOSInv[mse::constant::comparatorInvChainLength];
+	double widthPMOSInv[mse::constant::comparatorInvChainLength];
 	double widthNMOSComp;
 	double widthPMOSComp;
-	double capInput[COMPARATOR_INV_CHAIN_LEN];
-	double capOutput[COMPARATOR_INV_CHAIN_LEN];
+	double capInput[mse::constant::comparatorInvChainLength];
+	double capOutput[mse::constant::comparatorInvChainLength];
 	double capBottom;
     double capTop;
     double resBottom;

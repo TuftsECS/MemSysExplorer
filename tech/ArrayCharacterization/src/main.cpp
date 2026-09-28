@@ -342,7 +342,7 @@ int main(int argc, char* argv[])
 					for (muxOutputLev2 = gInputParameter.minMuxOutputLev2; muxOutputLev2 <= gInputParameter.maxMuxOutputLev2; muxOutputLev2 *= 2)
 					for (numRowPerSet = gInputParameter.minNumRowPerSet; numRowPerSet <= std::min(gInputParameter.maxNumRowPerSet, gInputParameter.associativity); numRowPerSet *= 2)
 					for (areaOptimizationLevel = gInputParameter.minAreaOptimizationLevel; areaOptimizationLevel <= gInputParameter.maxAreaOptimizationLevel; areaOptimizationLevel++) {
-						long blockSize = TOTAL_ADDRESS_BIT - numIndexBit - numOffsetBit;
+						long blockSize = mse::constant::totalAddressBit - numIndexBit - numOffsetBit;
 						blockSize += 2;		/* add dirty bits and valid bits */
 						if (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) == 0) {
 							/* To aggressive partitioning */
