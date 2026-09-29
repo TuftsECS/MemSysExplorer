@@ -44,30 +44,30 @@ static mse::unit::Farad computeDrainCapacitance(const Technology& tech, mse::uni
 
 static mse::unit::Farad computeGateCapacitance(const Technology& tech, mse::unit::Feature gateWidth) {
     using namespace mse::unit;
-    Meter featureSize(tech.featureSize);
-    return Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * gateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
+    return Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * (gateWidth * featureSize).value() + tech.phyGateLength * tech.capPolywire);
 }
 
 static mse::unit::Ohm computeOnResistance(const Technology& tech, const double* onCurrent, mse::unit::Feature gateWidth, int tempIndex) {
     using namespace mse::unit;
-    Meter featureSize(tech.featureSize);
-    return Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * gateWidth.toMeters(featureSize).value()));
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
+    return Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * (gateWidth * featureSize).value()));
 }
 
 mse::CmosTransistor::CmosTransistor(const Technology& tech, unit::Feature gateWidth, unit::Feature transistorRegionHeight, const double* onCurrent, const double* offCurrent, unit::Volt vdsat, unit::Number mobility) {
     using namespace mse::unit;
 
-    const Meter featureSize(tech.featureSize);
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
     const int fingersAfterFolding = calculateFolding(gateWidth, transistorRegionHeight);
 
     const Feature foldedFingerTotalWidth = fingersAfterFolding * polyWidth + (fingersAfterFolding - 1) * diffusionRegionWidth;
     _dimensions = {
-        .width = (2.0 * contactWidth + foldedFingerTotalWidth).toMeters(featureSize),
-        .height = std::min(gateWidth, transistorRegionHeight).toMeters(featureSize)
+        .width = (2.0 * contactWidth + foldedFingerTotalWidth) * featureSize,
+        .height = std::min(gateWidth, transistorRegionHeight) * featureSize
     };
 
     const Feature foldedFingerDrainWidth = (fingersAfterFolding - 1) * diffusionRegionWidth;
-    const Meter drainWidth = (contactWidth + foldedFingerDrainWidth).toMeters(featureSize);
+    const Meter drainWidth = (contactWidth + foldedFingerDrainWidth) * featureSize;
     const Meter drainHeight = _dimensions.height;
     const MeterExp<2> drainArea = drainWidth * drainHeight;
 
@@ -81,17 +81,17 @@ mse::CmosTransistor::CmosTransistor(const Technology& tech, unit::Feature gateWi
 
     _channelResistance = computeOnResistance(tech, onCurrent, gateWidth, tempIndex);
 
-    Meter width = gateWidth.toMeters(featureSize);
-	if (featureSize >= 22_m * 1e-9) {
+    Meter width = gateWidth * featureSize;
+	if (featureSize.value() >= 22 * 1e-9) {
         Volt vsat = std::min(vdsat, Volt(tech.vdd - tech.vth));
         _transconductance = Siemens((mobility * tech.capOx) / 2 * width.value() / tech.phyGateLength * vsat.value());
-	} else if ((featureSize <= 14_m * 1e-9) && (featureSize >= 3_m * 1e-9)) {
+	} else if ((featureSize.value() <= 14 * 1e-9) && (featureSize.value() >= 3 * 1e-9)) {
 	    _transconductance = Siemens(tech.gm_oncurrent * static_cast<int>(std::ceil(gateWidth.value() / 2.0)) * (2.0 * tech.heightFin + tech.widthFin) / tech.PitchFin);
 	} else {
 	    _transconductance = Siemens(tech.gm_oncurrent * static_cast<int>(std::ceil(gateWidth.value() / 2.0)) * tech.effective_width * tech.max_sheet_num / tech.max_fin_per_GAA);
     }
 
-    _leakageCurrent = Ampere(gateWidth.toMeters(featureSize).value() * offCurrent[tempIndex]);
+    _leakageCurrent = Ampere((gateWidth * featureSize).value() * offCurrent[tempIndex]);
 }
 
 mse::NmosTransistor::NmosTransistor(const Technology& tech, unit::Feature gateWidth, unit::Feature transistorRegionHeight)
@@ -109,7 +109,7 @@ mse::CmosGate<Gate, Inputs>::CmosGate(const Technology& tech, int inputs, unit::
         : _inputs(inputs) {
     using namespace mse::unit;
 
-    const Meter featureSize(tech.featureSize);
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
     constexpr bool sequentialNmos = Gate != GateType::Nor;
 
     _nmosWidth = unitNmosGateWidth;
@@ -137,8 +137,8 @@ mse::CmosGate<Gate, Inputs>::CmosGate(const Technology& tech, int inputs, unit::
     const Feature pmosRegionWidth = 2.0 * contactWidth + inputs * pmosFoldedFingerRegionWidth + (inputs - 1) * pmosGap;
 
     _dimensions = {
-        .width = std::max(nmosRegionWidth, pmosRegionWidth).toMeters(featureSize),
-        .height = (nmosRegionHeight + pmosRegionHeight + (constant::minimumGapBetweenPandNDiffusions + constant::minimumPowerRailWidth * 2.0)).toMeters(featureSize)
+        .width = std::max(nmosRegionWidth, pmosRegionWidth) * featureSize,
+        .height = (nmosRegionHeight + pmosRegionHeight + (constant::minimumGapBetweenPandNDiffusions + constant::minimumPowerRailWidth * 2.0)) * featureSize
     };
 
     const Feature nmosFoldedFingerDrainWidth = (nmosFoldDegree - 1) * diffusionRegionWidth;
@@ -151,8 +151,10 @@ mse::CmosGate<Gate, Inputs>::CmosGate(const Technology& tech, int inputs, unit::
     const FeatureExp<2> nmosDrainArea = nmosDrainWidth * nmosDrainHeight;
     const FeatureExp<2> pmosDrainArea = pmosDrainWidth * pmosDrainHeight;
 
-    _drainCapacitance = computeDrainCapacitance(tech, nmosDrainArea.toMeters(featureSize), nmosDrainWidth.toMeters(featureSize), nmosDrainHeight.toMeters(featureSize), nmosFoldDegree)
-                      + computeDrainCapacitance(tech, pmosDrainArea.toMeters(featureSize), pmosDrainWidth.toMeters(featureSize), pmosDrainHeight.toMeters(featureSize), pmosFoldDegree);
+    const auto featureSize2 = featureSize * featureSize;
+
+    _drainCapacitance = computeDrainCapacitance(tech, nmosDrainArea * featureSize2, nmosDrainWidth * featureSize, nmosDrainHeight * featureSize, nmosFoldDegree)
+                      + computeDrainCapacitance(tech, pmosDrainArea * featureSize2, pmosDrainWidth * featureSize, pmosDrainHeight * featureSize, pmosFoldDegree);
 
     _gateCapacitance = computeGateCapacitance(tech, _nmosWidth) + computeGateCapacitance(tech, _pmosWidth);
 
@@ -168,14 +170,14 @@ mse::CmosGate<Gate, Inputs>::CmosGate(const Technology& tech, int inputs, unit::
     _pmosResistance *= sequentialNmos ? 1 : inputs;
 
     if constexpr (Gate == GateType::Inverter) {
-        _leakageCurrent = Ampere(std::max(unitNmosGateWidth.toMeters(featureSize).value() * tech.currentOffNmos[tempIndex], unitPmosGateWidth.toMeters(featureSize).value() * tech.currentOffPmos[tempIndex]));
+        _leakageCurrent = Ampere(std::max((unitNmosGateWidth * featureSize).value() * tech.currentOffNmos[tempIndex], (unitPmosGateWidth * featureSize).value() * tech.currentOffPmos[tempIndex]));
     } else if constexpr (Gate == GateType::Nand) {
         assert(inputs == 2 || inputs == 3);
-        _leakageCurrent = Ampere(unitPmosGateWidth.toMeters(featureSize).value() * tech.currentOffPmos[tempIndex] * inputs);
+        _leakageCurrent = Ampere((unitPmosGateWidth * featureSize).value() * tech.currentOffPmos[tempIndex] * inputs);
         _leakageCurrent *= inputs == 2 ? constant::averageLeakRatioNand2 : constant::averageLeakRatioNand3;
     } else {
         assert(inputs == 2 || inputs == 3);
-        _leakageCurrent = Ampere(unitNmosGateWidth.toMeters(featureSize).value() * tech.currentOffNmos[tempIndex] * inputs);
+        _leakageCurrent = Ampere((unitNmosGateWidth * featureSize).value() * tech.currentOffNmos[tempIndex] * inputs);
         _leakageCurrent *= inputs == 2 ? constant::averageLeakRatioNor2 : constant::averageLeakRatioNor3;
     }
 }

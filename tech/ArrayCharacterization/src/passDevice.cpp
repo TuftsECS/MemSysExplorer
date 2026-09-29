@@ -35,31 +35,31 @@ static mse::unit::Farad computeDrainCapacitance(const Technology& tech, mse::uni
 
 static mse::unit::Farad computeGateCapacitance(const Technology& tech, mse::unit::Feature gateWidth) {
     using namespace mse::unit;
-    const Meter featureSize(tech.featureSize);
-    return Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * gateWidth.toMeters(featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
+    return Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * (gateWidth * featureSize).value() + tech.phyGateLength * tech.capPolywire);
 }
 
 static mse::unit::Ohm computeOnResistance(const Technology& tech, const double* onCurrent, mse::unit::Feature gateWidth, int tempIndex) {
     using namespace mse::unit;
-    const Meter featureSize(tech.featureSize);
-    return Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * gateWidth.toMeters(featureSize).value()));
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
+    return Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * (gateWidth * featureSize).value()));
 }
 
 template <mse::PassType Type, int Inputs>
 mse::PassStack<Type, Inputs>::PassStack(const Technology& tech, unit::Feature gateWidth, unit::Feature maxRegionHeight) {
     using namespace mse::unit;
 
-    const Meter featureSize(tech.featureSize);
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
     const unsigned foldDegree = calculateFolding(gateWidth, maxRegionHeight);
 
     const Feature foldedFingerWidth = foldDegree * polyWidth + (foldDegree - 1) * diffusionRegionWidth;
     _dimensions = {
-        .width = (2.0 * contactWidth + Inputs * foldedFingerWidth + (Inputs - 1) * diffusionRegionWidth).toMeters(featureSize),
-        .height = std::min(gateWidth, maxRegionHeight).toMeters(featureSize)
+        .width = (2.0 * contactWidth + Inputs * foldedFingerWidth + (Inputs - 1) * diffusionRegionWidth) * featureSize,
+        .height = std::min(gateWidth, maxRegionHeight) * featureSize
     };
 
     const Feature foldedFingerDrainWidth = (foldDegree - 1) * diffusionRegionWidth;
-    const Meter drainWidth = (contactWidth + Inputs * foldedFingerDrainWidth + (Inputs - 1) * diffusionRegionWidth).toMeters(featureSize);
+    const Meter drainWidth = (contactWidth + Inputs * foldedFingerDrainWidth + (Inputs - 1) * diffusionRegionWidth) * featureSize;
     const Meter drainHeight = _dimensions.height;
     const MeterExp<2> drainArea = drainWidth * drainHeight;
     _drainCapacitance = computeDrainCapacitance(tech, drainArea, drainWidth, drainHeight, foldDegree);
@@ -75,7 +75,7 @@ mse::PassStack<Type, Inputs>::PassStack(const Technology& tech, unit::Feature ga
     const double* offCurrent = Type == PassType::Nmos ? tech.currentOffNmos : tech.currentOffPmos;
     _resistance = computeOnResistance(tech, onCurrent, gateWidth, tempIndex) * Inputs;
 
-    _leakageCurrent = Ampere(gateWidth.toMeters(featureSize).value() * offCurrent[tempIndex]);
+    _leakageCurrent = Ampere((gateWidth * featureSize).value() * offCurrent[tempIndex]);
 }
 
 template class mse::PassStack<mse::PassType::Nmos, 2>;

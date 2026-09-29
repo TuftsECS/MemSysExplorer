@@ -423,27 +423,6 @@ public:
     constexpr auto operator<=>(const Unit&) const noexcept = default;
 
     //==================================================
-    // For feature sizes, it is common to convert them to meters for an absolute physical size
-    // Unit types with just a single UnitAtom holding a UnitType::Feature type are given the below function
-    // This makes it simple and clear that a feature is being transformed to meters with another Unit type holding the feature size
-    // Use like featureLength.toMeters(featureSize)
-    // This function also accounts for exponents in the feature Unit type (so square features go to square meters)
-
-    constexpr auto toMeters(Unit<UnitAtom<UnitType::Meter, 1>> featureSizeInMeters) const noexcept
-    requires (sizeof...(Atoms) == 1 && AtomAt<Unit, 0>::type::type == UnitType::Feature) {
-        // No constexpr std::pow yet so manually do this with a loop
-        UnitValueType factor = 1.0;
-        for (int i = 0; i < std::abs(AtomAt<Unit, 0>::type::exponent); ++i) {
-            factor *= featureSizeInMeters._value;
-        }
-        if constexpr (AtomAt<Unit, 0>::type::exponent >= 0) {
-            return Unit<UnitAtom<UnitType::Meter, AtomAt<Unit, 0>::type::exponent>>(_value * factor);
-        } else {
-            return Unit<UnitAtom<UnitType::Meter, AtomAt<Unit, 0>::type::exponent>>(_value / factor);
-        }
-    }
-
-    //==================================================
     // A handy string function that automatically scales and adds units to the unit value for printing
     // If scaleUnit == true and the value is less than 1, the number is adjusted with a scale factor
     //   For example 0.010 volts -> "10.000mV"
@@ -720,6 +699,7 @@ UnitConversionReciprocalAtoms(OhmAtom, SiemensAtom)
 
 UnitConversion2Atoms(OhmAtom, FaradAtom, SecondAtom)
 UnitConversion2Atoms(AmpereAtom, OhmAtom, VoltAtom)
+UnitConversion2Atoms(AmpereAtom, VoltAtom, WattAtom)
 UnitConversion2AtomsExponents(FaradAtom, 1, VoltAtom, 2, JouleAtom, 1)
 
 UnitConversionSimilarAtoms(BitsAtom, BytesAtom, [](auto bits) { return bits / 8; })
