@@ -1,4 +1,4 @@
-#include "cmos.hpp"
+#include "cmosDevice.hpp"
 #include "constant.hpp"
 #include "log.hpp"
 #include "utility.hpp"
@@ -17,7 +17,7 @@ static constexpr mse::unit::Feature polyWidth(1.0);
 static unsigned calculateFolding(mse::unit::Feature regionHeight, mse::unit::Feature maxRegionHeight) {
     using namespace mse::unit;
 
-    if (regionHeight > maxRegionHeight) {
+    if (regionHeight >= maxRegionHeight) {
         // Fold
         if (maxRegionHeight < 3.0_feat) {
             mse::log::fatal("Unable to do CMOS folding because CMOS size limitation is less than 3F");
