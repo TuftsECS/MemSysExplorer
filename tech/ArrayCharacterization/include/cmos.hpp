@@ -2,12 +2,19 @@
 #define MSE_CMOS_HPP
 
 #include "unit.hpp"
+#include "Dimensions.hpp"
 
 #include <functional>
 
 class Technology;
 
 namespace mse {
+
+enum class GateType {
+    Inverter,
+    Nand,
+    Nor
+};
 
 //==================================================
 // CMOS device abstract base that unifies an interface for all CMOS devices (transistors and gates)
@@ -17,15 +24,19 @@ public:
 
     virtual ~CmosDevice() = default;
 
-    virtual int inputCount() const noexcept = 0;
+    virtual constexpr int inputCount() const noexcept = 0;
 
-    virtual unit::Farad drainCapacitance() const noexcept = 0;
-    virtual unit::Farad gateCapacitance() const noexcept = 0;
+    Dimensions dimensions() const noexcept { return _dimensions; }
+    unit::Farad drainCapacitance() const noexcept { return _drainCapacitance; }
+    unit::Farad gateCapacitance() const noexcept { return _gateCapacitance; }
+    unit::Ampere leakageCurrent() const noexcept { return _leakageCurrent; }
 
-    virtual unit::Ampere leakageCurrent() const noexcept = 0;
+protected:
 
-    virtual unit::Meter width() const noexcept = 0;
-    virtual unit::Meter height() const noexcept = 0;
+    Dimensions _dimensions;
+    unit::Farad _drainCapacitance;
+    unit::Farad _gateCapacitance;
+    unit::Ampere _leakageCurrent;
 };
 
 //==================================================
@@ -34,14 +45,9 @@ public:
 class CmosTransistor : public CmosDevice {
 public:
 
-    int inputCount() const noexcept override final { return 1; }
-    unit::Farad drainCapacitance() const noexcept override { return _drainCapacitance; }
-    unit::Farad gateCapacitance() const noexcept override { return _gateCapacitance; }
+    constexpr int inputCount() const noexcept override final { return 1; }
     unit::Ohm channelResistance() const noexcept { return _channelResistance; }
     unit::Siemens transconductance() const noexcept { return _transconductance; }
-    unit::Ampere leakageCurrent() const noexcept override { return _leakageCurrent; }
-    unit::Meter width() const noexcept override { return _width; }
-    unit::Meter height() const noexcept override { return _height; }
 
 protected:
 
@@ -58,13 +64,8 @@ protected:
 
 private:
 
-    unit::Farad _drainCapacitance;
-    unit::Farad _gateCapacitance;
     unit::Ohm _channelResistance;
     unit::Siemens _transconductance;
-    unit::Ampere _leakageCurrent;
-    unit::Meter _width;
-    unit::Meter _height;
 };
 
 //==================================================
@@ -90,154 +91,46 @@ public:
 };
 
 //==================================================
-// CMOS gate model base class that computes all values once during construction
-// Templated to do CRTP and take a certain number of gate inputs so logic may be optimized at compile time
+// CMOS gate model that computes all values once during construction
+// When inputs is > 0, that value is used as a compile-time constant for a number of inputs
+// When inputs is = 0, a runtime value is supplied to the constructor for the number of inputs
 
-template <typename Derived, int Inputs>
+template <GateType Gate, int Inputs>
 class CmosGate : public CmosDevice {
 public:
 
-    int inputCount() const noexcept override final { return Inputs; }
-    unit::Farad drainCapacitance() const noexcept override { return _drainCapacitance; }
-    unit::Farad gateCapacitance() const noexcept override { return _gateCapacitance; }
-    unit::Ohm nmosResistance() const noexcept { return _nmosResistance; }
-    unit::Ohm pmosResistance() const noexcept { return _pmosResistance; }
-    unit::Ampere leakageCurrent() const noexcept override { return _leakageCurrent; }
-    unit::Meter width() const noexcept override { return _width; }
-    unit::Meter height() const noexcept override { return _height; }
-    unit::Number logicalEffort() const noexcept { return _logicalEffort; }
-
-protected:
-
     constexpr CmosGate() = default;
-    CmosGate(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
-
-    unit::Farad _drainCapacitance;
-    unit::Farad _gateCapacitance;
-    unit::Ohm _nmosResistance;
-    unit::Ohm _pmosResistance;
-    unit::Ampere _leakageCurrent;
-    unit::Meter _width;
-    unit::Meter _height;
-    unit::Number _logicalEffort;
-};
-
-// Specialization for CMOS gates where the number of gate inputs must be given at runtime
-// Choose to specialize to when Inputs = 0 because that would not be a practical value to use for a real gate
-// This specialization changes the constructor to take an extra int for the number of inputs
-
-template <typename Derived>
-class CmosGate<Derived, 0> : public CmosDevice {
-public:
-
-    int inputCount() const noexcept override final { return _inputs; }
-    unit::Farad drainCapacitance() const noexcept override { return _drainCapacitance; }
-    unit::Farad gateCapacitance() const noexcept override { return _gateCapacitance; }
-    unit::Ohm nmosResistance() const noexcept { return _nmosResistance; }
-    unit::Ohm pmosResistance() const noexcept { return _pmosResistance; }
-    unit::Ampere leakageCurrent() const noexcept override { return _leakageCurrent; }
-    unit::Meter width() const noexcept override { return _width; }
-    unit::Meter height() const noexcept override { return _height; }
-    unit::Number logicalEffort() const noexcept { return _logicalEffort; }
-
-protected:
-
-    constexpr CmosGate() = default;
+    CmosGate(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight) requires (Inputs > 0);
     CmosGate(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
-    const int _inputs;
-    unit::Farad _drainCapacitance;
-    unit::Farad _gateCapacitance;
+    constexpr int inputCount() const noexcept override final { return _inputs; }
+    unit::Ohm nmosResistance() const noexcept { return _nmosResistance; }
+    unit::Ohm pmosResistance() const noexcept { return _pmosResistance; }
+    unit::Number logicalEffort() const noexcept { return _logicalEffort; }
+    // Effective widths
+    unit::Feature nmosWidth() const noexcept { return _nmosWidth; }
+    unit::Feature pmosWidth() const noexcept { return _pmosWidth; }
+
+private:
+
+    int _inputs = 0;
+    unit::Feature _nmosWidth;
+    unit::Feature _pmosWidth;
     unit::Ohm _nmosResistance;
     unit::Ohm _pmosResistance;
-    unit::Ampere _leakageCurrent;
-    unit::Meter _width;
-    unit::Meter _height;
     unit::Number _logicalEffort;
 };
 
 //==================================================
-// INV variant of a CMOS gate
+// Aliases for GateType selections
 
-class CmosInverter final : public CmosGate<CmosInverter, 1> {
-
-    friend class CmosGate<CmosInverter, 1>;
-
-public:
-
-    constexpr CmosInverter() = default;
-    CmosInverter(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
-
-private:
-
-    static constexpr bool sequentialNmos = true;
-};
-
-//==================================================
-// NAND variant of a CMOS gate
+using CmosInverter = CmosGate<GateType::Inverter, 1>;
 
 template <int Inputs = 0>
-class CmosNand final : public CmosGate<CmosNand<Inputs>, Inputs> {
-
-    friend class CmosGate<CmosNand<Inputs>, Inputs>;
-
-public:
-
-    constexpr CmosNand() = default;
-    CmosNand(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
-
-private:
-
-    static constexpr bool sequentialNmos = true;
-};
-
-template <>
-class CmosNand<0> final : public CmosGate<CmosNand<0>, 0> {
-
-    friend class CmosGate<CmosNand<0>, 0>;
-
-public:
-
-    constexpr CmosNand() = default;
-    CmosNand(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
-
-private:
-
-    static constexpr bool sequentialNmos = true;
-};
-
-//==================================================
-// NOR variant of a CMOS gate
+using CmosNand = CmosGate<GateType::Nand, Inputs>;
 
 template <int Inputs = 0>
-class CmosNor final : public CmosGate<CmosNor<Inputs>, Inputs> {
-
-    friend class CmosGate<CmosNor<Inputs>, Inputs>;
-
-public:
-
-    constexpr CmosNor() = default;
-    CmosNor(const Technology& tech, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
-
-private:
-
-    static constexpr bool sequentialNmos = false;
-};
-
-template <>
-class CmosNor<0> final : public CmosGate<CmosNor<0>, 0> {
-
-    friend class CmosGate<CmosNor<0>, 0>;
-
-public:
-
-    constexpr CmosNor() = default;
-    CmosNor(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
-
-private:
-
-    static constexpr bool sequentialNmos = false;
-};
+using CmosNor = CmosGate<GateType::Nor, Inputs>;
 
 } // namespace mse
 

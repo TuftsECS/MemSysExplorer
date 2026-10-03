@@ -532,7 +532,7 @@ public:
 
 // Custom stream insertion operator to print units naturally
 template<typename... Ts>
-std::ostream& operator<<(std::ostream& stream, Unit<Ts...> u) {
+inline std::ostream& operator<<(std::ostream& stream, Unit<Ts...> u) {
     stream << u.toString(stream.precision());
     return stream;
 }
