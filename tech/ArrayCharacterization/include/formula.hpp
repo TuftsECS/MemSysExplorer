@@ -34,7 +34,6 @@
 *                     Website: http://www.cse.psu.edu/~xydong/ )
 *******************************************************************************/
 
-
 #ifndef MSE_FORMULA_HPP
 #define MSE_FORMULA_HPP
 
@@ -53,8 +52,6 @@ enum class CmosType {
     NMOS,
     PMOS
 };
-
-bool isPow2(int n);
 
 /* calculate the gate capacitance */
 double CalculateGateCap(double width, Technology tech);
@@ -93,8 +90,6 @@ double CalculateOnResistance(double width, CmosType type, double temperature, Te
 
 double CalculateTransconductance(double width, CmosType type, Technology tech);
 
-double horowitz(double tr, double beta, double rampInput, double* rampOutput);
-
 double CalculateWireResistance(
 		double resistivity, double wireWidth, double wireThickness,
 		double barrierThickness, double dishingThickness, double alphaScatter);
@@ -103,6 +98,5 @@ double CalculateWireCapacitance(
 		double permittivity, double wireWidth, double wireThickness, double wireSpacing,
 		double ildThickness, double millarValue, double horizontalDielectric,
 		double verticalDielectic, double fringeCap);
-
 
 #endif /* MSE_FORMULA_HPP */

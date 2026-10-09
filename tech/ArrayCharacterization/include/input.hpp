@@ -32,6 +32,7 @@
 #include <tuple>
 #include <unordered_set>
 #include <functional>
+#include <format>
 
 namespace mse {
 
@@ -54,10 +55,16 @@ struct InputFileParameter {
             : key("NULL"),
               printName("NULL") {}
 
-    InputFileParameter(const std::string& key, const std::string& printName = "") noexcept
-            : key(key),
-              printName(printName.empty() ? key : printName) {}
+    InputFileParameter(std::string key, std::string printName = "") noexcept
+            : key(std::move(key)),
+              printName(printName.empty() ? this->key : std::move(printName)) {}
 };
+
+template <typename T>
+concept InputFileParameterType = std::derived_from<T, InputFileParameter>;
+
+template <typename T>
+concept StringConvertible = requires (T v) { static_cast<std::string>(v); };
 
 //==================================================
 // For single-valued parameters like a number, boolean, string...
@@ -78,8 +85,8 @@ public:
     using InputFileParameter::InputFileParameter;
 
     template <typename U>
-    ScalarParameter(const std::string& key, const std::string& printName, U&& defaultValue) noexcept
-            : InputFileParameter(key, printName),
+    ScalarParameter(std::string key, std::string printName, U&& defaultValue) noexcept
+            : InputFileParameter(std::move(key), std::move(printName)),
               _value(std::forward<T>(defaultValue)) {}
 
     bool initialized() const noexcept override final {
@@ -88,7 +95,7 @@ public:
 
     std::string toString() const noexcept {
         std::string valueString;
-        if constexpr (requires (T v) { static_cast<std::string>(v); } ) {
+        if constexpr (StringConvertible<T>) {
             valueString = _value.value();
         } else {
             valueString = std::to_string(_value.value());
@@ -137,8 +144,8 @@ public:
 
     template <typename... Us>
     requires (sizeof...(Us) > 0)
-    ArrayParameter(const std::string& key, const std::string& printName, Us&&... defaultValues) noexcept
-            : InputFileParameter(key, printName),
+    ArrayParameter(std::string key, std::string printName, Us&&... defaultValues) noexcept
+            : InputFileParameter(std::move(key), std::move(printName)),
               _value(std::forward<Us>(defaultValues)...) {}
 
     bool initialized() const noexcept override final {
@@ -155,7 +162,7 @@ public:
                 if (i > 0) {
                     valueString += ", ";
                 }
-                if constexpr (requires (T v) { static_cast<std::string>(v); } ) {
+                if constexpr (StringConvertible<T>) {
                     valueString += _value.value()[i];
                 } else {
                     valueString += std::to_string(_value.value()[i]);
@@ -246,8 +253,7 @@ private:
 // Use a void type to simplify the CompoundParameter to just an aggregate of parameters
 // Then no constructor is requried
 
-template <typename T = void, typename... Us>
-requires (std::derived_from<Us, InputFileParameter> && ...)
+template <typename T = void, InputFileParameterType... Us>
 class CompoundParameter : public InputFileParameter {
 
     friend class YamlInputFile;
@@ -263,8 +269,8 @@ public:
 
     CompoundParameter() noexcept {}
 
-    CompoundParameter(const std::string& key, std::function<T(const CompoundParameter&)> constructor, Us&&... args) noexcept
-            : InputFileParameter(key),
+    CompoundParameter(std::string key, std::function<T(const CompoundParameter&)> constructor, Us&&... args) noexcept
+            : InputFileParameter(std::move(key)),
               _constructor(constructor),
               _parameters(std::forward<Us>(args)...) {
         // Funky logic for defaulting if each passed parameter is also defaulted
@@ -273,8 +279,8 @@ public:
         }, _parameters);
     }
 
-    CompoundParameter(const std::string& key, const std::string& printName, std::function<T(const CompoundParameter&)> constructor, Us&&... args) noexcept
-            : InputFileParameter(key, printName),
+    CompoundParameter(std::string key, std::string printName, std::function<T(const CompoundParameter&)> constructor, Us&&... args) noexcept
+            : InputFileParameter(std::move(key), std::move(printName)),
               _constructor(constructor),
               _parameters(std::forward<Us>(args)...) {
         _defaulted = std::apply([](const auto&... parameter) {
@@ -283,8 +289,8 @@ public:
     }
 
     template <typename V>
-    CompoundParameter(const std::string& key, const std::string& printName, V&& defaultValue, std::function<T(const CompoundParameter&)> constructor, Us&&... args) noexcept
-            : InputFileParameter(key, printName),
+    CompoundParameter(std::string key, std::string printName, V&& defaultValue, std::function<T(const CompoundParameter&)> constructor, Us&&... args) noexcept
+            : InputFileParameter(std::move(key), std::move(printName)),
               _defaulted(true),
               _constructor(constructor),
               _parameters(std::forward<Us>(args)...),
@@ -292,7 +298,7 @@ public:
 
     std::string toString() const noexcept {
         std::string valueString;
-        if constexpr (requires (T v) { static_cast<std::string>(v); } ) {
+        if constexpr (StringConvertible<T>) {
             valueString = _value.value();
         } else {
             valueString = std::to_string(_value.value());
@@ -339,8 +345,7 @@ public:
 // void specialization
 //==================================================
 
-template <typename... Us>
-requires (std::derived_from<Us, InputFileParameter> && ...)
+template <InputFileParameterType... Us>
 class CompoundParameter<void, Us...> : public InputFileParameter {
 
     friend class YamlInputFile;
@@ -354,8 +359,8 @@ public:
 
     CompoundParameter() noexcept {}
 
-    CompoundParameter(const std::string& key, const Us&... args) noexcept
-            : InputFileParameter(key),
+    CompoundParameter(std::string key, const Us&... args) noexcept
+            : InputFileParameter(std::move(key)),
               _parameters(args...) {
         // Funky logic for defaulting if each passed parameter is also defaulted
         _defaulted = std::apply([](const auto&... parameter) {
@@ -363,8 +368,8 @@ public:
         }, _parameters);
     }
 
-    CompoundParameter(const std::string& key, const std::string& printName, const Us&... args) noexcept
-            : InputFileParameter(key, printName),
+    CompoundParameter(std::string key, std::string printName, const Us&... args) noexcept
+            : InputFileParameter(std::move(key), std::move(printName)),
               _parameters(args...) {
         _defaulted = std::apply([](const auto&... parameter) {
             return (parameter.initialized() && ...);
@@ -392,13 +397,11 @@ public:
     void construct() noexcept {}
 };
 
-template <typename... Us>
-requires (std::derived_from<Us, InputFileParameter> && ...)
-CompoundParameter(const std::string& key, const Us&... args) -> CompoundParameter<void, Us...>;
+template <InputFileParameterType... Us>
+CompoundParameter(std::string key, const Us&... args) -> CompoundParameter<void, Us...>;
 
-template <typename... Us>
-requires (std::derived_from<Us, InputFileParameter> && ...)
-CompoundParameter(const std::string& key, const std::string& printName, const Us&... args) -> CompoundParameter<void, Us...>;
+template <InputFileParameterType... Us>
+CompoundParameter(std::string key, std::string printName, const Us&... args) -> CompoundParameter<void, Us...>;
 
 //==================================================
 // The YAML file wrapper which fills parameters using the YAML-CPP library
@@ -420,7 +423,7 @@ private:
 
 public:
 
-    YamlInputFile(std::string fileName) : _filePath(fileName), _fileRoot(YAML::LoadFile(fileName)) {}
+    YamlInputFile(std::string fileName) : _filePath(std::move(fileName)), _fileRoot(YAML::LoadFile(_filePath)) {}
 
     // Strict ownership
     // No copying or moving for simplicity
@@ -438,8 +441,7 @@ public:
     // Returning false indicates a default value was given to the parameter
     // No return state indicates not found in the file with no default since that is a throwing condition
 
-    template <typename... Ts>
-    requires (std::derived_from<Ts, InputFileParameter> && ...)
+    template <InputFileParameterType... Ts>
     bool fillParameter(Ts&... parameters) noexcept {
         try {
             // Below bitwise AND is used instead of logical AND to get around short-circuiting
@@ -447,9 +449,9 @@ public:
             (touchKey(parameters.key), ...); // Mark key as seen in this input file
             return result;
         } catch (const YAML::Exception& e) {
-            log::fatal("Error parsing YAML file \"{}\": {}", _filePath, e.what());
+            log::fatal(std::format("Error parsing YAML file \"{}\": {}", _filePath, e.what()));
         } catch (const std::exception& e) {
-            log::fatal("Error reading file \"{}\": {}", _filePath, e.what());
+            log::fatal(std::format("Error reading file \"{}\": {}", _filePath, e.what()));
         }
     }
 
@@ -571,7 +573,7 @@ private:
 
     static bool checkForKey(const YAML::Node& node, const InputFileParameter& parameter);
 
-    void touchKey(const std::string& key);
+    void touchKey(std::string key);
     bool strictlyAccessed() const; // Checks if all the top level keys have been accessed at least once
 };
 

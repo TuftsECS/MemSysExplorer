@@ -101,25 +101,21 @@
 
 
 
+/* A trial bank is not checked against the retention time */
 #define TRY_AND_UPDATE(oldResult, memoryType) { \
-	if (gInputParameter.routingMode == h_tree) \
-		trialBank = new BankWithHtree(); \
-	else \
-		trialBank = new BankWithoutHtree(); \
-	trialBank->Initialize((oldResult).bank->numRowMat, (oldResult).bank->numColumnMat, (oldResult).bank->capacity, (oldResult).bank->blockSize, (oldResult).bank->associativity, \
-				(oldResult).bank->numRowPerSet, (oldResult).bank->numActiveMatPerRow, (oldResult).bank->numActiveMatPerColumn, (oldResult).bank->muxSenseAmp, \
-				gInputParameter.internalSensing, (oldResult).bank->muxOutputLev1, (oldResult).bank->muxOutputLev2, (oldResult).bank->numRowSubarray, (oldResult).bank->numColumnSubarray, \
-				(oldResult).bank->numActiveSubarrayPerRow, (oldResult).bank->numActiveSubarrayPerColumn, (oldResult).bank->areaOptimizationLevel, (memoryType)); \
-	trialBank->CalculateArea(); \
-	trialBank->CalculateRC(); \
-	trialBank->CalculateLatencyAndPower(); \
-	*(tempResult.bank) = *trialBank; \
-	*(tempResult.localWire) = gLocalWire; \
-	*(tempResult.globalWire) = gGlobalWire; \
-	oldResult.compareAndUpdate(tempResult); \
-	delete trialBank; \
+	std::shared_ptr<mse::component::Bank> trialBank = makeBank((oldResult).bank->matRows, (oldResult).bank->matColumns, (oldResult).bank->capacity, \
+				(oldResult).bank->blockSize, (oldResult).bank->associativity, (oldResult).bank->rowsPerSet, (oldResult).bank->activeMatsPerRow, \
+				(oldResult).bank->activeMatsPerColumn, (oldResult).bank->bitlineMuxInputs, gInputParameter.internalSensing, \
+				(oldResult).bank->senseAmpMuxLevel1Inputs, (oldResult).bank->senseAmpMuxLevel2Inputs, (oldResult).bank->subarrayRows, \
+				(oldResult).bank->subarrayColumns, (oldResult).bank->activeSubarraysPerRow, (oldResult).bank->activeSubarraysPerColumn, \
+				(oldResult).bank->areaOptimizationLevel, (memoryType)); \
+	if (calculateBank(*trialBank)) { \
+		tempResult.bank = trialBank; \
+		*(tempResult.localWire) = gLocalWire; \
+		*(tempResult.globalWire) = gGlobalWire; \
+		oldResult.compareAndUpdate(tempResult); \
+	} \
 }
-
 
 
 #define BIGFOR \
@@ -139,23 +135,17 @@
 
 
 
-#define CALCULATE(bank, memoryType) { \
-	if (gInputParameter.routingMode == h_tree) \
-		(bank) = new BankWithHtree(); \
-	else \
-		(bank) = new BankWithoutHtree(); \
-	(bank)->Initialize(numRowMat, numColumnMat, capacity, blockSize, associativity, \
+/* Builds and evaluates a bank for the current organization, and is true when the bank is valid */
+#define CALCULATE(bank, memoryType) \
+	(((bank) = makeBank(numRowMat, numColumnMat, capacity, blockSize, associativity, \
 				numRowPerSet, numActiveMatPerRow, numActiveMatPerColumn, muxSenseAmp, \
 				gInputParameter.internalSensing, muxOutputLev1, muxOutputLev2, numRowSubarray, numColumnSubarray, \
-				numActiveSubarrayPerRow, numActiveSubarrayPerColumn, (BufferDesignTarget)areaOptimizationLevel, (memoryType)); \
-	(bank)->CalculateArea(); \
-	(bank)->CalculateRC(); \
-	(bank)->CalculateLatencyAndPower(); \
-}
+				numActiveSubarrayPerRow, numActiveSubarrayPerColumn, (BufferDesignTarget)areaOptimizationLevel, (memoryType))), \
+		calculateBank(*(bank)) && (bank)->meetsRetention())
 
 
 #define UPDATE_BEST_DATA { \
-	*(tempResult.bank) = *dataBank; \
+	tempResult.bank = dataBank; \
 	*(tempResult.localWire) = gLocalWire; \
 	*(tempResult.globalWire) = gGlobalWire; \
 	for (int i = 0; i < (int)full_exploration; i++) \
@@ -164,13 +154,13 @@
 
 
 #define VERIFY_DATA_CAPACITY { \
-	if ((long long)dataBank->mat.subarray.numColumn * dataBank->mat.subarray.numRow * dataBank->numColumnMat * \
-			dataBank->numRowMat * dataBank->numColumnSubarray * dataBank->numRowSubarray != capacity) { \
-				std::cout << "1 Bank = " << dataBank->numRowMat << "x" << dataBank->numColumnMat << " Mats" << std::endl; \
-				std::cout << "Activation - " << dataBank->numActiveMatPerColumn << "x" << dataBank->numActiveMatPerRow << " Mats" << std::endl; \
-				std::cout << "1 Mat  = " << dataBank->numRowSubarray << "x" << dataBank->numColumnSubarray << " Subarrays" << std::endl; \
-				std::cout << "Activation - " << dataBank->numActiveSubarrayPerColumn << "x" << dataBank->numActiveSubarrayPerRow << " Subarrays" << std::endl; \
-				std::cout << "Mux Degree - " << dataBank->muxSenseAmp << " x " << dataBank->muxOutputLev1 << " x " << dataBank->muxOutputLev2 << std::endl; \
+	if ((long long)dataBank->mat.subarray.columns * dataBank->mat.subarray.rows * dataBank->matColumns * \
+			dataBank->matRows * dataBank->subarrayColumns * dataBank->subarrayRows != capacity) { \
+				std::cout << "1 Bank = " << dataBank->matRows << "x" << dataBank->matColumns << " Mats" << std::endl; \
+				std::cout << "Activation - " << dataBank->activeMatsPerColumn << "x" << dataBank->activeMatsPerRow << " Mats" << std::endl; \
+				std::cout << "1 Mat  = " << dataBank->subarrayRows << "x" << dataBank->subarrayColumns << " Subarrays" << std::endl; \
+				std::cout << "Activation - " << dataBank->activeSubarraysPerColumn << "x" << dataBank->activeSubarraysPerRow << " Subarrays" << std::endl; \
+				std::cout << "Mux Degree - " << dataBank->bitlineMuxInputs << " x " << dataBank->senseAmpMuxLevel1Inputs << " x " << dataBank->senseAmpMuxLevel2Inputs << std::endl; \
 				std::cout << "ERROR: DATA capacity violation. Shouldn't happen" << std::endl; \
 				exit(-1); \
 			} \
@@ -178,7 +168,7 @@
 
 
 #define UPDATE_BEST_TAG { \
-	*(tempResult.bank) = *tagBank; \
+	tempResult.bank = tagBank; \
 	*(tempResult.localWire) = gLocalWire; \
 	*(tempResult.globalWire) = gGlobalWire; \
 	for (int i = 0; i < (int)full_exploration; i++) \
@@ -187,13 +177,13 @@
 
 
 #define VERIFY_TAG_CAPACITY { \
-	if ((long long)tagBank->mat.subarray.numColumn * tagBank->mat.subarray.numRow * tagBank->numColumnMat * \
-			tagBank->numRowMat * tagBank->numColumnSubarray * tagBank->numRowSubarray != capacity) { \
-				std::cout << "1 Bank = " << tagBank->numRowMat << "x" << tagBank->numColumnMat << " Mats" << std::endl; \
-				std::cout << "Activation - " << tagBank->numActiveMatPerColumn << "x" << tagBank->numActiveMatPerRow << " Mats" << std::endl; \
-				std::cout << "1 Mat  = " << tagBank->numRowSubarray << "x" << tagBank->numColumnSubarray << " Subarrays" << std::endl; \
-				std::cout << "Activation - " << tagBank->numActiveSubarrayPerColumn << "x" << tagBank->numActiveSubarrayPerRow << " Subarrays" << std::endl; \
-				std::cout << "Mux Degree - " << tagBank->muxSenseAmp << " x " << tagBank->muxOutputLev1 << " x " << tagBank->muxOutputLev2 << std::endl; \
+	if ((long long)tagBank->mat.subarray.columns * tagBank->mat.subarray.rows * tagBank->matColumns * \
+			tagBank->matRows * tagBank->subarrayColumns * tagBank->subarrayRows != capacity) { \
+				std::cout << "1 Bank = " << tagBank->matRows << "x" << tagBank->matColumns << " Mats" << std::endl; \
+				std::cout << "Activation - " << tagBank->activeMatsPerColumn << "x" << tagBank->activeMatsPerRow << " Mats" << std::endl; \
+				std::cout << "1 Mat  = " << tagBank->subarrayRows << "x" << tagBank->subarrayColumns << " Subarrays" << std::endl; \
+				std::cout << "Activation - " << tagBank->activeSubarraysPerColumn << "x" << tagBank->activeSubarraysPerRow << " Subarrays" << std::endl; \
+				std::cout << "Mux Degree - " << tagBank->bitlineMuxInputs << " x " << tagBank->senseAmpMuxLevel1Inputs << " x " << tagBank->senseAmpMuxLevel2Inputs << std::endl; \
 				std::cout << "ERROR: DATA capacity violation. Shouldn't happen" << std::endl; \
 				exit(-1); \
 			} \

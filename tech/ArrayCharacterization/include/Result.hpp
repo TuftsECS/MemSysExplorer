@@ -38,8 +38,7 @@
 #ifndef MSE_RESULT_HPP
 #define MSE_RESULT_HPP
 
-#include "BankWithHtree.hpp"
-#include "BankWithoutHtree.hpp"
+#include "component/Bank.hpp"
 #include "Wire.hpp"
 
 #include "yaml-cpp/yaml.h"
@@ -61,9 +60,17 @@ public:
 	YAML::Node toYamlNodeAsCache(Result& tagBank, CacheAccessMode cacheAccessMode);
 	void compareAndUpdate(Result& newResult);
 
+	/* Bank results, or the invalid value when there is no bank yet */
+	double readLatency() const;
+	double writeLatency() const;
+	double readDynamicEnergy() const;
+	double writeDynamicEnergy() const;
+	double leakage() const;
+	double area() const;
+
 	OptimizationTarget optimizationTarget = read_latency_optimized;	/* Exploration should not be assigned here */
 
-	std::unique_ptr<Bank> bank;
+	std::shared_ptr<mse::component::Bank> bank;
 	std::unique_ptr<Wire> localWire;		/* TO-DO: this one has the same name as one of the global variables */
 	std::unique_ptr<Wire> globalWire;
 

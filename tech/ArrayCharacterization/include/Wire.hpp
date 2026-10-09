@@ -39,7 +39,7 @@
 #define MSE_WIRE_HPP
 
 #include "typedef.hpp"
-#include "SenseAmp.hpp"
+#include "component/SenseAmp.hpp"
 
 #include <iostream>
 
