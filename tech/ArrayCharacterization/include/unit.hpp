@@ -701,6 +701,8 @@ UnitConversion2Atoms(OhmAtom, FaradAtom, SecondAtom)
 UnitConversion2Atoms(AmpereAtom, OhmAtom, VoltAtom)
 UnitConversion2Atoms(AmpereAtom, VoltAtom, WattAtom)
 UnitConversion2AtomsExponents(FaradAtom, 1, VoltAtom, 2, JouleAtom, 1)
+UnitConversion2AtomsExponents(VoltAtom, 1, AmpereAtom, -1, OhmAtom, 1)
+UnitConversion2AtomsExponents(FaradAtom, 1, SecondAtom, -1, SiemensAtom, 1)
 
 UnitConversionSimilarAtoms(BitsAtom, BytesAtom, [](auto bits) { return bits / 8; })
 UnitConversionSimilarAtoms(BytesAtom, BitsAtom, [](auto bytes) { return bytes * 8; })

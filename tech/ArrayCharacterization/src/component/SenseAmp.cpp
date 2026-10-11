@@ -19,16 +19,17 @@ static bool usesMlcModel(bool mlc) {
 }
 
 bool mse::component::SenseAmp::setup() noexcept {
-    return _senseAmpPitch.value() > gTech.featureSize * 2;
+    using namespace mse::unit;
+
+    return _senseAmpPitch > gTech.featureSize * 2_feat;
 }
 
 mse::unit::Farad mse::component::SenseAmp::calculateLoadCapacitance() const noexcept {
     using namespace mse::unit;
     using namespace mse::constant;
 
-    const Number finFactor = gTech.featureSize <= 14*1e-9 ? 2 : 1;
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{gTech.featureSize};
-    const Feature pitch = _senseAmpPitch / featureSize;
+    const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
+    const Feature pitch = _senseAmpPitch / gTech.featureSize;
 
     Farad capacitance = NmosTransistor(gTech, finFactor * (senseAmpAltWidthP + senseAmpAltWidthN), pitch).gateCapacitance()
             + NmosTransistor(gTech, finFactor * senseAmpAltWidthN, pitch).drainCapacitance()
@@ -49,9 +50,8 @@ mse::Dimensions mse::component::SenseAmp::calculateDimensions() const noexcept {
     using namespace mse::unit;
     using namespace mse::constant;
 
-    const Number finFactor = gTech.featureSize <= 14*1e-9 ? 2 : 1;
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{gTech.featureSize};
-    const Feature pitch = _senseAmpPitch / featureSize;
+    const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
+    const Feature pitch = _senseAmpPitch / gTech.featureSize;
 
     const Dimensions top = PmosTransistor(gTech, finFactor * senseAmpAltWidthTop, pitch).dimensions();
     const Dimensions p = PmosTransistor(gTech, finFactor * senseAmpAltWidthP, pitch).dimensions();
@@ -76,7 +76,7 @@ mse::Dimensions mse::component::SenseAmp::calculateDimensions() const noexcept {
     dimensions.width = _senseAmpPitch * _columns;
 
     if (_currentSense) {
-        const MeterExp<2> ivConverter = ivConverterArea * featureSize * featureSize;
+        const MeterExp<2> ivConverter = ivConverterArea * gTech.featureSize * gTech.featureSize;
         dimensions.height += ivConverter / dimensions.width;
     }
 
@@ -90,23 +90,23 @@ mse::component::BasicTiming mse::component::SenseAmp::calculateTiming() const no
     Second readLatency;
 
     if (_currentSense) {
-        if (gTech.featureSize >= 179e-9) {
+        if (gTech.featureSizeInNano >= 179) {
             readLatency = 0.46e-9_s;
-        } else if (gTech.featureSize >= 119e-9) {
+        } else if (gTech.featureSizeInNano >= 119) {
             readLatency = 0.49e-9_s;
-        } else if (gTech.featureSize >= 89e-9) {
+        } else if (gTech.featureSizeInNano >= 89) {
             readLatency = 0.53e-9_s;
-        } else if (gTech.featureSize >= 64e-9) {
+        } else if (gTech.featureSizeInNano >= 64) {
             readLatency = 0.62e-9_s;
-        } else if (gTech.featureSize >= 44e-9) {
+        } else if (gTech.featureSizeInNano >= 44) {
             readLatency = 0.80e-9_s;
-        } else if (gTech.featureSize >= 31e-9) {
+        } else if (gTech.featureSizeInNano >= 31) {
             readLatency = 1.07e-9_s;
         } else {
             readLatency = 1.0e-10_s;
         }
     } else {
-        const Number finFactor = gTech.featureSize <= 14*1e-9 ? 2 : 1;
+        const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
         const Feature height = maxTransistorHeight;
         Siemens gm;
         if (auto mlcGm = usesMlcModel(_mlc) ? mlcValue(_fingers, {240.3E-6, 340.5E-6, 385.9E-6, 408.7E-6, 421.7E-6, 430.0E-6, 435.8E-6}) : std::nullopt) {
@@ -115,7 +115,7 @@ mse::component::BasicTiming mse::component::SenseAmp::calculateTiming() const no
             gm = NmosTransistor(gTech, finFactor * senseAmpWidthN, height).transconductance() + PmosTransistor(gTech, finFactor * senseAmpWidthP, height).transconductance();
         }
         const Second tau = loadCapacitance() / OhmExp<-1>(gm);
-        readLatency = tau * std::log(gTech.vdd / senseVoltage.value());
+        readLatency = tau * std::log(gTech.vdd / senseVoltage);
     }
 
     if (gCell.memCellType == FeFET) {
@@ -137,24 +137,23 @@ mse::component::BasicPower mse::component::SenseAmp::calculatePower() const noex
     using namespace mse::unit;
     using namespace mse::constant;
 
-    const Volt vdd{gTech.vdd};
     Joule readEnergy;
     Watt leakage;
 
     if (_currentSense) {
-        if (gTech.featureSize >= 119e-9) {
+        if (gTech.featureSizeInNano >= 119) {
             readEnergy = 8.52e-14_J;
             leakage = 1.40e-8_W;
-        } else if (gTech.featureSize >= 89e-9) {
+        } else if (gTech.featureSizeInNano >= 89) {
             readEnergy = 8.72e-14_J;
             leakage = 1.87e-8_W;
-        } else if (gTech.featureSize >= 64e-9) {
+        } else if (gTech.featureSizeInNano >= 64) {
             readEnergy = 9.00e-14_J;
             leakage = 2.57e-8_W;
-        } else if (gTech.featureSize >= 44e-9) {
+        } else if (gTech.featureSizeInNano >= 44) {
             readEnergy = 10.26e-14_J;
             leakage = 4.41e-9_W;
-        } else if (gTech.featureSize >= 31e-9) {
+        } else if (gTech.featureSizeInNano >= 31) {
             readEnergy = 12.56e-14_J;
             leakage = 12.54e-8_W;
         } else {
@@ -162,15 +161,15 @@ mse::component::BasicPower mse::component::SenseAmp::calculatePower() const noex
             leakage = 0_W;
         }
     } else {
-        readEnergy = loadCapacitance() * vdd * vdd;
+        readEnergy = loadCapacitance() * gTech.vdd * gTech.vdd;
         Ampere idleCurrent;
         if (_mlc) {
             idleCurrent = 1.35E-11_A * (_levels - 1.0);
         } else {
-            const Number finFactor = gTech.featureSize <= 14*1e-9 ? 2 : 1;
+            const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
             idleCurrent = NmosTransistor(gTech, finFactor * senseAmpWidthEnable, maxTransistorHeight).leakageCurrent();
         }
-        leakage = idleCurrent * vdd;
+        leakage = idleCurrent * gTech.vdd;
     }
 
     if (gCell.memCellType == FeFET) {

@@ -333,7 +333,7 @@ void InputParameter::PrintInputParameter() {
 		std::cout << "Page Size  : " << pageSize / 8 << "Bytes\n";
 		std::cout << "Block Size : " << flashBlockSize / 8 / 1024 << "KB\n";
 	}
-	// TO-DO: tedious work here!!!
+	// TODO: tedious work here!!!
 
 	if (optimizationTarget == full_exploration) {
 		std::cout << "\nFull design space exploration ... might take hours\n";

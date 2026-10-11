@@ -71,7 +71,7 @@ public:
 	OptimizationTarget optimizationTarget = read_latency_optimized;	/* Exploration should not be assigned here */
 
 	std::shared_ptr<mse::component::Bank> bank;
-	std::unique_ptr<Wire> localWire;		/* TO-DO: this one has the same name as one of the global variables */
+	std::unique_ptr<Wire> localWire;		/* TODO: this one has the same name as one of the global variables */
 	std::unique_ptr<Wire> globalWire;
 
 	double limitReadLatency = mse::constant::invalidValue;			/* The maximum allowable read latency, Unit: s */

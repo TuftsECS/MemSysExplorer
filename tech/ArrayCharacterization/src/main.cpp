@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 	Technology techHighR;
 	double alphaR = 0;
 	if (gInputParameter.processNodeR > 200){
-		// TO-DO: technology node > 200 nm
+		// TODO: technology node > 200 nm
 	} else if (gInputParameter.processNodeR > 120) { // 120 nm < technology node <= 200 nm
 		techHighR.Initialize(200, gInputParameter.deviceRoadmapR, is_FeFET);
 		alphaR = (gInputParameter.processNodeR - 120.0) / 60;
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
 	Technology techHighW;
 	double alphaW = 0;
 	if (gInputParameter.processNodeW > 200){
-		// TO-DO: technology node > 200 nm
+		// TODO: technology node > 200 nm
 	} else if (gInputParameter.processNodeW > 120) { // 120 nm < technology node <= 200 nm
 		techHighW.Initialize(200, gInputParameter.deviceRoadmapW, is_FeFET);
 		alphaW = (gInputParameter.processNodeW - 120.0) / 60;
@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
 	Technology techHigh;
 	double alpha = 0;
 	if (gInputParameter.processNode > 200){
-		// TO-DO: technology node > 200 nm
+		// TODO: technology node > 200 nm
 	} else if (gInputParameter.processNode > 120) { // 120 nm < technology node <= 200 nm
 		techHigh.Initialize(200, gInputParameter.deviceRoadmap, is_FeFET);
 		alpha = (gInputParameter.processNode - 120.0) / 60;

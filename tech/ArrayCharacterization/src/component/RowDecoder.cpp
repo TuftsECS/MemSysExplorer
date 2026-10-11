@@ -95,7 +95,7 @@ mse::component::BasicPower mse::component::RowDecoder::calculatePower() const no
     power.leakage = driver.leakage;
     power.dynamicReadEnergy = driver.dynamicReadEnergy;
     if (nandInputs() > 0) {
-        const Watt nandLeakage = CmosNand<>(gTech, nandInputs(), constant::minNmosSize, gTech.pnSizeRatio * constant::minNmosSize, constant::maxTransistorHeight).leakageCurrent() * Volt(gTech.vdd);
+        const Watt nandLeakage = CmosNand<>(gTech, nandInputs(), constant::minNmosSize, gTech.pnSizeRatio * constant::minNmosSize, constant::maxTransistorHeight).leakageCurrent() * gTech.vdd;
         // DRAM wordlines are overdriven to Vpp, only one row switches each time
         const Volt swing(gCell.memCellType == DRAM || gCell.memCellType == eDRAM ? gTech.vpp : gTech.vdd);
         const Joule nandEnergy = (nandOutputCapacitance() + _outputDriver.stages().front().inputCapacitance) * swing * swing;

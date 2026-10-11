@@ -72,7 +72,7 @@ public:
 	double readVoltage = 0;		/* Read voltage */
 	double readCurrent = 0;		/* Read current */
 	double minSenseVoltage = 0.08; /* Minimum sense voltage */
-        double wordlineBoostRatio = 1.0; /*TO-DO: function not realized: ratio of boost wordline voltage to vdd */
+        double wordlineBoostRatio = 1.0; /*TODO: function not realized: ratio of boost wordline voltage to vdd */
 	double readPower = 0;       /* Read power per bitline (uW)*/
 	bool   resetMode = true;		/* true = voltage-mode, false = current-mode */
 	double resetVoltage = 0;	/* Reset voltage */

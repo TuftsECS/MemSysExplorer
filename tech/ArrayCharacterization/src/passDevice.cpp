@@ -32,23 +32,21 @@ static mse::unit::Farad computeDrainCapacitance(const Technology& tech, mse::uni
     if (foldDegree % 2 == 1) {
         drainSidewallLength += drainHeight;
     }
-    const Farad junction = Farad(drainArea.value() * tech.capJunction);
-    const Farad channel = Farad(foldDegree * drainHeight.value() * tech.capDrainToChannel);
-    const Farad sidewall = Farad(drainSidewallLength.value() * tech.capSidewall);
+    const Farad junction = drainArea * tech.capJunction;
+    const Farad channel = foldDegree * drainHeight * tech.capDrainToChannel;
+    const Farad sidewall = drainSidewallLength * tech.capSidewall;
 
     return junction + channel + sidewall;
 }
 
 static mse::unit::Farad computeGateCapacitance(const Technology& tech, mse::unit::Feature gateWidth) {
     using namespace mse::unit;
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
-    return Farad((tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * (gateWidth * featureSize).value() + tech.phyGateLength * tech.capPolywire);
+    return (tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * (gateWidth * tech.featureSize) + tech.phyGateLength * tech.capPolywire;
 }
 
-static mse::unit::Ohm computeOnResistance(const Technology& tech, const double* onCurrent, mse::unit::Feature gateWidth, int tempIndex) {
+static mse::unit::Ohm computeOnResistance(const Technology& tech, const Technology::TemperatureTable& onCurrent, mse::unit::Feature gateWidth, int tempIndex) {
     using namespace mse::unit;
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
-    return Ohm(tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * (gateWidth * featureSize).value()));
+    return tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * (gateWidth * tech.featureSize));
 }
 
 template <mse::PassType Type, int Inputs>
@@ -68,13 +66,12 @@ template <mse::PassType Type, int Inputs>
 mse::Dimensions mse::PassStack<Type, Inputs>::dimensions() const noexcept {
     using namespace mse::unit;
 
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{_tech->featureSize};
     const unsigned foldDegree = calculateFolding(_gateWidth, _maxRegionHeight);
     const Feature foldedFingerWidth = foldDegree * polyWidth + (foldDegree - 1) * diffusionRegionWidth;
 
     return Dimensions{
-        .width = (2.0 * contactWidth + Inputs * foldedFingerWidth + (Inputs - 1) * diffusionRegionWidth) * featureSize,
-        .height = std::min(_gateWidth, _maxRegionHeight) * featureSize
+        .width = (2.0 * contactWidth + Inputs * foldedFingerWidth + (Inputs - 1) * diffusionRegionWidth) * _tech->featureSize,
+        .height = std::min(_gateWidth, _maxRegionHeight) * _tech->featureSize
     };
 }
 
@@ -82,12 +79,11 @@ template <mse::PassType Type, int Inputs>
 mse::unit::Farad mse::PassStack<Type, Inputs>::drainCapacitance() const noexcept {
     using namespace mse::unit;
 
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{_tech->featureSize};
     const unsigned foldDegree = calculateFolding(_gateWidth, _maxRegionHeight);
 
     const Feature foldedFingerDrainWidth = (foldDegree - 1) * diffusionRegionWidth;
-    const Meter drainWidth = (contactWidth + Inputs * foldedFingerDrainWidth + (Inputs - 1) * diffusionRegionWidth) * featureSize;
-    const Meter drainHeight = std::min(_gateWidth, _maxRegionHeight) * featureSize;
+    const Meter drainWidth = (contactWidth + Inputs * foldedFingerDrainWidth + (Inputs - 1) * diffusionRegionWidth) * _tech->featureSize;
+    const Meter drainHeight = std::min(_gateWidth, _maxRegionHeight) * _tech->featureSize;
     const MeterExp<2> drainArea = drainWidth * drainHeight;
 
     return computeDrainCapacitance(*_tech, drainArea, drainWidth, drainHeight, foldDegree);
@@ -102,15 +98,14 @@ template <mse::PassType Type, int Inputs>
 mse::unit::Ampere mse::PassStack<Type, Inputs>::leakageCurrent() const noexcept {
     using namespace mse::unit;
 
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{_tech->featureSize};
-    const double* offCurrent = Type == PassType::Nmos ? _tech->currentOffNmos : _tech->currentOffPmos;
+    const Technology::TemperatureTable& offCurrent = Type == PassType::Nmos ? _tech->currentOffNmos : _tech->currentOffPmos;
 
-    return Ampere((_gateWidth * featureSize).value() * offCurrent[_tempIndex]);
+    return _gateWidth * _tech->featureSize * offCurrent[_tempIndex];
 }
 
 template <mse::PassType Type, int Inputs>
 mse::unit::Ohm mse::PassStack<Type, Inputs>::resistance() const noexcept {
-    const double* onCurrent = Type == PassType::Nmos ? _tech->currentOnNmos : _tech->currentOnPmos;
+    const Technology::TemperatureTable& onCurrent = Type == PassType::Nmos ? _tech->currentOnNmos : _tech->currentOnPmos;
 
     return computeOnResistance(*_tech, onCurrent, _gateWidth, _tempIndex) * Inputs;
 }

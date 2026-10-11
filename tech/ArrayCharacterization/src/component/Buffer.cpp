@@ -66,9 +66,9 @@ static constexpr BufferTable node22 {
 };
 
 static const BufferTable& selectTable() {
-    if (gTech.featureSize >= 44e-9) {
+    if (gTech.featureSizeInNano >= 44) {
         return node45;
-    } else if (gTech.featureSize >= 31e-9) {
+    } else if (gTech.featureSizeInNano >= 31) {
         return node32;
     }
     return node22;

@@ -14,7 +14,7 @@ mse::component::Precharger::Precharger(unit::Volt prechargeVoltage, long long co
 bool mse::component::Precharger::setup() noexcept {
     using namespace mse::unit;
 
-    const Meter cellWidth = Feature(gCell.widthInFeatureSize) * Unit<MeterAtom<>, FeatureAtom<-1>>(gTech.featureSize);
+    const Meter cellWidth = Feature(gCell.widthInFeatureSize) * gTech.featureSize;
     const Farad wireLoadPerColumn(cellWidth.value() * gLocalWire.capWirePerUnit);
     const Farad inverterInputCapacitance = CmosInverter(gTech, constant::minNmosSize, constant::minNmosSize * gTech.pnSizeRatio, 40_feat).gateCapacitance();
     const Farad loadPerColumn = inverterInputCapacitance + wireLoadPerColumn;
@@ -81,10 +81,9 @@ mse::component::RampedTiming mse::component::Precharger::calculateTiming(physics
 mse::component::BasicPower mse::component::Precharger::calculatePower() const noexcept {
     using namespace mse::unit;
 
-    const Volt vdd(gTech.vdd);
-    const Watt inverterLeakage = _columns * vdd * CmosInverter(gTech, constant::minNmosSize, constant::minNmosSize * gTech.pnSizeRatio, 40_feat).leakageCurrent();
+    const Watt inverterLeakage = _columns * gTech.vdd * CmosInverter(gTech, constant::minNmosSize, constant::minNmosSize * gTech.pnSizeRatio, 40_feat).leakageCurrent();
     const Watt prechargerLeakage = _columns * _prechargeVoltage * PmosTransistor(gTech, prechargerWidth, 40_feat).leakageCurrent();
-    const Joule inverterEnergy = rc().inverterLoadCapacitance * vdd * vdd;
+    const Joule inverterEnergy = rc().inverterLoadCapacitance * gTech.vdd * gTech.vdd;
 
     // Bitline precharge energy is not counted because it is a charging process, and no precharging is needed during the write operation
     BasicPower power;

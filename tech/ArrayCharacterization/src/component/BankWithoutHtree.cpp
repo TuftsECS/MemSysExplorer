@@ -277,7 +277,7 @@ mse::component::BankPower mse::component::BankWithoutHtree::calculatePower() con
             power.leakage += Watt(leakage * routedBits * matColumns);
         } else if (i < activeMatsPerColumn) {
             const double globalBitlineCapacitance = wireLength * gGlobalWire.capWirePerUnit;
-            const double addressEnergy = globalBitlineCapacitance * gTech.vdd * gTech.vdd * _matAddressBits;
+            const double addressEnergy = globalBitlineCapacitance * gTech.vdd.value() * gTech.vdd.value() * _matAddressBits;
             if (gCell.memCellType == SRAM) {
                 // Should equal the reset and set voltages for SRAM
                 const double prechargeVoltage = gCell.readVoltage;

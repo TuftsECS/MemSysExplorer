@@ -197,18 +197,18 @@ void Result::print() {
 	std::cout << " - Total Area = " << bank->dimensions().height << " x " << bank->dimensions().width
 			<< " = " << bank->dimensions().area() << "\n";
 	std::cout << " |--- Mat Area      = " << bank->mat.dimensions().height << " x " << bank->mat.dimensions().width
-			<< " = " << bank->mat.dimensions().area() << "   (" << gCell.area * gTech.featureSize * gTech.featureSize
+			<< " = " << bank->mat.dimensions().area() << "   (" << gCell.area * gTech.featureSize.value() * gTech.featureSize.value()
 			* bank->capacity / bank->matRows / bank->matColumns / bank->mat.dimensions().area().value() * 100 << "%)\n";
 	std::cout << " |--- Subarray Area = " << subarray.dimensions().height << " x "
 			<< subarray.dimensions().width << " = " << subarray.dimensions().area() << "   ("
-			<< gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / bank->matRows
+			<< gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity / bank->matRows
 			/ bank->matColumns / bank->subarrayRows / bank->subarrayColumns
 			/ subarray.dimensions().area().value() * 100 << "%)\n";
 	//Qing: subarray buffer area
 	std::cout << " |--- Subarray Buffer Area = " << subarray.buffer.dimensions().height << " x "
 			<< subarray.buffer.dimensions().width << " = " << subarray.buffer.dimensions().area() << "\n";
 	//Qing.
-	std::cout << " - Area Efficiency = " << gCell.area * gTech.featureSize * gTech.featureSize
+	std::cout << " - Area Efficiency = " << gCell.area * gTech.featureSize.value() * gTech.featureSize.value()
 			* bank->capacity / bank->dimensions().area().value() * 100 << "%\n";
 
 	std::cout << "Timing:\n";
@@ -493,7 +493,7 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 			cacheWriteLatency = std::max(tagResult.bank->timing().writeLatency.value(), bank->timing().writeLatency.value());	// Data and tag are written in parallel
 			/* Calculate power */
 			cacheMissDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value();	// No matter what tag is always accessed
-			cacheMissDynamicEnergy += bank->power().dynamicReadEnergy.value();	// Data is also partially accessed, TO-DO: not accurate here
+			cacheMissDynamicEnergy += bank->power().dynamicReadEnergy.value();	// Data is also partially accessed, TODO: not accurate here
 			cacheHitDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
 			cacheWriteDynamicEnergy = tagResult.bank->power().dynamicWriteEnergy.value() + bank->power().dynamicWriteEnergy.value();
 		} else if (cacheAccessMode == fast_access_mode) {
@@ -503,7 +503,7 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 			cacheWriteLatency = std::max(tagResult.bank->timing().writeLatency.value(), bank->timing().writeLatency.value());
 			/* Calculate power */
 			cacheMissDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value();	// No matter what tag is always accessed
-			cacheMissDynamicEnergy += bank->power().dynamicReadEnergy.value();	// Data is also partially accessed, TO-DO: not accurate here
+			cacheMissDynamicEnergy += bank->power().dynamicReadEnergy.value();	// Data is also partially accessed, TODO: not accurate here
 			cacheHitDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
 			cacheWriteDynamicEnergy = tagResult.bank->power().dynamicWriteEnergy.value() + bank->power().dynamicWriteEnergy.value();
 		} else {		/* sequential access */
@@ -519,7 +519,7 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 		/* Calculate leakage */
 		cacheLeakage = tagResult.bank->power().leakage.value() + bank->power().leakage.value();
 		/* Calculate area */
-		cacheArea = tagResult.bank->dimensions().area().value() + bank->dimensions().area().value();	// TO-DO: simply add them together here
+		cacheArea = tagResult.bank->dimensions().area().value() + bank->dimensions().area().value();	// TODO: simply add them together here
 
 		/* start printing */
 		std::cout << "\n=======================\n"
@@ -649,8 +649,8 @@ YAML::Node Result::toYamlNode() {
 			result["MemoryCell"]["WidthSRAMCellPMOS_F"] = gCell.widthSRAMCellPMOS;
 			result["MemoryCell"]["PeripheralRoadmap"]   = roadmapToString(gTech.deviceRoadmap);
 			result["MemoryCell"]["PeripheralNode_nm"]   = gTech.featureSizeInNano;
-			result["MemoryCell"]["VDD_V"]               = gTech.vdd;
-			result["MemoryCell"]["WWL_SWING"]           = gTech.vdd;
+			result["MemoryCell"]["VDD_V"]               = gTech.vdd.value();
+			result["MemoryCell"]["WWL_SWING"]           = gTech.vdd.value();
 			result["MemoryCell"]["Temperature_K"]       = gCell.temperature;
 		}
 
@@ -659,8 +659,8 @@ YAML::Node Result::toYamlNode() {
 			result["MemoryCell"]["WidthAccessCMOS_F"] = gCell.widthAccessCMOS;
 			result["MemoryCell"]["PeripheralRoadmap"] = roadmapToString(gTech.deviceRoadmap);
 			result["MemoryCell"]["PeripheralNode_nm"] = gTech.featureSizeInNano;
-			result["MemoryCell"]["VDD_V"] = gTech.vdd;
-			result["MemoryCell"]["WWL_SWING"] = gTech.vpp;
+			result["MemoryCell"]["VDD_V"] = gTech.vdd.value();
+			result["MemoryCell"]["WWL_SWING"] = gTech.vpp.value();
 			result["MemoryCell"]["Temperature_K"] = gCell.temperature;
 		}
 
@@ -674,8 +674,8 @@ YAML::Node Result::toYamlNode() {
 			result["MemoryCell"]["PeripheralNode_nm"]      = gTech.featureSizeInNano;
 			result["MemoryCell"]["WriteAccessNode_nm"]     = gTechW.featureSizeInNano;
 			result["MemoryCell"]["ReadAccessNode_nm"]      = gTechR.featureSizeInNano;
-			result["MemoryCell"]["VDD_V"]                  = gTech.vdd;
-			result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp;
+			result["MemoryCell"]["VDD_V"]                  = gTech.vdd.value();
+			result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp.value();
 			result["MemoryCell"]["Temperature_K"]          = gCell.temperature;
 		}
 
@@ -812,19 +812,19 @@ YAML::Node Result::toYamlNode() {
     result["Results"]["Area"]["Mat"]["Width_um"] = bank->mat.dimensions().width.value() * 1e6;
     result["Results"]["Area"]["Mat"]["Area_mm2"] = bank->mat.dimensions().area().value() * 1e6;
     result["Results"]["Area"]["Mat"]["Efficiency_percent"] = 
-        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / 
+        (gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity / 
          bank->matRows / bank->matColumns / bank->mat.dimensions().area().value() * 100);
 
     result["Results"]["Area"]["Subarray"]["Height_um"] = bank->mat.subarray.dimensions().height.value() * 1e6;
     result["Results"]["Area"]["Subarray"]["Width_um"] = bank->mat.subarray.dimensions().width.value() * 1e6;
     result["Results"]["Area"]["Subarray"]["Area_mm2"] = bank->mat.subarray.dimensions().area().value() * 1e6;
     result["Results"]["Area"]["Subarray"]["Efficiency_percent"] =
-        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / 
+        (gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity / 
          bank->matRows / bank->matColumns / bank->subarrayRows / 
          bank->subarrayColumns / bank->mat.subarray.dimensions().area().value() * 100);
 
     result["Results"]["Area"]["AreaEfficiency_percent"] =
-        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / bank->dimensions().area().value() * 100);
+        (gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity / bank->dimensions().area().value() * 100);
 
     // Timing
     result["Results"]["Timing"]["Read"]["Latency_ns"] = bank->timing().readLatency.value() * 1e9;
@@ -1035,7 +1035,7 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 		result["MemoryCell"]["WidthSRAMCellPMOS_F"] = gCell.widthSRAMCellPMOS;
 		result["MemoryCell"]["PeripheralRoadmap"]   = roadmapToString(gTech.deviceRoadmap);
 		result["MemoryCell"]["PeripheralNode_nm"]   = gTech.featureSizeInNano;
-		result["MemoryCell"]["VDD_V"]               = gTech.vdd;
+		result["MemoryCell"]["VDD_V"]               = gTech.vdd.value();
 		result["MemoryCell"]["Temperature_K"]       = gCell.temperature;
 	}
 
@@ -1044,8 +1044,8 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 		result["MemoryCell"]["WidthAccessCMOS_F"] = gCell.widthAccessCMOS;
 		result["MemoryCell"]["PeripheralRoadmap"] = roadmapToString(gTech.deviceRoadmap);
 		result["MemoryCell"]["PeripheralNode_nm"] = gTech.featureSizeInNano;
-		result["MemoryCell"]["VDD_V"] = gTech.vdd;
-		result["MemoryCell"]["WL_SWING"] = gTech.vpp;
+		result["MemoryCell"]["VDD_V"] = gTech.vdd.value();
+		result["MemoryCell"]["WL_SWING"] = gTech.vpp.value();
 		result["MemoryCell"]["Temperature_K"] = gCell.temperature;
 	}
 
@@ -1059,8 +1059,8 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 		result["MemoryCell"]["PeripheralNode_nm"]      = gTech.featureSizeInNano;
 		result["MemoryCell"]["WriteAccessNode_nm"]     = gTechW.featureSizeInNano;
 		result["MemoryCell"]["ReadAccessNode_nm"]      = gTechR.featureSizeInNano;
-		result["MemoryCell"]["VDD_V"]                  = gTech.vdd;
-		result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp;
+		result["MemoryCell"]["VDD_V"]                  = gTech.vdd.value();
+		result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp.value();
 		result["MemoryCell"]["Temperature_K"]          = gCell.temperature;
 	}
 

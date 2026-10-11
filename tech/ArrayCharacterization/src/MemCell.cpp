@@ -341,28 +341,28 @@ void MemCell::ApplyPVT() {
 		double leakageCurrent = 0;
 		double effWidthAccessCMOS = 0;
 		Technology* chosenTech = nullptr;
-		double* currentOffNmosArr = nullptr;
+		const Technology::TemperatureTable* currentOffNmosArr = nullptr;
 
 		if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
 			chosenTech = &gTechW;
-			currentOffNmosArr = gTechW.currentOffNmos;
+			currentOffNmosArr = &gTechW.currentOffNmos;
 		} else if (memCellType == eDRAM || memCellType == DRAM) {
 			chosenTech = &gTech;
-			currentOffNmosArr = gTech.currentOffNmos;
+			currentOffNmosArr = &gTech.currentOffNmos;
 		}
 
 		if (chosenTech != nullptr) {
 			if (chosenTech->featureSizeInNano >= 22) {
 				effWidthAccessCMOS = gCell.widthAccessCMOS * chosenTech->featureSizeInNano * 1e-9;
 			} else if (chosenTech->featureSizeInNano >= 3) {
-				effWidthAccessCMOS = (int)ceil(gCell.widthAccessCMOS) * chosenTech->effective_width;
+				effWidthAccessCMOS = (int)ceil(gCell.widthAccessCMOS) * chosenTech->effectiveWidth.value();
 			} else {
 				effWidthAccessCMOS = (int)ceil(gCell.widthAccessCMOS)
-					* chosenTech->effective_width
-					* chosenTech->max_sheet_num
-					/ chosenTech->max_fin_per_GAA;
+					* chosenTech->effectiveWidth.value()
+					* chosenTech->maximumSheetCount
+					/ chosenTech->maximumFinsPerGAA;
 			}
-			leakageCurrent = currentOffNmosArr[gInputParameter.temperature - 300] * effWidthAccessCMOS;
+			leakageCurrent = (*currentOffNmosArr)[gInputParameter.temperature - 300].value() * effWidthAccessCMOS;
 		} else {
 			leakageCurrent = 0;
 		}
@@ -389,10 +389,10 @@ void MemCell::CellScaling(int _targetProcessNode) {
 				resetVoltage *= 1;
 			}
 			if (accessType == diode_access) {
-				capacitanceOn /= scalingFactor; //TO-DO
-				capacitanceOff /= scalingFactor; //TO-DO
+				capacitanceOn /= scalingFactor; //TODO
+				capacitanceOff /= scalingFactor; //TODO
 			}
-		} else if (memCellType == MRAM){ //TO-DO: MRAM
+		} else if (memCellType == MRAM){ //TODO: MRAM
 			resistanceOn *= scalingFactor * scalingFactor;
 			resistanceOff *= scalingFactor * scalingFactor;
 			if (!setMode) {
@@ -406,12 +406,12 @@ void MemCell::CellScaling(int _targetProcessNode) {
 				resetVoltage *= scalingFactor;
 			}
 			if (accessType == diode_access) {
-				capacitanceOn /= scalingFactor; //TO-DO
-				capacitanceOff /= scalingFactor; //TO-DO
+				capacitanceOn /= scalingFactor; //TODO
+				capacitanceOff /= scalingFactor; //TODO
 			}
-		} else if (memCellType == memristor) { //TO-DO: memristor
+		} else if (memCellType == memristor) { //TODO: memristor
 
-		} else { //TO-DO: other RAMs
+		} else { //TODO: other RAMs
 
 		}
 		processNode = _targetProcessNode;
@@ -456,7 +456,7 @@ void MemCell::CalculateWriteEnergy() {
 				resetEnergy = fabs(resetVoltage) * (fabs(resetVoltage) - voltageDropAccessDevice) / resistanceOn * resetPulse;
 		} else {
 			if (resetVoltage == 0){
-				resetEnergy = gTech.vdd * fabs(resetCurrent) * resetPulse; /*TO-DO consider charge pump*/
+				resetEnergy = gTech.vdd.value() * fabs(resetCurrent) * resetPulse; // TODO consider charge pump
 			} else {
 				resetEnergy = fabs(resetVoltage) * fabs(resetCurrent) * resetPulse;
 			}
@@ -491,7 +491,7 @@ void MemCell::CalculateWriteEnergy() {
 				setEnergy = fabs(setVoltage) * (fabs(setVoltage) - voltageDropAccessDevice) / resistanceOn * setPulse;
 		} else {
 			if (resetVoltage == 0){
-				setEnergy = gTech.vdd * fabs(setCurrent) * setPulse; /*TO-DO consider charge pump*/
+				setEnergy = gTech.vdd.value() * fabs(setCurrent) * setPulse; // TODO consider charge pump
 			} else {
 				setEnergy = fabs(setVoltage) * fabs(setCurrent) * setPulse;
 			}
@@ -512,21 +512,21 @@ void MemCell::CalculateWriteEnergy() {
 	}
 }
 
-double MemCell::CalculateReadPower() { /* TO-DO consider charge pumped read voltage */
+double MemCell::CalculateReadPower() { /* TODO consider charge pumped read voltage */
 	if (readPower == 0) {
 		if (gCell.readMode) {	/* voltage-sensing */
 			if (readVoltage == 0) { /* Current-in voltage sensing */
-				return gTech.vdd * readCurrent;
+				return gTech.vdd.value() * readCurrent;
 			}
 			if (readCurrent == 0) { /*Voltage-divider sensing */
 				double resInSerialForSenseAmp, maxBitlineCurrent;
 				resInSerialForSenseAmp = sqrt(resistanceOn * resistanceOff);
 				maxBitlineCurrent = (readVoltage - voltageDropAccessDevice) / (resistanceOn + resInSerialForSenseAmp);
-				return gTech.vdd * maxBitlineCurrent;
+				return gTech.vdd.value() * maxBitlineCurrent;
 			}
 		} else { /* current-sensing */
 			double maxBitlineCurrent = (readVoltage - voltageDropAccessDevice) / resistanceOn;
-			return gTech.vdd * maxBitlineCurrent;
+			return gTech.vdd.value() * maxBitlineCurrent;
 		}
 	} else {
 		return -1.0; /* should not call the function if read energy exists */
@@ -602,14 +602,14 @@ void MemCell::PrintCell() {
 		std::cout << "SRAM Cell PMOS Width: " << widthSRAMCellPMOS << "F\n";
 		std::cout << "SRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
 		std::cout << "SRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
-		std::cout << "SRAM Cell VDD: " << gTech.vdd << "V\n";
+		std::cout << "SRAM Cell VDD: " << gTech.vdd.value() << "V\n";
 		std::cout << "Temperature: " << gCell.temperature << "K\n";
 	} else if (memCellType == DRAM || memCellType == eDRAM) {
 		std::cout << "DRAM Cell Access Transistor Width: " << widthAccessCMOS << "F\n";
 		std::cout << "DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
 		std::cout << "DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
-		std::cout << "DRAM Cell VDD: " << gTech.vdd << "V\n";
-		std::cout << "DRAM Cell WL_SWING: " << gTech.vpp << "V\n";
+		std::cout << "DRAM Cell VDD: " << gTech.vdd.value() << "V\n";
+		std::cout << "DRAM Cell WL_SWING: " << gTech.vpp.value() << "V\n";
 		std::cout << "Temperature: " << gCell.temperature << "K\n";
 	} else if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
 		std::cout << "3T DRAM Cell Write Access Transistor Width: " << widthAccessCMOS << "F\n";
@@ -620,8 +620,8 @@ void MemCell::PrintCell() {
 		std::cout << "3T DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
 		std::cout << "3T DRAM Cell Write Access Node: " << gTechW.featureSizeInNano << "nm\n";
 		std::cout << "3T DRAM Cell Read Access Node: " << gTechR.featureSizeInNano << "nm\n";
-		std::cout << "3T DRAM Cell VDD: " << gTech.vdd << "V\n";
-		std::cout << "3T DRAM Cell WWL_SWING: " << gTechW.vpp << "V\n";
+		std::cout << "3T DRAM Cell VDD: " << gTech.vdd.value() << "V\n";
+		std::cout << "3T DRAM Cell WWL_SWING: " << gTechW.vpp.value() << "V\n";
 		std::cout << "Temperature: " << gCell.temperature << "K\n";
 	} else if (memCellType == SLCNAND) {
 		std::cout << "Pass Voltage       : " << flashPassVoltage << "V\n";

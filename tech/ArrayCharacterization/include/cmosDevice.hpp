@@ -3,10 +3,10 @@
 
 #include "unit.hpp"
 #include "Dimensions.hpp"
+#include "Technology.hpp"
 
 #include <functional>
 
-class Technology;
 
 namespace mse {
 
@@ -41,10 +41,10 @@ private:
     const Technology* _tech = nullptr;
     unit::Feature _gateWidth;
     unit::Feature _regionHeight;
-    const double* _onCurrent = nullptr; // TODO change to unit::Ampere
-    const double* _offCurrent = nullptr; // TODO change to unit::Ampere
+    const Technology::TemperatureTable* _onCurrent = nullptr;
+    const Technology::TemperatureTable* _offCurrent = nullptr;
     unit::Volt _vdsat;
-    unit::Number _mobility;
+    Technology::Mobility _mobility;
     int _tempIndex = 0;
 
 public:
@@ -65,10 +65,10 @@ protected:
         const Technology& tech,
         unit::Feature gateWidth,
         unit::Feature transistorRegionHeight,
-        const double* onCurrent, // TODO change to unit::Ampere
-        const double* offCurrent, // TODO change to unit::Ampere
+        const Technology::TemperatureTable& onCurrent,
+        const Technology::TemperatureTable& offCurrent,
         unit::Volt vdsat,
-        unit::Number mobility
+        Technology::Mobility mobility
     );
 };
 

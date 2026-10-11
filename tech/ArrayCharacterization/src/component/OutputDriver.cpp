@@ -9,19 +9,18 @@ mse::component::OutputDriverChain mse::component::OutputDriver::calculateChain()
 
     OutputDriverChain chain;
 
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{gTech.featureSize};
-    const Meter minWidth = constant::minNmosSize * featureSize;
-    const Meter maxWidth = Feature(gInputParameter.maxNmosSize) * featureSize;
+    const Meter minWidth = constant::minNmosSize * gTech.featureSize;
+    const Meter maxWidth = Feature(gInputParameter.maxNmosSize) * gTech.featureSize;
     const double pnRatio = gTech.pnSizeRatio;
 
-    auto gateCapacitance = [&featureSize] (Meter width) {
-        return NmosTransistor(gTech, width / featureSize, constant::maxTransistorHeight).gateCapacitance();
+    auto gateCapacitance = [] (Meter width) {
+        return NmosTransistor(gTech, width / gTech.featureSize, constant::maxTransistorHeight).gateCapacitance();
     };
     auto stageCount = [] (double totalEffort) {
         return std::max(0, static_cast<int>(std::log(totalEffort) / std::log(constant::optimalStageEffort) + 0.5) - 1);
     };
 
-    const Meter minDriverWidth = std::max(minWidth, Meter(_minDriverCurrent.value() / gTech.currentOnNmos[gInputParameter.temperature - 300]));
+    const Meter minDriverWidth = std::max(minWidth, _minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300]);
 
     if (minDriverWidth > maxWidth) {
         return chain;
@@ -90,7 +89,7 @@ mse::component::OutputDriverChain mse::component::OutputDriver::calculateChain()
 
     for (int i = 0; i < stageTotal; i++) {
         const Meter pmosWidth = nmosWidths[i] * pnRatio;
-        CmosInverter gate(gTech, nmosWidths[i] / featureSize, pmosWidth / featureSize, constant::maxTransistorHeight);
+        CmosInverter gate(gTech, nmosWidths[i] / gTech.featureSize, pmosWidth / gTech.featureSize, constant::maxTransistorHeight);
         chain.stages[i] = OutputDriverStage{
             .nmosWidth = nmosWidths[i],
             .pmosWidth = pmosWidth,
@@ -110,10 +109,9 @@ mse::Dimensions mse::component::OutputDriver::calculateDimensions() const noexce
         return Dimensions{.width = Meter(constant::invalidValue), .height = Meter(constant::invalidValue)};
     }
 
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{gTech.featureSize};
     Dimensions dimensions;
     for (const OutputDriverStage& stage : stages()) {
-        Dimensions stageDimensions = CmosInverter(gTech, stage.nmosWidth / featureSize, stage.pmosWidth / featureSize, 40_feat).dimensions();
+        Dimensions stageDimensions = CmosInverter(gTech, stage.nmosWidth / gTech.featureSize, stage.pmosWidth / gTech.featureSize, 40_feat).dimensions();
         dimensions.width += stageDimensions.width;
         dimensions.height = std::max(dimensions.height, stageDimensions.height);
     }
@@ -133,12 +131,11 @@ mse::component::RampedTiming mse::component::OutputDriver::calculateTiming(physi
         return timing;
     }
 
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{gTech.featureSize};
     const std::span<const OutputDriverStage> chain = stages();
     Second latency;
     for (size_t i = 0; i < chain.size(); i++) {
         const bool lastStage = i + 1 == chain.size();
-        NmosTransistor pullDown(gTech, chain[i].nmosWidth / featureSize, constant::maxTransistorHeight);
+        NmosTransistor pullDown(gTech, chain[i].nmosWidth / gTech.featureSize, constant::maxTransistorHeight);
         Ohm pullDownResistance = pullDown.channelResistance();
         Farad loadCapacitance = chain[i].outputCapacitance + (lastStage ? _outputCapacitance : chain[i+1].inputCapacitance);
         Second tau = pullDownResistance * loadCapacitance;
@@ -168,19 +165,17 @@ mse::component::BasicPower mse::component::OutputDriver::calculatePower() const 
         return power;
     }
 
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{gTech.featureSize};
     const std::span<const OutputDriverStage> chain = stages();
-    const Volt vdd(gTech.vdd);
     Ampere leakageCurrent;
     Farad switchedCapacitance;
     for (size_t i = 0; i < chain.size(); i++) {
-        leakageCurrent += CmosInverter(gTech, chain[i].nmosWidth / featureSize, chain[i].pmosWidth / featureSize, constant::maxTransistorHeight).leakageCurrent();
+        leakageCurrent += CmosInverter(gTech, chain[i].nmosWidth / gTech.featureSize, chain[i].pmosWidth / gTech.featureSize, constant::maxTransistorHeight).leakageCurrent();
         // The last stage drives the final load capacitance
         switchedCapacitance += chain[i].outputCapacitance + (i + 1 == chain.size() ? _outputCapacitance : chain[i+1].inputCapacitance);
     }
 
-    power.dynamicReadEnergy = power.dynamicWriteEnergy = switchedCapacitance * vdd * vdd;
-    power.leakage = leakageCurrent * vdd;
+    power.dynamicReadEnergy = power.dynamicWriteEnergy = switchedCapacitance * gTech.vdd * gTech.vdd;
+    power.leakage = leakageCurrent * gTech.vdd;
 
     return power;
 }
