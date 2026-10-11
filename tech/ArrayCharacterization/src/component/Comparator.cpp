@@ -76,8 +76,6 @@ mse::component::RampedTiming mse::component::Comparator::calculateTiming(physics
 mse::component::BasicPower mse::component::Comparator::calculatePower() const noexcept {
     using namespace mse::unit;
 
-    const Volt vdd(gTech.vdd);
-
     Ampere leakageCurrent;
     for (int i = 0; i < chainLength; i++) {
         leakageCurrent += CmosInverter(gTech, inverterNmosWidths[i], inverterPmosWidths[i], constant::maxTransistorHeight).leakageCurrent();
@@ -91,8 +89,8 @@ mse::component::BasicPower mse::component::Comparator::calculatePower() const no
 
     // 4 quarter comparators
     BasicPower power;
-    power.dynamicReadEnergy = power.dynamicWriteEnergy = switchedCapacitance * vdd * vdd * 4;
-    power.leakage = leakageCurrent * vdd * 4;
+    power.dynamicReadEnergy = power.dynamicWriteEnergy = switchedCapacitance * gTech.vdd * gTech.vdd * 4;
+    power.leakage = leakageCurrent * gTech.vdd * 4;
 
     return power;
 }

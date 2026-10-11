@@ -72,19 +72,18 @@ mse::component::RampedTiming mse::component::BasicDecoder::calculateTiming(physi
 mse::component::BasicPower mse::component::BasicDecoder::calculatePower() const noexcept {
     using namespace mse::unit;
 
-    const Volt vdd(gTech.vdd);
     const BasicPower& driver = _outputDriver.power();
     const OutputDriverStage& firstStage = _outputDriver.stages().front();
 
     // Only one output switches each time
     BasicPower power;
     if (nandInputs() == 0) {
-        const Joule inverterEnergy = (firstStage.inputCapacitance + firstStage.outputCapacitance) * vdd * vdd;
+        const Joule inverterEnergy = (firstStage.inputCapacitance + firstStage.outputCapacitance) * gTech.vdd * gTech.vdd;
         power.leakage = 2 * driver.leakage;
         power.dynamicReadEnergy = inverterEnergy + driver.dynamicReadEnergy;
     } else {
-        const Watt nandLeakage = CmosNand<>(gTech, nandInputs(), constant::minNmosSize, gTech.pnSizeRatio * constant::minNmosSize, constant::maxTransistorHeight).leakageCurrent() * vdd;
-        const Joule nandEnergy = (nandOutputCapacitance() + firstStage.inputCapacitance) * vdd * vdd;
+        const Watt nandLeakage = CmosNand<>(gTech, nandInputs(), constant::minNmosSize, gTech.pnSizeRatio * constant::minNmosSize, constant::maxTransistorHeight).leakageCurrent() * gTech.vdd;
+        const Joule nandEnergy = (nandOutputCapacitance() + firstStage.inputCapacitance) * gTech.vdd * gTech.vdd;
         power.leakage = (nandLeakage + driver.leakage) * nandGates();
         power.dynamicReadEnergy = nandEnergy + driver.dynamicReadEnergy;
     }

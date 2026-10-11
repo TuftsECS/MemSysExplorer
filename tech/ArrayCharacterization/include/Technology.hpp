@@ -39,65 +39,74 @@
 #define MSE_TECHNOLOGY_HPP
 
 #include "typedef.hpp"
+#include "unit.hpp"
 
+#include <array>
 #include <iostream>
 
 class Technology {
 public:
-	/* Functions */
-	void PrintProperty();
-	void Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap, bool _is_FeFET);
-	void InterpolateWith(Technology rhs, double _alpha);
+    using MeterPerFeature = mse::unit::Unit<mse::unit::MeterAtom<>, mse::unit::FeatureAtom<-1>>;
+    using FaradPerMeter = mse::unit::Unit<mse::unit::FaradAtom<>, mse::unit::MeterAtom<-1>>;
+    using FaradPerSquareMeter = mse::unit::Unit<mse::unit::FaradAtom<>, mse::unit::MeterAtom<-2>>;
+    using AmperePerMeter = mse::unit::Unit<mse::unit::AmpereAtom<>, mse::unit::MeterAtom<-1>>;
+    using SiemensPerMeter = mse::unit::Unit<mse::unit::SiemensAtom<>, mse::unit::MeterAtom<-1>>;
+    using Mobility = mse::unit::Unit<mse::unit::MeterAtom<2>, mse::unit::VoltAtom<-1>, mse::unit::SecondAtom<-1>>;
+    // Indexed by temperature from 300K to 400K
+    using TemperatureTable = std::array<AmperePerMeter, 101>;
 
-	/* Properties */
-	bool initialized = false;	/* Initialization flag */
-	int featureSizeInNano; /*Process feature size, Unit: nm */
-        bool is_FeFET; /*flag for whether gate cap needs to be scaled */
-	double featureSize;	/* Process feature size, Unit: m */
-	DeviceRoadmap deviceRoadmap;	/* HP, LSTP, or LOP */
-	double vdd;			/* Supply voltage, Unit: V */
-    double vpp;             /* Wordline overdrive voltage. */
-	double vth;				/* Threshold voltage, Unit: V */
+    // Functions
+    void PrintProperty();
+    void Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap, bool _isFeFET);
+    void InterpolateWith(Technology rhs, double _alpha);
 
+    // Properties
+    bool initialized = false; // Initialization flag
+    int featureSizeInNano; // Process feature size in nm
+    bool isFeFET; // Whether gate cap needs to be scaled
+    MeterPerFeature featureSize; // Process feature size
+    DeviceRoadmap deviceRoadmap; // HP, LSTP, or LOP
+    mse::unit::Volt vdd; // Supply voltage
+    mse::unit::Volt vpp; // Wordline overdrive voltage
+    mse::unit::Volt vth; // Threshold voltage
 
-	double heightFin;	/* Fin height, Unit: m */
-	double widthFin;	/* Fin width, Unit: m */
-	double PitchFin;	/* Fin pitch, Unit: m */
+    mse::unit::Meter heightFin;
+    mse::unit::Meter widthFin;
+    mse::unit::Meter finPitch;
 
+    mse::unit::Volt vdsatNmos; // Velocity saturation voltage
+    mse::unit::Volt vdsatPmos; // Velocity saturation voltage
+    mse::unit::Meter phyGateLength; // Physical gate length
+    FaradPerMeter capIdealGate; // Ideal gate capacitance
+    FaradPerMeter capIdealGateFeFET; // Ideal gate capacitance just for FeFET memory cells
+    FaradPerMeter capFringe; // Fringe capacitance
+    FaradPerSquareMeter capJunction; // Junction bottom capacitance, Cj0
+    FaradPerMeter capOverlap; // Overlap capacitance, Cover in MASTAR
+    FaradPerMeter capSidewall; // Junction sidewall capacitance, Cjsw
+    FaradPerMeter capDrainToChannel; // Junction drain to channel capacitance, Cjswg
+    FaradPerSquareMeter capOx; // Cox_elec in MASTAR
+    mse::unit::Volt buildInPotential; // Bottom junction built-in potential (PB in BSIM4 model)
+    Mobility effectiveElectronMobility; // ueff for NMOS in MASTAR
+    Mobility effectiveHoleMobility; // ueff for PMOS in MASTAR
+    mse::unit::Number pnSizeRatio; // PMOS to NMOS size ratio
+    mse::unit::Number effectiveResistanceMultiplier; // Extra resistance due to vdsat
+    TemperatureTable currentOnNmos; // NMOS saturation current
+    TemperatureTable currentOnPmos; // PMOS saturation current
+    TemperatureTable currentOffNmos; // NMOS off current
+    TemperatureTable currentOffPmos; // PMOS off current
 
-	double vdsatNmos;		/* Velocity saturation voltage, Unit: V */
-	double vdsatPmos;		/* Velocity saturation voltage, Unit: V */
-	double phyGateLength;	/* Physical gate length, Unit: m */
-	double capIdealGate;	/* Ideal gate capacitance, Unit: F/m */
-	double capIdealGateFeFET;	/* Ideal gate capacitance just for FeFET memory cells, Unit: F/m */
-	double capFringe;		/* Fringe capacitance, Unit: F/m */
-	double capJunction;		/* Junction bottom capacitance, Cj0, Unit: F/m^2 */
-	double capOverlap;		/* Overlap capacitance, Cover in MASTAR, Unit: F/m */
-	double capSidewall;		/* Junction sidewall capacitance, Cjsw, Unit: F/m */
-	double capDrainToChannel;	/* Junction drain to channel capacitance, Cjswg, Unit: F/m */
-	double capOx;			/* Cox_elec in MASTAR, Unit: F/m^2 */
-	double buildInPotential; /* Bottom junction built-in potential(PB in BSIM4 model), Unit: V */
-	double effectiveElectronMobility;		 /* ueff for NMOS in MASTAR, Unit: m^2/V/s */
-	double effectiveHoleMobility;            /* ueff for PMOS in MASTAR, Unit: m^2/V/s */
-	double pnSizeRatio;	/* PMOS to NMOS size ratio */
-	double effectiveResistanceMultiplier;	/* Extra resistance due to vdsat */
-	double currentOnNmos[101];		/* NMOS saturation current, Unit: A/m */
-	double currentOnPmos[101];		/* PMOS saturation current, Unit: A/m */
-	double currentOffNmos[101];	/* NMOS off current (from 300K to 400K), Unit: A/m */
-	double currentOffPmos[101]; /* PMOS off current (from 300K to 400K), Unit: A/m */
+    FaradPerMeter capPolywire; // Poly wire capacitance
 
-	double capPolywire;	/* Poly wire capacitance, Unit: F/m */
-
-    double current_gmNmos;		/* NMOS current at 0.7*vdd for gm calculation, Unit: A/m/V*/ 
-    double current_gmPmos;		/* PMOS current at 0.7*vdd for gm calculation, Unit: A/m/V*/ 
-	double max_sheet_num=0;
-	double thickness_sheet=0;
-	double width_sheet=0;
-	double effective_width=0;
-	double max_fin_num=0;
-	double max_fin_per_GAA=0;
-	double gm_oncurrent = 0;  // gm at on current
-	double cap_draintotal = 0;
+    SiemensPerMeter transconductanceNmos; // NMOS current per volt at 0.7 vdd for gm calculation
+    SiemensPerMeter transconductancePmos; // PMOS current per volt at 0.7 vdd for gm calculation
+    int maximumSheetCount = 0;
+    mse::unit::Meter sheetThickness;
+    mse::unit::Meter sheetWidth;
+    mse::unit::Meter effectiveWidth;
+    int maximumFinCount = 0;
+    int maximumFinsPerGAA = 0;
+    SiemensPerMeter onCurrentTransconductance; // gm at on current
+    FaradPerMeter capDrainTotal;
 };
 
 #endif

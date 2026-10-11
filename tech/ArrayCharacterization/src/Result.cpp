@@ -254,7 +254,7 @@ void Result::print() {
             || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM
             || (gCell.memCellType == memristor && (gCell.accessType == CMOS_access || gCell.accessType == BJT_access));
     const bool threeTransistorCell = gCell.memCellType == eDRAM3T333 || gCell.memCellType == eDRAM3T;
-    const double cellArea = gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity;
+    const double cellArea = gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity;
 
     // RESET, SET and write latencies break down the same way apart from the subarray's own parts
     auto writeLatency = [this, &level, &routing] (std::string_view title, Second bankLatency, Second matLatency,
@@ -655,8 +655,8 @@ YAML::Node Result::toYamlNode() {
 			result["MemoryCell"]["WidthSRAMCellPMOS_F"] = gCell.widthSRAMCellPMOS;
 			result["MemoryCell"]["PeripheralRoadmap"]   = roadmapToString(gTech.deviceRoadmap);
 			result["MemoryCell"]["PeripheralNode_nm"]   = gTech.featureSizeInNano;
-			result["MemoryCell"]["VDD_V"]               = gTech.vdd;
-			result["MemoryCell"]["WWL_SWING"]           = gTech.vdd;
+			result["MemoryCell"]["VDD_V"]               = gTech.vdd.value();
+			result["MemoryCell"]["WWL_SWING"]           = gTech.vdd.value();
 			result["MemoryCell"]["Temperature_K"]       = gCell.temperature;
 		}
 
@@ -665,8 +665,8 @@ YAML::Node Result::toYamlNode() {
 			result["MemoryCell"]["WidthAccessCMOS_F"] = gCell.widthAccessCMOS;
 			result["MemoryCell"]["PeripheralRoadmap"] = roadmapToString(gTech.deviceRoadmap);
 			result["MemoryCell"]["PeripheralNode_nm"] = gTech.featureSizeInNano;
-			result["MemoryCell"]["VDD_V"] = gTech.vdd;
-			result["MemoryCell"]["WWL_SWING"] = gTech.vpp;
+			result["MemoryCell"]["VDD_V"] = gTech.vdd.value();
+			result["MemoryCell"]["WWL_SWING"] = gTech.vpp.value();
 			result["MemoryCell"]["Temperature_K"] = gCell.temperature;
 		}
 
@@ -680,8 +680,8 @@ YAML::Node Result::toYamlNode() {
 			result["MemoryCell"]["PeripheralNode_nm"]      = gTech.featureSizeInNano;
 			result["MemoryCell"]["WriteAccessNode_nm"]     = gTechW.featureSizeInNano;
 			result["MemoryCell"]["ReadAccessNode_nm"]      = gTechR.featureSizeInNano;
-			result["MemoryCell"]["VDD_V"]                  = gTech.vdd;
-			result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp;
+			result["MemoryCell"]["VDD_V"]                  = gTech.vdd.value();
+			result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp.value();
 			result["MemoryCell"]["Temperature_K"]          = gCell.temperature;
 		}
 
@@ -818,19 +818,19 @@ YAML::Node Result::toYamlNode() {
     result["Results"]["Area"]["Mat"]["Width_um"] = bank->mat.dimensions().width.value() * 1e6;
     result["Results"]["Area"]["Mat"]["Area_mm2"] = bank->mat.dimensions().area().value() * 1e6;
     result["Results"]["Area"]["Mat"]["Efficiency_percent"] = 
-        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / 
+        (gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity / 
          bank->matRows / bank->matColumns / bank->mat.dimensions().area().value() * 100);
 
     result["Results"]["Area"]["Subarray"]["Height_um"] = bank->mat.subarray.dimensions().height.value() * 1e6;
     result["Results"]["Area"]["Subarray"]["Width_um"] = bank->mat.subarray.dimensions().width.value() * 1e6;
     result["Results"]["Area"]["Subarray"]["Area_mm2"] = bank->mat.subarray.dimensions().area().value() * 1e6;
     result["Results"]["Area"]["Subarray"]["Efficiency_percent"] =
-        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / 
+        (gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity / 
          bank->matRows / bank->matColumns / bank->subarrayRows / 
          bank->subarrayColumns / bank->mat.subarray.dimensions().area().value() * 100);
 
     result["Results"]["Area"]["AreaEfficiency_percent"] =
-        (gCell.area * gTech.featureSize * gTech.featureSize * bank->capacity / bank->dimensions().area().value() * 100);
+        (gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity / bank->dimensions().area().value() * 100);
 
     // Timing
     result["Results"]["Timing"]["Read"]["Latency_ns"] = bank->timing().readLatency.value() * 1e9;
@@ -1041,7 +1041,7 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 		result["MemoryCell"]["WidthSRAMCellPMOS_F"] = gCell.widthSRAMCellPMOS;
 		result["MemoryCell"]["PeripheralRoadmap"]   = roadmapToString(gTech.deviceRoadmap);
 		result["MemoryCell"]["PeripheralNode_nm"]   = gTech.featureSizeInNano;
-		result["MemoryCell"]["VDD_V"]               = gTech.vdd;
+		result["MemoryCell"]["VDD_V"]               = gTech.vdd.value();
 		result["MemoryCell"]["Temperature_K"]       = gCell.temperature;
 	}
 
@@ -1050,8 +1050,8 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 		result["MemoryCell"]["WidthAccessCMOS_F"] = gCell.widthAccessCMOS;
 		result["MemoryCell"]["PeripheralRoadmap"] = roadmapToString(gTech.deviceRoadmap);
 		result["MemoryCell"]["PeripheralNode_nm"] = gTech.featureSizeInNano;
-		result["MemoryCell"]["VDD_V"] = gTech.vdd;
-		result["MemoryCell"]["WL_SWING"] = gTech.vpp;
+		result["MemoryCell"]["VDD_V"] = gTech.vdd.value();
+		result["MemoryCell"]["WL_SWING"] = gTech.vpp.value();
 		result["MemoryCell"]["Temperature_K"] = gCell.temperature;
 	}
 
@@ -1065,8 +1065,8 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 		result["MemoryCell"]["PeripheralNode_nm"]      = gTech.featureSizeInNano;
 		result["MemoryCell"]["WriteAccessNode_nm"]     = gTechW.featureSizeInNano;
 		result["MemoryCell"]["ReadAccessNode_nm"]      = gTechR.featureSizeInNano;
-		result["MemoryCell"]["VDD_V"]                  = gTech.vdd;
-		result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp;
+		result["MemoryCell"]["VDD_V"]                  = gTech.vdd.value();
+		result["MemoryCell"]["WWL_SWING"]              = gTechW.vpp.value();
 		result["MemoryCell"]["Temperature_K"]          = gCell.temperature;
 	}
 

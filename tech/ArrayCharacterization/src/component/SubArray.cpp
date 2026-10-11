@@ -32,8 +32,7 @@ void mse::component::SubArray::forEachSubcomponent(const SubcomponentVisitor& vi
 bool mse::component::SubArray::setup() noexcept {
     using namespace mse::unit;
 
-    const Number finFactor = gTech.featureSize <= 14*1e-9 ? 2 : 1;
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{gTech.featureSize};
+    const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
     const int temperatureIndex = gInputParameter.temperature - 300;
 
     const bool dramCell = gCell.memCellType == DRAM || gCell.memCellType == eDRAM
@@ -75,7 +74,7 @@ bool mse::component::SubArray::setup() noexcept {
     if (resistiveCell) {
         if (gCell.accessType == CMOS_access) {
             // Bitline too long
-            if (gTech.currentOnNmos[temperatureIndex] / gTech.currentOffNmos[temperatureIndex] < rows / constant::bitlineLeakageTolerance) {
+            if ((gTech.currentOnNmos[temperatureIndex] / gTech.currentOffNmos[temperatureIndex]).value() < rows / constant::bitlineLeakageTolerance) {
                 return false;
             }
             _maxBitlineCurrent = Ampere(std::max(gCell.resetCurrent, gCell.setCurrent) + gCell.leakageCurrentAccessDevice * (rows - 1));
@@ -95,8 +94,8 @@ bool mse::component::SubArray::setup() noexcept {
                         * (columns - selectedColumns);
             }
 
-            const Meter minWordlineDriverWidth(maxWordlineCurrent.value() / gTech.currentOnNmos[temperatureIndex]);
-            if (minWordlineDriverWidth > Feature(gInputParameter.maxNmosSize) * featureSize) {
+            const Meter minWordlineDriverWidth = maxWordlineCurrent / gTech.currentOnNmos[temperatureIndex];
+            if (minWordlineDriverWidth > Feature(gInputParameter.maxNmosSize) * gTech.featureSize) {
                 return false;
             }
 
@@ -109,9 +108,9 @@ bool mse::component::SubArray::setup() noexcept {
         }
     }
 
-    const Meter minBitlineMuxWidth = std::max(constant::minNmosSize * featureSize,
-            Meter(_maxBitlineCurrent.value() / gTech.currentOnNmos[temperatureIndex]));
-    if (minBitlineMuxWidth > Feature(gInputParameter.maxNmosSize) * featureSize) {
+    const Meter minBitlineMuxWidth = std::max(constant::minNmosSize * gTech.featureSize,
+            _maxBitlineCurrent / gTech.currentOnNmos[temperatureIndex]);
+    if (minBitlineMuxWidth > Feature(gInputParameter.maxNmosSize) * gTech.featureSize) {
         return false;
     }
 
@@ -125,19 +124,19 @@ bool mse::component::SubArray::setup() noexcept {
         fatal("DRAM does not support external sense amplifiers");
     }
 
-    _wordlineLength = columns * Feature(gCell.widthInFeatureSize) * featureSize;
-    _bitlineLength = rows * Feature(gCell.heightInFeatureSize) * featureSize;
+    _wordlineLength = columns * Feature(gCell.widthInFeatureSize) * gTech.featureSize;
+    _bitlineLength = rows * Feature(gCell.heightInFeatureSize) * gTech.featureSize;
     if (gCell.stitching) {
-        _wordlineLength += ((columns - 1) / gCell.stitching + 1) * constant::stitchingOverhead * featureSize;
+        _wordlineLength += ((columns - 1) / gCell.stitching + 1) * constant::stitchingOverhead * gTech.featureSize;
     }
     // Two select transistors including contacts are 5F long in total
     if (gCell.memCellType == SLCNAND) {
         const int pageCount = gInputParameter.flashBlockSize / gInputParameter.pageSize;
-        _bitlineLength += (rows / pageCount) * 5_feat * featureSize;
+        _bitlineLength += (rows / pageCount) * 5_feat * gTech.featureSize;
     }
     // Access transistor
     if (gCell.memCellType == CTT || gCell.memCellType == MLCCTT) {
-        _bitlineLength += 5_feat * featureSize;
+        _bitlineLength += 5_feat * gTech.featureSize;
     }
 
     const Unit<FaradAtom<>, MeterAtom<-1>> wireCapacitance{gLocalWire.capWirePerUnit};
@@ -152,51 +151,51 @@ bool mse::component::SubArray::setup() noexcept {
     muxDecoderLoadCapacitance += _rc.wordlineCapacitance;
 
     if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM) {
-        _senseVoltage = Volt(gTech.vdd / 2 * gCell.capDRAMCell / (gCell.capDRAMCell + _rc.bitlineCapacitance.value()));
+        _senseVoltage = gTech.vdd / 2 * gCell.capDRAMCell / (gCell.capDRAMCell + _rc.bitlineCapacitance.value());
         // Bitline too long
         if (_senseVoltage < Volt(gCell.minSenseVoltage)) {
             return false;
         }
     } else if (gCell.memCellType == SLCNAND) {
         // With a 0.5Vdd reference and a 0.6Vdd initial bitline, the sense amp can tell the data apart once the bitline drops to 0.4Vdd
-        _senseVoltage = Volt(std::max(gCell.minSenseVoltage, 0.2 * gTech.vdd));
+        _senseVoltage = std::max(Volt(gCell.minSenseVoltage), 0.2 * gTech.vdd);
     } else {
         // TODO different memory technologies might have different values here
         _senseVoltage = Volt(gCell.minSenseVoltage);
     }
 
-    const double cellWidth = gCell.widthInFeatureSize * gTech.featureSize;
+    const double cellWidth = gCell.widthInFeatureSize * gTech.featureSize.value();
     if (gCell.memCellType == SRAM) {
         // Two access transistors
-        const double accessWidth = finFactor * gCell.widthAccessCMOS * gTech.featureSize;
+        const double accessWidth = finFactor * gCell.widthAccessCMOS * gTech.featureSize.value();
         _rc.cellAccessResistance = Ohm(CalculateOnResistance(accessWidth, CmosType::NMOS, gInputParameter.temperature, gTech));
         _rc.cellAccessCapacitance = Farad(CalculateDrainCap(accessWidth, CmosType::NMOS, cellWidth, gTech));
         _rc.wordlineCapacitance += 2 * Farad(CalculateGateCap(accessWidth, gTech)) * columns;
         _rc.bitlineCapacitance += _rc.cellAccessCapacitance * rows / 2; // Shared contact
-        _rc.prechargeVoltage = Volt(gTech.vdd) / 2;
+        _rc.prechargeVoltage = gTech.vdd / 2;
     } else if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM) {
         // One access transistor
-        const double accessWidth = finFactor * gCell.widthAccessCMOS * gTech.featureSize;
+        const double accessWidth = finFactor * gCell.widthAccessCMOS * gTech.featureSize.value();
         _rc.cellAccessResistance = Ohm(CalculateOnResistance(accessWidth, CmosType::NMOS, gInputParameter.temperature, gTech));
         _rc.cellAccessCapacitance = Farad(CalculateDrainCap(accessWidth, CmosType::NMOS, cellWidth, gTech));
         _rc.wordlineCapacitance += Farad(CalculateGateCap(accessWidth, gTech)) * columns;
         _rc.bitlineCapacitance += _rc.cellAccessCapacitance * rows / 2; // Shared contact
-        _rc.prechargeVoltage = Volt(gTech.vdd) / 2;
+        _rc.prechargeVoltage = gTech.vdd / 2;
     } else if (gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
         // Separate read and write access transistors
-        const Number writeFinFactor = gTechW.featureSize <= 14*1e-9 ? 2 : 1;
-        const Number readFinFactor = gTechR.featureSize <= 14*1e-9 ? 2 : 1;
-        const double writeAccessWidth = writeFinFactor * gCell.widthAccessCMOS * gTechW.featureSize;
-        const double readAccessWidth = readFinFactor * gCell.widthAccessCMOSR * gTechR.featureSize;
+        const Number writeFinFactor = gTechW.featureSizeInNano <= 14 ? 2 : 1;
+        const Number readFinFactor = gTechR.featureSizeInNano <= 14 ? 2 : 1;
+        const double writeAccessWidth = writeFinFactor * gCell.widthAccessCMOS * gTechW.featureSize.value();
+        const double readAccessWidth = readFinFactor * gCell.widthAccessCMOSR * gTechR.featureSize.value();
         _rc.cellWriteAccessResistance = Ohm(CalculateOnResistance(writeAccessWidth, CmosType::NMOS, gInputParameter.temperature, gTechW));
         _rc.cellReadAccessResistance = Ohm(CalculateOnResistance(readAccessWidth, CmosType::NMOS, gInputParameter.temperature, gTechR));
         _rc.cellWriteAccessCapacitance = Farad(CalculateDrainCap(writeAccessWidth, CmosType::NMOS, cellWidth, gTechW));
         _rc.cellReadAccessCapacitance = Farad(CalculateDrainCap(readAccessWidth, CmosType::NMOS, cellWidth, gTechR));
         _rc.wordlineCapacitance += std::max(Farad(CalculateGateCap(readAccessWidth, gTechR)), Farad(CalculateGateCap(writeAccessWidth, gTechW))) * columns;
         _rc.bitlineCapacitance += std::max(_rc.cellWriteAccessCapacitance, _rc.cellReadAccessCapacitance) * rows;
-        _rc.prechargeVoltage = Volt(gTech.vdd);
+        _rc.prechargeVoltage = gTech.vdd;
     } else if (gCell.memCellType == FBRAM) {
-        const double soiWidth = finFactor * gCell.widthSOIDevice * gTech.featureSize;
+        const double soiWidth = finFactor * gCell.widthSOIDevice * gTech.featureSize.value();
         _rc.cellAccessCapacitance = Farad(CalculateFBRAMDrainCap(soiWidth, gTech));
         _rc.wordlineCapacitance += Farad(CalculateFBRAMGateCap(soiWidth, gCell.gateOxThicknessFactor, gTech)) * columns;
         _rc.bitlineCapacitance += _rc.cellAccessCapacitance * rows / 2; // Shared contact
@@ -205,7 +204,7 @@ bool mse::component::SubArray::setup() noexcept {
     } else if (resistiveCell) {
         // CMOS, BJT, or diode access devices
         if (gCell.accessType == CMOS_access) {
-            const double accessWidth = finFactor * gCell.widthAccessCMOS * gTech.featureSize;
+            const double accessWidth = finFactor * gCell.widthAccessCMOS * gTech.featureSize.value();
             _rc.cellAccessResistance = Ohm(CalculateOnResistance(accessWidth, CmosType::NMOS, gInputParameter.temperature, gTech));
             _rc.cellAccessCapacitance = Farad(CalculateDrainCap(accessWidth, CmosType::NMOS, cellWidth, gTech));
             if (gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET) {
@@ -228,20 +227,20 @@ bool mse::component::SubArray::setup() noexcept {
         // The NAND string is the page count per block plus two select transistors
         const int pageCount = gInputParameter.flashBlockSize / gInputParameter.pageSize;
         const int stringLength = pageCount + 2;
-        const double transistorWidth = finFactor * gTech.featureSize;
+        const double transistorWidth = finFactor * gTech.featureSize.value();
         _rc.cellAccessResistance = Ohm(CalculateOnResistance(transistorWidth, CmosType::NMOS, gInputParameter.temperature, gTech)) * stringLength;
         _rc.cellAccessCapacitance = Farad(CalculateDrainCap(transistorWidth, CmosType::NMOS, cellWidth, gTech));
         // Each cell's gate is the control gate in series with the floating gate
         _rc.wordlineCapacitance += Farad(CalculateGateCap(transistorWidth, gTech)) * columns * gCell.gateCouplingRatio / (gCell.gateCouplingRatio + 1);
         _rc.bitlineCapacitance += _rc.cellAccessCapacitance * (rows / pageCount) / 2; // Shared contact, with rows / pageCount effective rows
-        _rc.prechargeVoltage = Volt(gTech.vdd) * 0.6;
+        _rc.prechargeVoltage = gTech.vdd * 0.6;
     } else if (gCell.memCellType == CTT || gCell.memCellType == MLCCTT) {
-        const double transistorWidth = finFactor * gTech.featureSize;
+        const double transistorWidth = finFactor * gTech.featureSize.value();
         _rc.cellAccessResistance = Ohm(CalculateOnResistance(transistorWidth, CmosType::NMOS, gInputParameter.temperature, gTech));
         _rc.cellAccessCapacitance = Farad(CalculateDrainCap(transistorWidth, CmosType::NMOS, cellWidth, gTech));
         _rc.wordlineCapacitance += Farad(CalculateGateCap(transistorWidth, gTech)) * columns;
         _rc.bitlineCapacitance += _rc.cellAccessCapacitance * rows;
-        _rc.prechargeVoltage = Volt(gTech.vdd) * 0.5;
+        _rc.prechargeVoltage = gTech.vdd * 0.5;
     } else { // MLC NAND flash
         // TODO
     }
@@ -259,14 +258,14 @@ bool mse::component::SubArray::setup() noexcept {
         }
         // TODO a charge pump could raise the sense amp working point
         _rc.prechargeVoltage = (_rc.cellOffVoltage + _rc.cellOnVoltage) / 2;
-        _rc.prechargeVoltage = std::min(Volt(gTech.vdd), _rc.prechargeVoltage);
+        _rc.prechargeVoltage = std::min(gTech.vdd, _rc.prechargeVoltage);
         if (_rc.prechargeVoltage - _rc.cellOnVoltage <= _senseVoltage) {
             warn("No reasonable precharge voltage exists for the read current or voltage");
             return false;
         }
     }
 
-    if (!build(precharger, Volt(gTech.vdd), columns, _rc.bitlineCapacitance, _rc.bitlineResistance)) {
+    if (!build(precharger, gTech.vdd, columns, _rc.bitlineCapacitance, _rc.bitlineResistance)) {
         return false;
     }
 
@@ -439,16 +438,16 @@ mse::component::SubArrayTiming mse::component::SubArray::calculateTiming(physics
     timing.chargeLatency = physics::horowitz(chargeTau, 0, physics::stepRamp).delay;
 
     const Farad muxLoadCapacitance = bitlineMux.rc().delayLoadCapacitance;
-    const Number finFactor = gTech.featureSize <= 14*1e-9 ? 2 : 1;
+    const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
 
     if (gCell.memCellType == SRAM) {
-        const Ohm pullDownResistance(CalculateOnResistance(finFactor * gCell.widthSRAMCellNMOS * gTech.featureSize, CmosType::NMOS,
+        const Ohm pullDownResistance(CalculateOnResistance(finFactor * gCell.widthSRAMCellNMOS * gTech.featureSize.value(), CmosType::NMOS,
                 gInputParameter.temperature, gTech));
         Second tau = (_rc.cellAccessResistance + pullDownResistance) * (_rc.cellAccessCapacitance + _rc.bitlineCapacitance + muxLoadCapacitance)
                 + _rc.bitlineResistance * (muxLoadCapacitance + _rc.bitlineCapacitance / 2);
         // One bitline rises and the other drops, so half the sense voltage is enough
         tau *= std::log(_rc.prechargeVoltage / (_rc.prechargeVoltage - _senseVoltage / 2));
-        const double transconductance = CalculateTransconductance(finFactor * gCell.widthAccessCMOS * gTech.featureSize, CmosType::NMOS, gTech);
+        const double transconductance = CalculateTransconductance(finFactor * gCell.widthAccessCMOS * gTech.featureSize.value(), CmosType::NMOS, gTech);
         const double beta = 1 / (pullDownResistance.value() * transconductance);
         timing.bitlineLatency = physics::horowitz(tau, beta, wordlineRamp).delay;
         timing.readLatency = decoderLatency + timing.bitlineLatency + bitlineMux.timing().readLatency + senseAmpLatency
@@ -539,7 +538,7 @@ mse::component::SubArrayTiming mse::component::SubArray::calculateTiming(physics
     } else if (gCell.memCellType == SLCNAND || gCell.memCellType == CTT || gCell.memCellType == MLCCTT) {
         // A NAND string is the page count per block plus two select transistors, a CTT cell pulls down through two transistors
         const int stringLength = gCell.memCellType == SLCNAND ? gInputParameter.flashBlockSize / gInputParameter.pageSize + 2 : 2;
-        const double transistorWidth = finFactor * gTech.featureSize;
+        const double transistorWidth = finFactor * gTech.featureSize.value();
 
         const Ohm pullDownResistance = Ohm(CalculateOnResistance(transistorWidth, CmosType::NMOS, gInputParameter.temperature, gTech)) * stringLength;
         Second tau = pullDownResistance * (_rc.cellAccessCapacitance + _rc.bitlineCapacitance + muxLoadCapacitance)
@@ -590,38 +589,37 @@ mse::component::SubArrayPower mse::component::SubArray::calculatePower() const n
 
     const long long selectedColumns = columns / _bitlineMuxInputs / _senseAmpMuxLevel1Inputs / _senseAmpMuxLevel2Inputs;
     const Farad bitlineCapacitance = _rc.cellAccessCapacitance + _rc.bitlineCapacitance + bitlineMux.rc().powerLoadCapacitance;
-    const Number finFactor = gTech.featureSize <= 14*1e-9 ? 2 : 1;
-    const Volt vdd(gTech.vdd);
+    const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
 
     if (gCell.memCellType == SRAM) {
         power.dynamicReadEnergy = bitlineCapacitance * _rc.prechargeVoltage * _rc.prechargeVoltage * columns;
         power.dynamicWriteEnergy = bitlineCapacitance * _rc.prechargeVoltage * _rc.prechargeVoltage * columns
                 / _bitlineMuxInputs / _senseAmpMuxLevel1Inputs / _senseAmpMuxLevel2Inputs;
         // Two inverters per cell
-        power.leakage = Ampere(CalculateGateLeakage(::GateType::INV, 1, finFactor * gCell.widthSRAMCellNMOS * gTech.featureSize,
-                finFactor * gCell.widthSRAMCellPMOS * gTech.featureSize, gInputParameter.temperature, gTech)) * vdd * 2;
+        power.leakage = Ampere(CalculateGateLeakage(::GateType::INV, 1, finFactor * gCell.widthSRAMCellNMOS * gTech.featureSize.value(),
+                finFactor * gCell.widthSRAMCellPMOS * gTech.featureSize.value(), gInputParameter.temperature, gTech)) * gTech.vdd * 2;
         // Two access NMOS, combined as one with vdd crossed
-        power.leakage += Watt(Ampere(CalculateGateLeakage(::GateType::INV, 1, finFactor * gCell.widthAccessCMOS * gTech.featureSize, 0,
-                gInputParameter.temperature, gTech)) * vdd);
+        power.leakage += Watt(Ampere(CalculateGateLeakage(::GateType::INV, 1, finFactor * gCell.widthAccessCMOS * gTech.featureSize.value(), 0,
+                gInputParameter.temperature, gTech)) * gTech.vdd);
         power.leakage *= rows * columns;
     } else if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM) {
-        power.dynamicReadEnergy = bitlineCapacitance * _senseVoltage * vdd * columns;
+        power.dynamicReadEnergy = bitlineCapacitance * _senseVoltage * gTech.vdd * columns;
         // Should also equal the set voltage, Vdd for DRAM
         const Volt writeVoltage(gTech.vpp);
         power.dynamicWriteEnergy = (_rc.bitlineCapacitance + bitlineMux.rc().powerLoadCapacitance) * writeVoltage * writeVoltage * columns;
         power.refreshDynamicEnergy = power.dynamicReadEnergy + power.dynamicWriteEnergy;
-        power.leakage = Ampere(CalculateGateLeakage(::GateType::INV, 1, finFactor * gCell.widthAccessCMOS * gTech.featureSize, 0,
-                gInputParameter.temperature, gTech)) * vdd;
+        power.leakage = Ampere(CalculateGateLeakage(::GateType::INV, 1, finFactor * gCell.widthAccessCMOS * gTech.featureSize.value(), 0,
+                gInputParameter.temperature, gTech)) * gTech.vdd;
         power.leakage *= columns;
     } else if (gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
         power.dynamicReadEnergy = (_rc.cellReadAccessCapacitance + _rc.bitlineCapacitance + bitlineMux.rc().powerLoadCapacitance)
-                * _senseVoltage * Volt(gTechR.vdd) * columns;
+                * _senseVoltage * gTechR.vdd * columns;
         // Should also equal the set voltage, Vdd for DRAM
         const Volt writeVoltage(gTechW.vpp);
         power.dynamicWriteEnergy = (_rc.bitlineCapacitance + bitlineMux.rc().powerLoadCapacitance) * writeVoltage * writeVoltage * columns;
         power.refreshDynamicEnergy = power.dynamicReadEnergy + power.dynamicWriteEnergy;
-        power.leakage = Ampere(CalculateGateLeakage(::GateType::INV, 1, finFactor * gCell.widthAccessCMOS * gTech.featureSize, 0,
-                gInputParameter.temperature, gTech)) * vdd;
+        power.leakage = Ampere(CalculateGateLeakage(::GateType::INV, 1, finFactor * gCell.widthAccessCMOS * gTech.featureSize.value(), 0,
+                gInputParameter.temperature, gTech)) * gTech.vdd;
         power.leakage *= columns;
     } else if (gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor || gCell.memCellType == FBRAM
             || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
@@ -650,8 +648,8 @@ mse::component::SubArrayPower mse::component::SubArray::calculatePower() const n
 
         Joule resetEnergyPerBit(gCell.resetEnergy);
         Joule setEnergyPerBit(gCell.setEnergy);
-        const Volt setVoltage = gCell.setMode ? Volt(gCell.setVoltage) : vdd;
-        const Volt resetVoltage = gCell.resetMode ? Volt(gCell.resetVoltage) : vdd;
+        const Volt setVoltage = gCell.setMode ? Volt(gCell.setVoltage) : gTech.vdd;
+        const Volt resetVoltage = gCell.resetMode ? Volt(gCell.resetVoltage) : gTech.vdd;
         setEnergyPerBit += Joule(bitlineCapacitance * setVoltage * setVoltage);
         resetEnergyPerBit += Joule(bitlineCapacitance * resetVoltage * resetVoltage);
 
@@ -705,7 +703,7 @@ mse::component::SubArrayPower mse::component::SubArray::calculatePower() const n
         rowDecoderResetDynamicEnergy = power.rowDecoderReadDynamicEnergy;
         rowDecoderSetDynamicEnergy = power.rowDecoderReadDynamicEnergy;
         // Approximated by scaling the Vdd energy to Vpass
-        Joule wordlineReadEnergy = power.rowDecoderReadDynamicEnergy / vdd / vdd * passVoltage * passVoltage;
+        Joule wordlineReadEnergy = power.rowDecoderReadDynamicEnergy / gTech.vdd / gTech.vdd * passVoltage * passVoltage;
         wordlineReadEnergy *= blockWordlines - 1; // Every wordline but the selected one
         power.rowDecoderReadDynamicEnergy = wordlineReadEnergy;
 
@@ -713,24 +711,24 @@ mse::component::SubArrayPower mse::component::SubArray::calculatePower() const n
         power.setDynamicEnergy = bitlineCapacitance * programVoltage * programVoltage * columns;
         // Tunneling current, over every column since unselected bitlines also precharge to Vdd
         power.setDynamicEnergy += Joule(constant::floatingGateThresholdDelta.value() * constant::tunnelCurrentFlow.value() * gCell.area
-                * gTech.featureSize * gTech.featureSize * gCell.flashProgramTime * columns);
+                * gTech.featureSize.value() * gTech.featureSize.value() * gCell.flashProgramTime * columns);
         // The string select line precharges to Vdd like the row decoder energy, unselected wordlines in the block to Vpass, and the selected one to Vpgm
         Joule wordlineSetEnergy = rowDecoderSetDynamicEnergy;
-        wordlineSetEnergy += Joule(rowDecoderSetDynamicEnergy / vdd / vdd * passVoltage * passVoltage * (blockWordlines - 1));
-        wordlineSetEnergy += Joule(rowDecoderSetDynamicEnergy / vdd / vdd * programVoltage * programVoltage);
+        wordlineSetEnergy += Joule(rowDecoderSetDynamicEnergy / gTech.vdd / gTech.vdd * passVoltage * passVoltage * (blockWordlines - 1));
+        wordlineSetEnergy += Joule(rowDecoderSetDynamicEnergy / gTech.vdd / gTech.vdd * programVoltage * programVoltage);
         rowDecoderSetDynamicEnergy = wordlineSetEnergy;
 
         // Erase (reset): every bitline and the source line precharge to Vera - Vbi
-        const Volt bitlineEraseVoltage = eraseVoltage - Volt(gTech.buildInPotential);
+        const Volt bitlineEraseVoltage = eraseVoltage - gTech.buildInPotential;
         power.resetDynamicEnergy = bitlineCapacitance * bitlineEraseVoltage * bitlineEraseVoltage;
         power.resetDynamicEnergy *= columns + 1; // Plus the source line
         // The selected block shares one p-well, which precharges to Vera
-        Farad wellJunctionCapacitance(gTech.capJunction * gCell.area * gTech.featureSize * gTech.featureSize);
+        Farad wellJunctionCapacitance(gTech.capJunction.value() * gCell.area * gTech.featureSize.value() * gTech.featureSize.value());
         wellJunctionCapacitance *= gInputParameter.flashBlockSize;
         power.resetDynamicEnergy += Joule(wellJunctionCapacitance * eraseVoltage * eraseVoltage);
         // Wordlines and select lines in unselected blocks, and select lines in the selected block, precharge to Vera * beta
         const double beta = 0.8;
-        Joule wordlineResetEnergy = rowDecoderResetDynamicEnergy / vdd / vdd * (eraseVoltage * beta) * (eraseVoltage * beta);
+        Joule wordlineResetEnergy = rowDecoderResetDynamicEnergy / gTech.vdd / gTech.vdd * (eraseVoltage * beta) * (eraseVoltage * beta);
         wordlineResetEnergy *= blockWordlines - pageCount;
         rowDecoderResetDynamicEnergy = wordlineResetEnergy;
 
