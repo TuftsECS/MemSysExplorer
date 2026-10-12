@@ -26,28 +26,37 @@ public:
 
     virtual constexpr int inputCount() const noexcept = 0;
 
-    Dimensions dimensions() const noexcept { return _dimensions; }
-    unit::Farad drainCapacitance() const noexcept { return _drainCapacitance; }
-    unit::Farad gateCapacitance() const noexcept { return _gateCapacitance; }
-    unit::Ampere leakageCurrent() const noexcept { return _leakageCurrent; }
-
-protected:
-
-    Dimensions _dimensions;
-    unit::Farad _drainCapacitance;
-    unit::Farad _gateCapacitance;
-    unit::Ampere _leakageCurrent;
+    virtual Dimensions dimensions() const noexcept = 0;
+    virtual unit::Farad drainCapacitance() const noexcept = 0;
+    virtual unit::Farad gateCapacitance() const noexcept = 0;
+    virtual unit::Ampere leakageCurrent() const noexcept = 0;
 };
 
 //==================================================
-// CMOS tranistor model base class that computes all values once during construction
+// CMOS tranistor model base class
 
 class CmosTransistor : public CmosDevice {
+private:
+
+    const Technology* _tech = nullptr;
+    unit::Feature _gateWidth;
+    unit::Feature _regionHeight;
+    const double* _onCurrent = nullptr; // TODO change to unit::Ampere
+    const double* _offCurrent = nullptr; // TODO change to unit::Ampere
+    unit::Volt _vdsat;
+    unit::Number _mobility;
+    int _tempIndex = 0;
+
 public:
 
     constexpr int inputCount() const noexcept override final { return 1; }
-    unit::Ohm channelResistance() const noexcept { return _channelResistance; }
-    unit::Siemens transconductance() const noexcept { return _transconductance; }
+
+    Dimensions dimensions() const noexcept override final;
+    unit::Farad drainCapacitance() const noexcept override final;
+    unit::Farad gateCapacitance() const noexcept override final;
+    unit::Ampere leakageCurrent() const noexcept override final;
+    unit::Ohm channelResistance() const noexcept;
+    unit::Siemens transconductance() const noexcept;
 
 protected:
 
@@ -61,11 +70,6 @@ protected:
         unit::Volt vdsat,
         unit::Number mobility
     );
-
-private:
-
-    unit::Ohm _channelResistance;
-    unit::Siemens _transconductance;
 };
 
 //==================================================
@@ -91,12 +95,27 @@ public:
 };
 
 //==================================================
-// CMOS gate model that computes all values once during construction
+// CMOS gate model
 // When inputs is > 0, that value is used as a compile-time constant for a number of inputs
 // When inputs is = 0, a runtime value is supplied to the constructor for the number of inputs
 
 template <GateType Gate, int Inputs>
 class CmosGate : public CmosDevice {
+private:
+
+    static constexpr bool sequentialNmos = Gate != GateType::Nor;
+
+    const Technology* _tech = nullptr;
+    int _inputs = 0;
+    unit::Feature _unitNmosWidth;
+    unit::Feature _unitPmosWidth;
+    unit::Feature _nmosWidth;
+    unit::Feature _pmosWidth;
+    unit::Feature _nmosMaxWidth;
+    unit::Feature _pmosMaxWidth;
+    unit::Number _logicalEffort;
+    int _tempIndex = 0;
+
 public:
 
     constexpr CmosGate() = default;
@@ -104,8 +123,13 @@ public:
     CmosGate(const Technology& tech, int inputs, unit::Feature unitNmosGateWidth, unit::Feature unitPmosGateWidth, unit::Feature gateRegionHeight);
 
     constexpr int inputCount() const noexcept override final { return _inputs; }
-    unit::Ohm nmosResistance() const noexcept { return _nmosResistance; }
-    unit::Ohm pmosResistance() const noexcept { return _pmosResistance; }
+
+    Dimensions dimensions() const noexcept override final;
+    unit::Farad drainCapacitance() const noexcept override final;
+    unit::Farad gateCapacitance() const noexcept override final;
+    unit::Ampere leakageCurrent() const noexcept override final;
+    unit::Ohm nmosResistance() const noexcept;
+    unit::Ohm pmosResistance() const noexcept;
     unit::Number logicalEffort() const noexcept { return _logicalEffort; }
     // Effective widths
     unit::Feature nmosWidth() const noexcept { return _nmosWidth; }
@@ -113,12 +137,14 @@ public:
 
 private:
 
-    int _inputs = 0;
-    unit::Feature _nmosWidth;
-    unit::Feature _pmosWidth;
-    unit::Ohm _nmosResistance;
-    unit::Ohm _pmosResistance;
-    unit::Number _logicalEffort;
+    struct Layout {
+        int nmosFoldDegree = 0;
+        int pmosFoldDegree = 0;
+        unit::Feature nmosRegionHeight;
+        unit::Feature pmosRegionHeight;
+    };
+
+    Layout layout() const noexcept;
 };
 
 //==================================================

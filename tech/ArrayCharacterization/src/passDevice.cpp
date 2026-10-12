@@ -8,12 +8,18 @@ static constexpr mse::unit::Feature contactWidth = mse::constant::contactSize + 
 static constexpr mse::unit::Feature diffusionRegionWidth = mse::constant::minimumGapBetweenPoly;
 static constexpr mse::unit::Feature polyWidth(1.0);
 
+// Folding needs at least 3F of region height for the folding overhead
+static void checkFolding(mse::unit::Feature regionHeight, mse::unit::Feature maxRegionHeight) {
+    using namespace mse::unit;
+    if (regionHeight >= maxRegionHeight && maxRegionHeight < 3.0_feat) {
+        mse::log::fatal("Unable to do CMOS folding because size limitation is less than 3F");
+    }
+}
+
+// Calculates folding for a transistor region and checked by checkFolding during construction
 static unsigned calculateFolding(mse::unit::Feature regionHeight, mse::unit::Feature maxRegionHeight) {
     using namespace mse::unit;
     if (regionHeight >= maxRegionHeight) {
-        if (maxRegionHeight < 3.0_feat) {
-            mse::log::fatal("Unable to do CMOS folding because size limitation is less than 3F");
-        }
         return static_cast<unsigned>(std::ceil(regionHeight / (maxRegionHeight - 3.0_feat))); // 3F for folding overhead
     }
     return 1;
@@ -46,36 +52,67 @@ static mse::unit::Ohm computeOnResistance(const Technology& tech, const double* 
 }
 
 template <mse::PassType Type, int Inputs>
-mse::PassStack<Type, Inputs>::PassStack(const Technology& tech, unit::Feature gateWidth, unit::Feature maxRegionHeight) {
-    using namespace mse::unit;
-
-    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{tech.featureSize};
-    const unsigned foldDegree = calculateFolding(gateWidth, maxRegionHeight);
-
-    const Feature foldedFingerWidth = foldDegree * polyWidth + (foldDegree - 1) * diffusionRegionWidth;
-    _dimensions = {
-        .width = (2.0 * contactWidth + Inputs * foldedFingerWidth + (Inputs - 1) * diffusionRegionWidth) * featureSize,
-        .height = std::min(gateWidth, maxRegionHeight) * featureSize
-    };
-
-    const Feature foldedFingerDrainWidth = (foldDegree - 1) * diffusionRegionWidth;
-    const Meter drainWidth = (contactWidth + Inputs * foldedFingerDrainWidth + (Inputs - 1) * diffusionRegionWidth) * featureSize;
-    const Meter drainHeight = _dimensions.height;
-    const MeterExp<2> drainArea = drainWidth * drainHeight;
-    _drainCapacitance = computeDrainCapacitance(tech, drainArea, drainWidth, drainHeight, foldDegree);
-
-    _gateCapacitance = computeGateCapacitance(tech, gateWidth) * Inputs;
-
-    int tempIndex = gInputParameter.temperature - 300;
-    if (tempIndex > 100 || tempIndex < 0) {
+mse::PassStack<Type, Inputs>::PassStack(const Technology& tech, unit::Feature gateWidth, unit::Feature maxRegionHeight)
+        : _tech(&tech),
+          _gateWidth(gateWidth),
+          _maxRegionHeight(maxRegionHeight),
+          _tempIndex(gInputParameter.temperature - 300) {
+    if (_tempIndex > 100 || _tempIndex < 0) {
         log::fatal("Temperature is out of range");
     }
 
-    const double* onCurrent = Type == PassType::Nmos ? tech.currentOnNmos : tech.currentOnPmos;
-    const double* offCurrent = Type == PassType::Nmos ? tech.currentOffNmos : tech.currentOffPmos;
-    _resistance = computeOnResistance(tech, onCurrent, gateWidth, tempIndex) * Inputs;
+    checkFolding(_gateWidth, _maxRegionHeight);
+}
 
-    _leakageCurrent = Ampere((gateWidth * featureSize).value() * offCurrent[tempIndex]);
+template <mse::PassType Type, int Inputs>
+mse::Dimensions mse::PassStack<Type, Inputs>::dimensions() const noexcept {
+    using namespace mse::unit;
+
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{_tech->featureSize};
+    const unsigned foldDegree = calculateFolding(_gateWidth, _maxRegionHeight);
+    const Feature foldedFingerWidth = foldDegree * polyWidth + (foldDegree - 1) * diffusionRegionWidth;
+
+    return Dimensions{
+        .width = (2.0 * contactWidth + Inputs * foldedFingerWidth + (Inputs - 1) * diffusionRegionWidth) * featureSize,
+        .height = std::min(_gateWidth, _maxRegionHeight) * featureSize
+    };
+}
+
+template <mse::PassType Type, int Inputs>
+mse::unit::Farad mse::PassStack<Type, Inputs>::drainCapacitance() const noexcept {
+    using namespace mse::unit;
+
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{_tech->featureSize};
+    const unsigned foldDegree = calculateFolding(_gateWidth, _maxRegionHeight);
+
+    const Feature foldedFingerDrainWidth = (foldDegree - 1) * diffusionRegionWidth;
+    const Meter drainWidth = (contactWidth + Inputs * foldedFingerDrainWidth + (Inputs - 1) * diffusionRegionWidth) * featureSize;
+    const Meter drainHeight = std::min(_gateWidth, _maxRegionHeight) * featureSize;
+    const MeterExp<2> drainArea = drainWidth * drainHeight;
+
+    return computeDrainCapacitance(*_tech, drainArea, drainWidth, drainHeight, foldDegree);
+}
+
+template <mse::PassType Type, int Inputs>
+mse::unit::Farad mse::PassStack<Type, Inputs>::gateCapacitance() const noexcept {
+    return computeGateCapacitance(*_tech, _gateWidth) * Inputs;
+}
+
+template <mse::PassType Type, int Inputs>
+mse::unit::Ampere mse::PassStack<Type, Inputs>::leakageCurrent() const noexcept {
+    using namespace mse::unit;
+
+    const Unit<MeterAtom<>, FeatureAtom<-1>> featureSize{_tech->featureSize};
+    const double* offCurrent = Type == PassType::Nmos ? _tech->currentOffNmos : _tech->currentOffPmos;
+
+    return Ampere((_gateWidth * featureSize).value() * offCurrent[_tempIndex]);
+}
+
+template <mse::PassType Type, int Inputs>
+mse::unit::Ohm mse::PassStack<Type, Inputs>::resistance() const noexcept {
+    const double* onCurrent = Type == PassType::Nmos ? _tech->currentOnNmos : _tech->currentOnPmos;
+
+    return computeOnResistance(*_tech, onCurrent, _gateWidth, _tempIndex) * Inputs;
 }
 
 template class mse::PassStack<mse::PassType::Nmos, 2>;

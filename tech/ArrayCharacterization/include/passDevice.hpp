@@ -23,35 +23,36 @@ public:
 
     virtual constexpr int inputCount() const noexcept = 0;
 
-    Dimensions dimensions() const noexcept { return _dimensions; }
-    unit::Farad drainCapacitance() const noexcept { return _drainCapacitance; }
-    unit::Farad gateCapacitance() const noexcept { return _gateCapacitance; }
-    unit::Ampere leakageCurrent() const noexcept { return _leakageCurrent; }
-
-protected:
-
-    Dimensions _dimensions;
-    unit::Farad _drainCapacitance;
-    unit::Farad _gateCapacitance;
-    unit::Ampere _leakageCurrent;
+    virtual Dimensions dimensions() const noexcept = 0;
+    virtual unit::Farad drainCapacitance() const noexcept = 0;
+    virtual unit::Farad gateCapacitance() const noexcept = 0;
+    virtual unit::Ampere leakageCurrent() const noexcept = 0;
 };
 
 //==================================================
-// Pass-transistor stack model that computes all values once during construction
+// Pass-transistor stack model
 
 template <PassType Type, int Inputs>
 class PassStack : public PassDevice {
+private:
+
+    const Technology* _tech = nullptr;
+    unit::Feature _gateWidth;
+    unit::Feature _maxRegionHeight;
+    int _tempIndex = 0;
+
 public:
 
     constexpr PassStack() = default;
     PassStack(const Technology& tech, unit::Feature gateWidth, unit::Feature maxRegionHeight);
 
     constexpr int inputCount() const noexcept override final { return Inputs; }
-    unit::Ohm resistance() const noexcept { return _resistance; }
 
-private:
-
-    unit::Ohm _resistance;
+    Dimensions dimensions() const noexcept override final;
+    unit::Farad drainCapacitance() const noexcept override final;
+    unit::Farad gateCapacitance() const noexcept override final;
+    unit::Ampere leakageCurrent() const noexcept override final;
+    unit::Ohm resistance() const noexcept;
 };
 
 template <int Inputs>
