@@ -12,27 +12,29 @@ namespace mse::cell {
 struct DramParameters final : MemoryCellParameters {
     std::reference_wrapper<const Technology> tech;
 
-    ScalarParameter<unit::Feature> accessNmosGateWidth{"Access CMOS Width", "", unit::Feature(1)};
-    ScalarParameter<unit::Farad> internalCapacitance{"Storage Node Capacitance", "", unit::Farad(1)};
+    ScalarParameter<unit::Feature> accessNmosGateWidth{"Access.Width", "", unit::Feature(0)};
+    ScalarParameter<unit::Farad> internalCapacitance{"Storage.Capacitance", "", unit::Farad(0)};
 
     unit::Feature transistorRegionHeight;
 
     DramParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
-        //fillParameter(accessNmosGateWidth, internalCapacitance);
-        // TODO
-        accessNmosGateWidth.value() = unit::Feature(gCell.widthAccessCMOS);
-        internalCapacitance.value() = unit::Farad(gCell.capDRAMCell);
+        fillParameter(accessNmosGateWidth, internalCapacitance);
 
         unit::Number featureScale = (tech.get().featureSizeInNano <= 14 ? 2 : 1);
         accessNmosGateWidth.value() *= featureScale;
 
-        transistorRegionHeight = unit::Feature(gCell.widthInFeatureSize);
+        transistorRegionHeight = cellWidth;
     }
 };
 
 class DramProperties final : public MemoryCellProperties {
+private:
+
+    unit::Volt _minSenseVoltage;
+
 public:
-    DramProperties(const DramParameters&) {
+
+    DramProperties(const DramParameters& parameters) : _minSenseVoltage(parameters.minSenseVoltage) {
         using namespace mse::unit;
 
         sensingMethod = SenseMethod::Voltage;
@@ -44,10 +46,11 @@ public:
     }
 
     bool isValid() {
-        if (sensingVoltage.value() < gCell.minSenseVoltage) {
+        if (sensingVoltage < _minSenseVoltage) {
             // bitline too long
             return false;
         }
+
         return true;
     }
 };

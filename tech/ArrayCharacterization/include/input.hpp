@@ -33,6 +33,7 @@
 #include <unordered_set>
 #include <functional>
 #include <format>
+#include <string_view>
 
 namespace mse {
 
@@ -446,7 +447,7 @@ public:
         try {
             // Below bitwise AND is used instead of logical AND to get around short-circuiting
             bool result = (fillParameter(parameters, _fileRoot) & ...); // Overload to certain parameter type
-            (touchKey(parameters.key), ...); // Mark key as seen in this input file
+            (touchKey(parameters.key.substr(0, parameters.key.find('.'))), ...); // Mark the top level key as seen in this input file
             return result;
         } catch (const YAML::Exception& e) {
             log::fatal(std::format("Error parsing YAML file \"{}\": {}", _filePath, e.what()));
@@ -460,13 +461,16 @@ public:
 
 private:
 
+    // Finds the node of a key, where dots separate the keys of nested maps like "Reset.Pulse"
+    static YAML::Node findNode(const YAML::Node& root, std::string_view key);
+
     //==================================================
     // Helper overloads for each parameter type
     // Necessary to get around virtual template incompatibility
 
     template <typename T>
     static bool fillParameter(ScalarParameter<T>& parameter, const YAML::Node& root) {
-        YAML::Node node = root[parameter.key];
+        YAML::Node node = findNode(root, parameter.key);
         if (!checkForKey(node, parameter)) {
             return false;
         }
@@ -495,7 +499,7 @@ private:
 
     template <typename T, int C>
     static bool fillParameter(ArrayParameter<T, C>& parameter, const YAML::Node& root) {
-        YAML::Node node = root[parameter.key];
+        YAML::Node node = findNode(root, parameter.key);
         if (!checkForKey(node, parameter)) {
             return false;
         }
@@ -535,7 +539,7 @@ private:
 
     template <typename... Ts>
     static bool fillParameter(CompoundParameter<Ts...>& parameter, const YAML::Node& root) {
-        YAML::Node node = root[parameter.key];
+        YAML::Node node = findNode(root, parameter.key);
         if (!checkForKey(node, parameter)) {
             return false;
         }
@@ -563,10 +567,18 @@ private:
         value = node.as<T>();
     }
 
+    // Unit values are written as a number with an optional scaled unit, like "10 ns", "1.5 MOhm", or "0.4"
+    // A number without a unit is in base units, and only single units like volts take a unit string
     template <typename... Ts>
     static void nodeValue(const YAML::Node& node, unit::Unit<Ts...>& value) {
-        value = mse::unit::Unit<Ts...>(node.as<typename mse::unit::Unit<Ts...>::UnitValueType>());
+        std::string_view unitString;
+        if constexpr (sizeof...(Ts) == 1 && ((Ts::exponent == 1) && ...)) {
+            unitString = (Ts::unitString(), ...);
+        }
+        value = mse::unit::Unit<Ts...>(unitValue(node.as<std::string>(), unitString));
     }
+
+    static double unitValue(const std::string& text, std::string_view unitString);
 
     //==================================================
     // Functions for checking strict access

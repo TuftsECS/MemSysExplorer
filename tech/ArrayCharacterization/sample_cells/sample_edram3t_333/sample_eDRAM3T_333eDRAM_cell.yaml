@@ -1,22 +1,24 @@
 # Cell Calibrated from:
-# Kong, David, et al. 
+# Kong, David, et al.
 # "333-eDRAM - 3T Embedded DRAM Leveraging Monolithic 3D Integration of 3 Transistor Types: IGZO, Carbon Nanotube and Silicon FETs"
 # 62nd ACM/IEEE Design Automation Conference (DAC), 2025
 
 MemCellType: eDRAM3T333
 
-CellArea_F2: 387.76
-CellAspectRatio: 1.06
+Area: 387.76
+AspectRatio: 1.06
 
-ReadMode: voltage
+Read:
+  Mode: voltage
 
-AccessType: CMOS
-AccessCMOSWidth_F: 1.64
-AccessCMOSWidthR_F: 3.6
+Access:
+  Type: CMOS
+  Width: 1.64
+  ReadWidth: 3.6
 
-DRAMCellCapacitance_F: 0.5e-15
+Storage:
+  Capacitance: 500 aF
+  MaxNodeDrop: 0.2 V
+  RetentionTime: 501 us
 
-MinSenseVoltage_mV: 10
-MaxStorageNodeDrop_V: 0.2
-
-RetentionTime_us: 501
+MinSenseVoltage: 10 mV

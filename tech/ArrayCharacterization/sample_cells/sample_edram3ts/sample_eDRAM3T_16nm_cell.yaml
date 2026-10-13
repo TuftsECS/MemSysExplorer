@@ -1,22 +1,24 @@
 # Cell Calibrated from:
-# Giterman, Robert, et al. 
+# Giterman, Robert, et al.
 # "A 1-Mbit fully logic-compatible 3T gain-cell embedded DRAM in 16-nm FinFET."
 # IEEE Solid-State Circuits Letters 3 (2020): 110-113.
 
 MemCellType: eDRAM3T
 
-CellArea_F2: 312.5
-CellAspectRatio: 1.51
+Area: 312.5
+AspectRatio: 1.51
 
-ReadMode: voltage
+Read:
+  Mode: voltage
 
-AccessType: CMOS
-AccessCMOSWidth_F: 1.0
-AccessCMOSWidthR_F: 2.0
+Access:
+  Type: CMOS
+  Width: 1.0
+  ReadWidth: 2.0
 
-DRAMCellCapacitance_F: 2e-15
+Storage:
+  Capacitance: 2 fF
+  MaxNodeDrop: 0.2 V
+  RetentionTime: 5101 us
 
-MinSenseVoltage_mV: 10
-MaxStorageNodeDrop_V: 0.2
-
-RetentionTime_us: 5101
+MinSenseVoltage: 10 mV

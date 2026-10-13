@@ -3,50 +3,51 @@
 
 # Basic Cell Properties
 MemCellType: MLCFeFET
-CellArea_F2: 103
-CellAspectRatio: 1
-CellLevels: 4
+Area: 103
+AspectRatio: 1
+MultiLevel:
+  Levels: 4
 
 # Resistance Values at Different Voltages
 Resistance:
-  OnAtSetVoltage_ohm: 100000
-  OffAtSetVoltage_ohm: 1000000000
-  OnAtResetVoltage_ohm: 100000
-  OffAtResetVoltage_ohm: 10000000
-  OnAtReadVoltage_ohm: 1000000
-  OffAtReadVoltage_ohm: 10000000
-  OnAtHalfResetVoltage_ohm: 500000
+  OnAtSetVoltage: 100 KOhm
+  OffAtSetVoltage: 1 GOhm
+  OnAtResetVoltage: 100 KOhm
+  OffAtResetVoltage: 10 MOhm
+  On: 1 MOhm
+  Off: 10 MOhm
+  OnAtHalfResetVoltage: 500 KOhm
 
 # Capacitance
 Capacitance:
-  On_F: 1e-16
-  Off_F: 1e-16
+  On: 100 aF
+  Off: 100 aF
 
 # Read Operation
 Read:
   Mode: current
-  Voltage_V: 0.05
-  Power_uW: 0.125
+  Voltage: 0.05 V
+  Power: 0.125 uW
 
 # Reset Operation
 Reset:
   Mode: voltage
-  Voltage_V: 3.0
-  Pulse_ns: 1557
-  Energy_pJ: 0.00664
+  Voltage: 3.0 V
+  Pulse: 1557 ns
+  Energy: 0.00664 pJ
 
 # Set Operation
 Set:
   Mode: voltage
-  Voltage_V: 3.0
-  Pulse_ns: 1557
-  Energy_pJ: 0.00664
+  Voltage: 3.0 V
+  Pulse: 1557 ns
+  Energy: 0.00664 pJ
 
 # Access Device
 Access:
   Type: CMOS
-  VoltageDropAccessDevice_V: 0.01
-  CMOSWidth_F: 0.01
+  VoltageDrop: 0.01 V
+  Width: 0.01
 
 # Additional Properties
 ReadFloating: false

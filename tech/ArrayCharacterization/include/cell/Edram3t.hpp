@@ -14,10 +14,9 @@ struct Edram3tParameters final : MemoryCellParameters {
     std::reference_wrapper<const Technology> techR;
     std::reference_wrapper<const Technology> techW;
 
-    //input::SimpleParameter<unit::Feature> accessNmosGateWidth;
-    //input::SimpleParameter<unit::Feature> accessNmosGateWidthR;
-    //input::SimpleParameter<unit::Feature> accessNmosGateWidthW;
-    ScalarParameter<unit::Farad> internalCapacitance{"Storage Node Capacitance", "", unit::Farad(0)};
+    ScalarParameter<unit::Feature> accessWidth{"Access.Width", "", unit::Feature(0)}; // Write access transistor
+    ScalarParameter<unit::Feature> readAccessWidth{"Access.ReadWidth", "", unit::Feature(0)};
+    ScalarParameter<unit::Farad> internalCapacitance{"Storage.Capacitance", "", unit::Farad(0)};
 
     unit::Feature accessNmosGateWidth;
     unit::Feature accessNmosGateWidthR;
@@ -25,19 +24,15 @@ struct Edram3tParameters final : MemoryCellParameters {
     unit::Feature transistorRegionHeight;
 
     Edram3tParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech), techR(gTechR), techW(gTechW) {
-        // TODO use specific cell fields in config file
-        // for now just steal from gCell, figure out new input style later
-        // fillParameter(accessNmosGateWidth, accessNmosGateWidthR, accessNmosGateWidthW);
-        //fillParameter(internalCapacitance);
-        internalCapacitance.value() = unit::Farad(gCell.capDRAMCell);
+        fillParameter(accessWidth, readAccessWidth, internalCapacitance);
         
         using namespace mse::unit;
 
-        accessNmosGateWidth = ((gTech.featureSizeInNano <= 14) ? 2_feat : 1_feat) * gCell.widthAccessCMOS;
-        accessNmosGateWidthR = ((gTechR.featureSizeInNano <= 14) ? 2_feat : 1_feat) * gCell.widthAccessCMOSR;
-        accessNmosGateWidthW = ((gTechW.featureSizeInNano <= 14) ? 2_feat : 1_feat) * gCell.widthAccessCMOS;
+        accessNmosGateWidth = ((gTech.featureSizeInNano <= 14) ? 2.0 : 1.0) * accessWidth.value();
+        accessNmosGateWidthR = ((gTechR.featureSizeInNano <= 14) ? 2.0 : 1.0) * readAccessWidth.value();
+        accessNmosGateWidthW = ((gTechW.featureSizeInNano <= 14) ? 2.0 : 1.0) * accessWidth.value();
 
-        transistorRegionHeight = unit::Feature(gCell.widthInFeatureSize);
+        transistorRegionHeight = cellWidth;
     }
 };
 

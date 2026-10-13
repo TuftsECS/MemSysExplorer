@@ -5,8 +5,8 @@
 
 # Basic Cell Properties
 MemCellType: CTT
-CellArea_F2: 8
-CellAspectRatio: 2
+Area: 8
+AspectRatio: 2
 
 # Read Operation
 Read:

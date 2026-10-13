@@ -1,21 +1,23 @@
 # Cell Calibrated from:
-# Barth, John, et al. 
+# Barth, John, et al.
 # "A 500 MHz random cycle, 1.5 ns latency, SOI embedded DRAM macro featuring a three-transistor micro sense amplifier."
 # IEEE Journal of Solid-State Circuits 43.1 (2008): 86-95.
 
 MemCellType: eDRAM
 
-CellArea_F2: 29.94
-CellAspectRatio: 2.39
+Area: 29.94
+AspectRatio: 2.39
 
-ReadMode: voltage
+Read:
+  Mode: voltage
 
-AccessType: CMOS
-AccessCMOSWidth_F: 1.0
+Access:
+  Type: CMOS
+  Width: 1.0
 
-DRAMCellCapacitance_F: 20e-15
+Storage:
+  Capacitance: 20 fF
+  MaxNodeDrop: 0.4 V
+  RetentionTime: 40 us
 
-MinSenseVoltage_mV: 10
-MaxStorageNodeDrop_V: 0.4
-
-RetentionTime_us: 40
+MinSenseVoltage: 10 mV

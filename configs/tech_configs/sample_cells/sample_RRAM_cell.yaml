@@ -2,49 +2,49 @@
 
 # Basic Cell Properties
 MemCellType: memristor
-CellArea_F2: 4
-CellAspectRatio: 1
+Area: 4
+AspectRatio: 1
 
 # Resistance Values
 Resistance:
-  OnAtSetVoltage_ohm: 100000
-  OffAtSetVoltage_ohm: 10000000
-  OnAtResetVoltage_ohm: 100000
-  OffAtResetVoltage_ohm: 10000000
-  OnAtReadVoltage_ohm: 1000000
-  OffAtReadVoltage_ohm: 10000000
-  OnAtHalfResetVoltage_ohm: 500000
+  OnAtSetVoltage: 100 KOhm
+  OffAtSetVoltage: 10 MOhm
+  OnAtResetVoltage: 100 KOhm
+  OffAtResetVoltage: 10 MOhm
+  On: 1 MOhm
+  Off: 10 MOhm
+  OnAtHalfResetVoltage: 500 KOhm
 
 # Capacitance
 Capacitance:
-  On_F: 1e-16
-  Off_F: 1e-16
+  On: 100 aF
+  Off: 100 aF
 
 # Read Operation
 Read:
   Mode: current
-  Voltage_V: 0.4
-  Power_uW: 0.16
+  Voltage: 0.4 V
+  Power: 0.16 uW
 
 # Reset Operation
 Reset:
   Mode: voltage
-  Voltage_V: 2.0
-  Pulse_ns: 10
-  Energy_pJ: 0.6
+  Voltage: 2.0 V
+  Pulse: 10 ns
+  Energy: 0.6 pJ
 
 # Set Operation
 Set:
   Mode: voltage
-  Voltage_V: 2.0
-  Pulse_ns: 10
-  Energy_pJ: 0.6
+  Voltage: 2.0 V
+  Pulse: 10 ns
+  Energy: 0.6 pJ
 
 # Access Device
 Access:
   Type: None
-  #Type: diode
-  #VoltageDropAccessDevice_V: 0.5
+  # Type: diode
+  # VoltageDrop: 0.5 V
 
 # Additional Properties
 ReadFloating: false

@@ -11,13 +11,13 @@ namespace mse::cell {
 struct Sram8tParameters final : MemoryCellParameters {
     std::reference_wrapper<const Technology> tech;
 
-    input::SimpleParameter<unit::Feature> inverterNmosGateWidth{"Nmos Width", "", unit::Feature(2.08)}; // Default value from CACTI
-    input::SimpleParameter<unit::Feature> inverterPmosGateWidth{"Pmos Width", "", unit::Feature(1.23)}; // Default value from CACTI
-    input::SimpleParameter<unit::Feature> accessNmosGateWidth{"Access CMOS Width"};
+    ScalarParameter<unit::Feature> inverterNmosGateWidth{"Inverter.NmosWidth", "", unit::Feature(2.08)}; // Default value from CACTI
+    ScalarParameter<unit::Feature> inverterPmosGateWidth{"Inverter.PmosWidth", "", unit::Feature(1.23)}; // Default value from CACTI
+    ScalarParameter<unit::Feature> accessNmosGateWidth{"Access.Width", "", unit::Feature(0)};
 
     unit::Feature transistorRegionHeight;
 
-    Sram8tParameters(input::YamlFile& file) : MemoryCellParameters(file), tech(gTech) {
+    Sram8tParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
         fillParameter(inverterNmosGateWidth, inverterPmosGateWidth, accessNmosGateWidth);
 
         unit::Number featureScale = (tech.get().featureSizeInNano <= 14 ? 2 : 1);
@@ -25,16 +25,16 @@ struct Sram8tParameters final : MemoryCellParameters {
         inverterPmosGateWidth.value() *= featureScale;
         accessNmosGateWidth.value() *= featureScale;
 
-        transistorRegionHeight = unit::Feature(gCell.widthInFeatureSize);
+        transistorRegionHeight = cellWidth;
     }
 };
 
 struct Sram8tProperties final : public MemoryCellProperties {
-    Sram8tProperties(const Sram8tParameters&) {
+    Sram8tProperties(const Sram8tParameters& parameters) {
         using namespace mse::unit;
 
         sensingMethod = SenseMethod::Voltage;
-        sensingVoltage = Volt(gCell.minSenseVoltage);
+        sensingVoltage = parameters.minSenseVoltage;
         prechargeVoltage = gTech.vdd * 0.5;
 
         sharedContact = true;
