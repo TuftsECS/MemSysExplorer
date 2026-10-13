@@ -44,6 +44,8 @@
 #include "Result.hpp"
 #include "formula.hpp"
 #include "macros.hpp"
+#include "cell/types.hpp"
+#include "input.hpp"
 #include "flags.hpp"
 
 #include <bit>
@@ -295,6 +297,9 @@ int main(int argc, char* argv[])
 	gCell.PrintCell();
 
 	applyConstraint();
+
+	mse::YamlInputFile cellYamlFile(gInputParameter.fileMemCell);
+	mse::cell::MemoryCellFactory<>::create(cellYamlFile, "MemCellType", mse::component::SubArray::cell);
 
 	int numRowMat, numColumnMat, numActiveMatPerRow, numActiveMatPerColumn;
 	int numRowSubarray, numColumnSubarray, numActiveSubarrayPerRow, numActiveSubarrayPerColumn;

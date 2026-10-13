@@ -9,6 +9,7 @@
 #include "component/Mux.hpp"
 #include "component/BasicValues.hpp"
 #include "physics/Horowitz.hpp"
+#include "cell/types.hpp"
 #include "Dimensions.hpp"
 #include "typedef.hpp"
 #include "unit.hpp"
@@ -46,12 +47,6 @@ struct SubArrayRC {
     unit::Ohm wordlineResistance;
     unit::Farad bitlineCapacitance;
     unit::Ohm bitlineResistance;
-    unit::Farad cellAccessCapacitance;
-    unit::Ohm cellAccessResistance;
-    unit::Farad cellReadAccessCapacitance;
-    unit::Ohm cellReadAccessResistance;
-    unit::Farad cellWriteAccessCapacitance;
-    unit::Ohm cellWriteAccessResistance;
     unit::Ohm cellOnResistance;
     unit::Ohm cellOffResistance;
     unit::Ohm equivalentOnResistance;
@@ -93,6 +88,8 @@ public:
     Mux senseAmpMuxLevel1;
     Mux senseAmpMuxLevel2;
     Buffer buffer;
+
+    static inline cell::MemoryCellVariant cell;
 
     SubArray() = default;
 
