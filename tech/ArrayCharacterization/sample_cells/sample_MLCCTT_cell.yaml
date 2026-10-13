@@ -4,15 +4,16 @@
 
 MemCellType: MLCCTT
 
-CellArea_F2: 8
-CellAspectRatio: 2
+Area: 8
+AspectRatio: 2
 
 Read:
   Mode: current
 
 # Device-Specific Parameters
-InputFingers: 8
-CellLevels: 16
+MultiLevel:
+  SenseAmpFingers: 8
+  Levels: 16
 
 Access:
   Type: None

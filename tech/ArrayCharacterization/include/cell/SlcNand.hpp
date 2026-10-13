@@ -15,48 +15,40 @@ namespace mse::cell {
 struct SlcNandParameters final : MemoryCellParameters {
     std::reference_wrapper<const Technology> tech;
 
+    ScalarParameter<unit::Number> gateCouplingRatio{"Flash.GateCouplingRatio", "", 0.0}; // Ratio of control gate to total floating gate capacitance
+    ScalarParameter<unit::Volt> eraseVoltage{"Flash.EraseVoltage", "", unit::Volt(0)};
+    ScalarParameter<unit::Volt> passVoltage{"Flash.PassVoltage", "", unit::Volt(0)}; // Applied to unselected wordlines within the block during programming
+    ScalarParameter<unit::Volt> programVoltage{"Flash.ProgramVoltage", "", unit::Volt(0)};
+    ScalarParameter<unit::Second> eraseTime{"Flash.EraseTime", "", unit::Second(0)};
+    ScalarParameter<unit::Second> programTime{"Flash.ProgramTime", "", unit::Second(0)};
+
     unit::Feature cellNmosGateWidth;
     unit::Feature transistorRegionHeight;
-    double cellArea; // Unit: F^2
 
     int pageCount; // Pages in a block, which is the number of cells in a string
     int stringLength; // Cells in a string plus two select transistors
 
-    unit::Number gateCouplingRatio; // Ratio of control gate to total floating gate capacitance
-    unit::Volt eraseVoltage;
-    unit::Volt passVoltage; // Applied to unselected wordlines within the block during programming
-    unit::Volt programVoltage;
-    unit::Second eraseTime;
-    unit::Second programTime;
-
     SlcNandParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
-        // TODO use specific cell fields in config file
         using namespace mse::unit;
 
+        fillParameter(gateCouplingRatio, eraseVoltage, passVoltage, programVoltage, eraseTime, programTime);
+
         cellNmosGateWidth = (gTech.featureSizeInNano <= 14) ? 2_feat : 1_feat; // Minimum size transistor
-        transistorRegionHeight = Feature(gCell.widthInFeatureSize);
-        cellArea = gCell.area;
+        transistorRegionHeight = cellWidth;
 
         pageCount = gInputParameter.flashBlockSize / gInputParameter.pageSize;
         stringLength = pageCount + 2;
-
-        gateCouplingRatio = gCell.gateCouplingRatio;
-        eraseVoltage = Volt(gCell.flashEraseVoltage);
-        passVoltage = Volt(gCell.flashPassVoltage);
-        programVoltage = Volt(gCell.flashProgramVoltage);
-        eraseTime = Second(gCell.flashEraseTime);
-        programTime = Second(gCell.flashProgramTime);
     }
 };
 
 struct SlcNandProperties final : MemoryCellProperties {
-    SlcNandProperties(const SlcNandParameters&) {
+    SlcNandProperties(const SlcNandParameters& parameters) {
         using namespace mse::unit;
 
         // Suppose the reference voltage is 0.5 vdd and the bitline is precharged to 0.6 vdd
         // If the bitline drops to 0.4 vdd, the sense amp can tell which data is stored
         sensingMethod = SenseMethod::Voltage;
-        sensingVoltage = std::max(Volt(gCell.minSenseVoltage), 0.2 * gTech.vdd);
+        sensingVoltage = std::max(parameters.minSenseVoltage.value(), 0.2 * gTech.vdd);
         prechargeVoltage = gTech.vdd * 0.6;
 
         sharedContact = true;
@@ -174,8 +166,8 @@ public:
         latency.bitline = bitlineDelay;
         latency.read = bitlineDelay + context.bitlineMuxReadLatency;
         // Erase is reset and programming is set, programming is used as the write latency
-        latency.reset = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency) + _parameters.eraseTime;
-        latency.set = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency) + _parameters.programTime;
+        latency.reset = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency) + _parameters.eraseTime.value();
+        latency.set = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency) + _parameters.programTime.value();
         latency.write = latency.set;
 
         return latency;
@@ -187,9 +179,9 @@ public:
         double featureSize = tech.featureSize.value();
         int pageCount = _parameters.pageCount;
         int stringLength = _parameters.stringLength;
-        double passVoltage = _parameters.passVoltage.value();
-        double programVoltage = _parameters.programVoltage.value();
-        double eraseVoltage = _parameters.eraseVoltage.value();
+        double passVoltage = _parameters.passVoltage.value().value();
+        double programVoltage = _parameters.programVoltage.value().value();
+        double eraseVoltage = _parameters.eraseVoltage.value().value();
 
         double capLine = _topology.cellTransistor.drainCapacitance().value() + context.bitlineCapacitance.value() + context.bitlineMuxPreviousPowerCapacitance.value();
         double rowDecoderEnergy = context.rowDecoderReadDynamic.value();
@@ -208,7 +200,7 @@ public:
         // Programming (set), the source line is charged to the program voltage as part of the bitline
         double setEnergy = capLine * programVoltage * programVoltage * context.numColumn;
         // Tunneling current, all unselected bitlines are precharged too so every column is counted
-        setEnergy += constant::floatingGateThresholdDelta.value() * constant::tunnelCurrentFlow.value() * _parameters.cellArea * featureSize * featureSize * _parameters.programTime.value() * context.numColumn;
+        setEnergy += constant::floatingGateThresholdDelta.value() * constant::tunnelCurrentFlow.value() * _parameters.area.value() * featureSize * featureSize * _parameters.programTime.value().value() * context.numColumn;
         energy.setDynamic = unit::Joule(setEnergy);
         // The string select line is precharged to vdd, which the row decoder already found
         double wordlineSetEnergy = rowDecoderEnergy;
@@ -223,7 +215,7 @@ public:
         double resetEnergy = capLine * bitlineEraseVoltage * bitlineEraseVoltage;
         resetEnergy *= (context.numColumn + 1); // Plus 1 for the source line
         // The p-well shared by the selected block is charged to the erase voltage
-        double wellJunctionCapacitance = tech.capJunction.value() * _parameters.cellArea * featureSize * featureSize;
+        double wellJunctionCapacitance = tech.capJunction.value() * _parameters.area.value() * featureSize * featureSize;
         wellJunctionCapacitance *= gInputParameter.flashBlockSize; // One block shares the same well
         resetEnergy += wellJunctionCapacitance * eraseVoltage * eraseVoltage;
         energy.resetDynamic = unit::Joule(resetEnergy);

@@ -14,24 +14,29 @@ namespace mse::cell {
 struct MlcCttParameters final : MemoryCellParameters {
     std::reference_wrapper<const Technology> tech;
 
+    ScalarParameter<std::string> readModeName{"Read.Mode", "", std::string("voltage")};
+    bool readMode; // true = voltage sensing, false = current sensing
+
     unit::Feature cellNmosGateWidth;
     unit::Feature transistorRegionHeight;
 
     MlcCttParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
-        // TODO use specific cell fields in config file
         using namespace mse::unit;
 
+        fillParameter(readModeName);
+        readMode = readModeName.value() == "voltage";
+
         cellNmosGateWidth = (gTech.featureSizeInNano <= 14) ? 2_feat : 1_feat; // Minimum size transistor
-        transistorRegionHeight = Feature(gCell.widthInFeatureSize);
+        transistorRegionHeight = cellWidth;
     }
 };
 
 struct MlcCttProperties final : MemoryCellProperties {
-    MlcCttProperties(const MlcCttParameters&) {
+    MlcCttProperties(const MlcCttParameters& parameters) {
         using namespace mse::unit;
 
-        sensingMethod = gCell.readMode ? SenseMethod::Voltage : SenseMethod::Current;
-        sensingVoltage = Volt(gCell.minSenseVoltage);
+        sensingMethod = parameters.readMode ? SenseMethod::Voltage : SenseMethod::Current;
+        sensingVoltage = parameters.minSenseVoltage;
         prechargeVoltage = gTech.vdd * 0.5;
 
         sharedContact = false;

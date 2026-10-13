@@ -33,7 +33,7 @@ private:
         using namespace mse::unit;
 
         const Technology& tech = parameters.tech;
-        const Meter gateWidth = parameters.accessNmosGateWidth * tech.featureSize;
+        const Meter gateWidth = parameters.accessNmosGateWidth.value() * tech.featureSize;
 
         return Farad(CalculateFeFETGateCap(gateWidth.value(), tech));
     }

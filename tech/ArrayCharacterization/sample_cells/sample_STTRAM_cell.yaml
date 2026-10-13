@@ -4,36 +4,37 @@
 MemCellType: MRAM
 
 # Basic Cell Properties
-CellArea_F2: 54
-CellAspectRatio: 0.54
+Area: 54
+AspectRatio: 0.54
 
 # Resistance Values
-ResistanceOn_ohm: 3000
-ResistanceOff_ohm: 6000
+Resistance:
+  On: 3 KOhm
+  Off: 6 KOhm
 
 # Read Operation
 Read:
   Mode: current
-  Voltage_V: 0.25
-  Power_uW: 30
-MinSenseVoltage_mV: 25
+  Voltage: 0.25 V
+  Power: 30 uW
+MinSenseVoltage: 25 mV
 
 # Reset Operation
 Reset:
   Mode: current
-  Current_uA: 80
-  Pulse_ns: 10
-  Energy_pJ: 1
+  Current: 80 uA
+  Pulse: 10 ns
+  Energy: 1 pJ
 
 # Set Operation
 Set:
   Mode: current
-  Current_uA: 80
-  Pulse_ns: 10
-  Energy_pJ: 1
+  Current: 80 uA
+  Pulse: 10 ns
+  Energy: 1 pJ
 
 # Access Device
 Access:
   Type: CMOS
-  VoltageDropAccessDevice_V: 0.15
-  CMOSWidth_F: 8
+  VoltageDrop: 0.15 V
+  Width: 8

@@ -3,6 +3,7 @@
 #include "log.hpp"
 #include "unit.hpp"
 
+#include <charconv>
 #include <format>
 
 //==================================================
@@ -50,4 +51,66 @@ bool mse::YamlInputFile::strictlyAccessed() const {
     }
     // Otherwise all keys in the top level were accessed / touched
     return true;
+}
+
+//==================================================
+// Functions for reading values
+
+YAML::Node mse::YamlInputFile::findNode(const YAML::Node& root, std::string_view key) {
+    const size_t dot = key.find('.');
+    const YAML::Node node = root[std::string(key.substr(0, dot))];
+    if (dot == std::string_view::npos || !node) {
+        return node;
+    }
+
+    return findNode(node, key.substr(dot + 1));
+}
+
+double mse::YamlInputFile::unitValue(const std::string& text, std::string_view unitString) {
+    std::string_view rest = text;
+    rest.remove_prefix(std::min(rest.find_first_not_of(" +"), rest.size()));
+
+    double value = 0;
+    const auto [end, error] = std::from_chars(rest.data(), rest.data() + rest.size(), value);
+    if (error != std::errc()) {
+        throw std::runtime_error(std::format("Value \"{}\" is not a number", text));
+    }
+    rest.remove_prefix(end - rest.data());
+    rest.remove_prefix(std::min(rest.find_first_not_of(' '), rest.size()));
+    rest.remove_suffix(rest.size() - std::min(rest.find_last_not_of(' ') + 1, rest.size()));
+
+    if (rest.empty()) {
+        return value;
+    }
+    if (unitString.empty() || !rest.ends_with(unitString)) {
+        throw std::runtime_error(std::format("Value \"{}\" should be a number with unit \"{}\"", text, unitString));
+    }
+
+    // Fractional scales divide so values match the legacy parsing of keys like Pulse_ns
+    const std::string_view scale = rest.substr(0, rest.size() - unitString.size());
+    if (scale.empty()) {
+        return value;
+    } else if (scale == "a") {
+        return value / 1e18;
+    } else if (scale == "f") {
+        return value / 1e15;
+    } else if (scale == "p") {
+        return value / 1e12;
+    } else if (scale == "n") {
+        return value / 1e9;
+    } else if (scale == "u") {
+        return value / 1e6;
+    } else if (scale == "m") {
+        return value / 1e3;
+    } else if (scale == "K" || scale == "k") {
+        return value * 1e3;
+    } else if (scale == "M") {
+        return value * 1e6;
+    } else if (scale == "G") {
+        return value * 1e9;
+    } else if (scale == "T") {
+        return value * 1e12;
+    }
+
+    throw std::runtime_error(std::format("Value \"{}\" has an unknown unit scale \"{}\"", text, scale));
 }

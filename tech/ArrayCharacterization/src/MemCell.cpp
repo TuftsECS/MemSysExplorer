@@ -41,289 +41,196 @@
 #include "macros.hpp"
 #include "enumInfo.hpp"
 #include "unit.hpp"
+#include "input.hpp"
 
 #include <math.h>
+#include <type_traits>
 
+/* Reads the same keys as the cell types in include/cell, so the legacy cell stays in sync with them */
 void MemCell::ReadCellFromFile(const std::string& inputFile)
 {
+    using namespace mse::unit;
+
     try {
-        YAML::Node config = YAML::LoadFile(inputFile);
+        mse::YamlInputFile file(inputFile);
+
+        // Fills a field from a key when the key is in the file, with unit values converted to base units
+        const auto fill = [&file] <typename T, typename Field> (std::type_identity<T>, const std::string& key, Field& field) {
+            mse::ScalarParameter<T> parameter{key, "", T(field)};
+            if (!file.fillParameter(parameter)) {
+                return false;
+            }
+            if constexpr (std::is_arithmetic_v<Field> && !std::is_arithmetic_v<T>) {
+                field = parameter.value().value();
+            } else {
+                field = parameter.value();
+            }
+
+            return true;
+        };
+        const auto number = std::type_identity<double>{};
 
         // Basic Cell Properties
-        yamlValueFromNode(memCellType, config, "MemCellType");
-
-        yamlValueFromNode(processNode, config, "ProcessNode");
-        yamlValueFromNode(area, config, "CellArea_F2");
-        if (yamlValueFromNode(aspectRatio, config, "CellAspectRatio")) {
+        fill(std::type_identity<MemCellType>{}, "MemCellType", memCellType);
+        fill(std::type_identity<int>{}, "ProcessNode", processNode);
+        fill(number, "Area", area);
+        if (fill(number, "AspectRatio", aspectRatio)) {
             heightInFeatureSize = sqrt(area * aspectRatio);
             widthInFeatureSize = sqrt(area / aspectRatio);
         }
 
         // Resistance Values
-        if (config["Resistance"]) {
-            YAML::Node resist = config["Resistance"];
-            yamlValueFromNode(resistanceOnAtSetVoltage, resist, "OnAtSetVoltage_ohm");
-            yamlValueFromNode(resistanceOffAtSetVoltage, resist, "OffAtSetVoltage_ohm");
-            yamlValueFromNode(resistanceOnAtResetVoltage, resist, "OnAtResetVoltage_ohm");
-            yamlValueFromNode(resistanceOffAtResetVoltage, resist, "OffAtResetVoltage_ohm");
-            yamlValueFromNode(resistanceOnAtReadVoltage, resist, "OnAtReadVoltage_ohm");
-            yamlValueFromNode(resistanceOn, resist, "OnAtReadVoltage_ohm");
-            yamlValueFromNode(resistanceOffAtReadVoltage, resist, "OffAtReadVoltage_ohm");
-            yamlValueFromNode(resistanceOff, resist, "OffAtReadVoltage_ohm");
-            yamlValueFromNode(resistanceOnAtHalfReadVoltage, resist, "OnAtHalfReadVoltage_ohm");
-            yamlValueFromNode(resistanceOffAtHalfReadVoltage, resist, "OffAtHalfReadVoltage_ohm");
-            yamlValueFromNode(resistanceOnAtHalfResetVoltage, resist, "OnAtHalfResetVoltage_ohm");
+        if (fill(std::type_identity<Ohm>{}, "Resistance.On", resistanceOn)) {
+            resistanceOnAtReadVoltage = resistanceOn;
         }
-
-        // Also support flat resistance fields (backwards compatibility)
-        yamlValueFromNode(resistanceOn, config, "ResistanceOn_ohm");
-        yamlValueFromNode(resistanceOff, config, "ResistanceOff_ohm");
+        if (fill(std::type_identity<Ohm>{}, "Resistance.Off", resistanceOff)) {
+            resistanceOffAtReadVoltage = resistanceOff;
+        }
+        fill(std::type_identity<Ohm>{}, "Resistance.OnAtSetVoltage", resistanceOnAtSetVoltage);
+        fill(std::type_identity<Ohm>{}, "Resistance.OffAtSetVoltage", resistanceOffAtSetVoltage);
+        fill(std::type_identity<Ohm>{}, "Resistance.OnAtResetVoltage", resistanceOnAtResetVoltage);
+        fill(std::type_identity<Ohm>{}, "Resistance.OffAtResetVoltage", resistanceOffAtResetVoltage);
+        fill(std::type_identity<Ohm>{}, "Resistance.OnAtHalfReadVoltage", resistanceOnAtHalfReadVoltage);
+        fill(std::type_identity<Ohm>{}, "Resistance.OffAtHalfReadVoltage", resistanceOffAtHalfReadVoltage);
+        fill(std::type_identity<Ohm>{}, "Resistance.OnAtHalfResetVoltage", resistanceOnAtHalfResetVoltage);
 
         // Capacitance
-        if (config["Capacitance"]) {
-            YAML::Node cap = config["Capacitance"];
-            yamlValueFromNode(capacitanceOn, cap, "On_F");
-            yamlValueFromNode(capacitanceOff, cap, "Off_F");
-        }
+        fill(std::type_identity<Farad>{}, "Capacitance.On", capacitanceOn);
+        fill(std::type_identity<Farad>{}, "Capacitance.Off", capacitanceOff);
 
-        // Also support flat capacitance fields
-        yamlValueFromNode(capacitanceOn, config, "CapacitanceOn_F");
-        yamlValueFromNode(capacitanceOff, config, "CapacitanceOff_F");
-
-        yamlValueFromNode(gateOxThicknessFactor, config, "GateOxThicknessFactor");
-
-        yamlValueFromNode(widthSOIDevice, config, "SOIDeviceWidth_F");
+        // Floating body
+        fill(number, "FloatingBody.GateOxideThicknessFactor", gateOxThicknessFactor);
+        fill(std::type_identity<Feature>{}, "FloatingBody.Width", widthSOIDevice);
 
         // Read Operation
-        if (config["Read"]) {
-            YAML::Node read = config["Read"];
-            std::string mode;
-            if (yamlValueFromNode(mode, read, "Mode")) {
-                readMode = (mode == "voltage");
-            }
-            yamlValueFromNode(readVoltage, read, "Voltage_V");
-            if (yamlValueFromNode(readCurrent, read, "Current_uA")) {
-                readCurrent /= 1e6;
-            }
-            if (yamlValueFromNode(readPower, read, "Power_uW")) {
-                readPower /= 1e6;
-            }
+        std::string mode;
+        if (fill(std::type_identity<std::string>{}, "Read.Mode", mode)) {
+            readMode = (mode == "voltage");
         }
+        fill(std::type_identity<Volt>{}, "Read.Voltage", readVoltage);
+        fill(std::type_identity<Ampere>{}, "Read.Current", readCurrent);
+        fill(std::type_identity<Watt>{}, "Read.Power", readPower);
 
-        yamlValueFromNode(wordlineBoostRatio, config, "WordlineBoostRatio");
-        if (yamlValueFromNode(minSenseVoltage, config, "MinSenseVoltage_mV")) {
-            minSenseVoltage /= 1e3;
-        }
-        yamlValueFromNode(maxStorageNodeDrop, config, "MaxStorageNodeDrop_V");
+        fill(number, "WordlineBoostRatio", wordlineBoostRatio);
+        fill(std::type_identity<Volt>{}, "MinSenseVoltage", minSenseVoltage);
+        fill(std::type_identity<Volt>{}, "Storage.MaxNodeDrop", maxStorageNodeDrop);
 
         // Reset Operation
-        if (config["Reset"]) {
-            YAML::Node reset = config["Reset"];
-            std::string mode;
-            if (yamlValueFromNode(mode, reset, "Mode")) {
-                resetMode = (mode == "voltage");
-            }
-            yamlValueFromNode(resetVoltage, reset, "Voltage_V");
-            if (yamlValueFromNode(resetCurrent, reset, "Current_uA")) {
-                resetCurrent /= 1e6;
-            }
-            if (yamlValueFromNode(resetPulse, reset, "Pulse_ns")) {
-                resetPulse /= 1e9;
-            }
-            if (yamlValueFromNode(resetEnergy, reset, "Energy_pJ")) {
-                resetEnergy /= 1e12;
-            }
+        if (fill(std::type_identity<std::string>{}, "Reset.Mode", mode)) {
+            resetMode = (mode == "voltage");
         }
+        fill(std::type_identity<Volt>{}, "Reset.Voltage", resetVoltage);
+        fill(std::type_identity<Ampere>{}, "Reset.Current", resetCurrent);
+        fill(std::type_identity<Second>{}, "Reset.Pulse", resetPulse);
+        fill(std::type_identity<Joule>{}, "Reset.Energy", resetEnergy);
 
         // Set Operation
-        if (config["Set"]) {
-            YAML::Node set = config["Set"];
-            std::string mode;
-            if (yamlValueFromNode(mode, set, "Mode")) {
-                setMode = (mode == "voltage");
-            }
-            yamlValueFromNode(setVoltage, set, "Voltage_V");
-            if (yamlValueFromNode(setCurrent, set, "Current_uA")) {
-                setCurrent /= 1e6;
-            }
-            if (yamlValueFromNode(setPulse, set, "Pulse_ns")) {
-                setPulse /= 1e9;
-            }
-            if (yamlValueFromNode(setEnergy, set, "Energy_pJ")) {
-                setEnergy /= 1e12;
-            }
+        if (fill(std::type_identity<std::string>{}, "Set.Mode", mode)) {
+            setMode = (mode == "voltage");
         }
+        fill(std::type_identity<Volt>{}, "Set.Voltage", setVoltage);
+        fill(std::type_identity<Ampere>{}, "Set.Current", setCurrent);
+        fill(std::type_identity<Second>{}, "Set.Pulse", setPulse);
+        fill(std::type_identity<Joule>{}, "Set.Energy", setEnergy);
 
         // Access Device
-        if (config["Access"]) {
-            YAML::Node access = config["Access"];
-            yamlValueFromNode(accessType, access, "Type");
-            if (access["CMOSWidth_F"]) {
-                if (accessType != CMOS_access) {
-                    std::cout << "Warning: CMOS width ignored (not CMOS-accessed)" << std::endl;
-                } else {
-                    yamlValueFromNode(widthAccessCMOS, access, "CMOSWidth_F");
-                }
-            }
-            if (access["CMOSWidthR_F"]) {
-                if (accessType != CMOS_access) {
-                    std::cout << "Warning: CMOS width R ignored (not CMOS-accessed)" << std::endl;
-                } else {
-                    yamlValueFromNode(widthAccessCMOSR, access, "CMOSWidthR_F");
-                }
-            }
-            yamlValueFromNode(voltageDropAccessDevice, access, "VoltageDropAccessDevice_V");
-            if (yamlValueFromNode(leakageCurrentAccessDevice, access, "LeakageCurrentAccessDevice_uA")) {
-                leakageCurrentAccessDevice /= 1e6;
-            }
-        }
-
-        // Also support flat access fields
-        yamlValueFromNode(accessType, config, "AccessType");
-        if (config["AccessCMOSWidth_F"]) {
+        fill(std::type_identity<CellAccessType>{}, "Access.Type", accessType);
+        double width = 0;
+        if (fill(std::type_identity<Feature>{}, "Access.Width", width)) {
             if (accessType != CMOS_access) {
                 std::cout << "Warning: CMOS width ignored (not CMOS-accessed)" << std::endl;
             } else {
-                yamlValueFromNode(widthAccessCMOS, config, "AccessCMOSWidth_F");
+                widthAccessCMOS = width;
             }
         }
-        if (config["AccessCMOSWidthR_F"]) {
+        if (fill(std::type_identity<Feature>{}, "Access.ReadWidth", width)) {
             if (accessType != CMOS_access) {
                 std::cout << "Warning: CMOS width R ignored (not CMOS-accessed)" << std::endl;
             } else {
-                yamlValueFromNode(widthAccessCMOSR, config, "AccessCMOSWidthR_F");
+                widthAccessCMOSR = width;
             }
         }
-        yamlValueFromNode(voltageDropAccessDevice, config, "VoltageDropAccessDevice_V");
-        if (yamlValueFromNode(leakageCurrentAccessDevice, config, "LeakageCurrentAccessDevice_uA")) {
-            leakageCurrentAccessDevice /= 1e6;
-        }
+        fill(std::type_identity<Volt>{}, "Access.VoltageDrop", voltageDropAccessDevice);
+        fill(std::type_identity<Ampere>{}, "Access.LeakageCurrent", leakageCurrentAccessDevice);
 
         // Additional Properties
-        yamlValueFromNode(readFloating, config, "ReadFloating");
+        fill(std::type_identity<bool>{}, "ReadFloating", readFloating);
 
         // DRAM specific
-        if (config["DRAMCellCapacitance_F"]) {
-            if (memCellType != DRAM && memCellType != eDRAM && 
-                memCellType != eDRAM3T && memCellType != eDRAM3T333) {
+        const bool dramCell = memCellType == DRAM || memCellType == eDRAM || memCellType == eDRAM3T || memCellType == eDRAM3T333;
+        double capacitance = 0;
+        if (fill(std::type_identity<Farad>{}, "Storage.Capacitance", capacitance)) {
+            if (!dramCell) {
                 std::cout << "Warning: DRAM capacitance ignored (not DRAM)" << std::endl;
             } else {
-                yamlValueFromNode(capDRAMCell, config, "DRAMCellCapacitance_F");
+                capDRAMCell = capacitance;
+            }
+        }
+        double retention = 0;
+        if (fill(std::type_identity<Second>{}, "Storage.RetentionTime", retention)) {
+            if (!dramCell) {
+                std::cout << "Warning: Retention time ignored (not DRAM)" << std::endl;
+            } else {
+                retentionTime = retention;
             }
         }
 
         // SRAM specific
-        if (config["SRAMCellNMOSWidth_F"]) {
+        if (fill(std::type_identity<Feature>{}, "Inverter.NmosWidth", width)) {
             if (memCellType != SRAM) {
                 std::cout << "Warning: SRAM NMOS width ignored (not SRAM)" << std::endl;
             } else {
-                yamlValueFromNode(widthSRAMCellNMOS, config, "SRAMCellNMOSWidth_F");
+                widthSRAMCellNMOS = width;
             }
         }
-
-        if (config["SRAMCellPMOSWidth_F"]) {
+        if (fill(std::type_identity<Feature>{}, "Inverter.PmosWidth", width)) {
             if (memCellType != SRAM) {
                 std::cout << "Warning: SRAM PMOS width ignored (not SRAM)" << std::endl;
             } else {
-                yamlValueFromNode(widthSRAMCellPMOS, config, "SRAMCellPMOSWidth_F");
+                widthSRAMCellPMOS = width;
             }
         }
 
         // Flash specific
-        if (config["Flash"]) {
-            YAML::Node flash = config["Flash"];
-            if (memCellType != SLCNAND && memCellType != MLCNAND) {
-                std::cout << "Warning: Flash parameters ignored (not Flash)" << std::endl;
-            } else {
-                yamlValueFromNode(flashEraseVoltage, flash, "EraseVoltage_V");
-                yamlValueFromNode(flashProgramVoltage, flash, "ProgramVoltage_V");
-                yamlValueFromNode(flashPassVoltage, flash, "PassVoltage_V");
-                if (yamlValueFromNode(flashEraseTime, flash, "EraseTime_ms")) {
-                    flashEraseTime /= 1e3;
-                }
-                if (yamlValueFromNode(flashProgramTime, flash, "ProgramTime_us")) {
-                    flashProgramTime /= 1e6;
-                }
-                yamlValueFromNode(gateCouplingRatio, flash, "GateCouplingRatio");
-            }
-        }
-
-        // Also support flat flash fields
-        if (config["FlashEraseVoltage_V"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND) {
-                std::cout << "Warning: Flash erase voltage ignored (not Flash)" << std::endl;
-            } else {
-                yamlValueFromNode(flashEraseVoltage, config, "FlashEraseVoltage_V");
-            }
-        }
-        if (config["FlashProgramVoltage_V"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND) {
-                std::cout << "Warning: Flash program voltage ignored (not Flash)" << std::endl;
-            } else {
-                yamlValueFromNode(flashProgramVoltage, config, "FlashProgramVoltage_V");
-            }
-        }
-        if (config["FlashPassVoltage_V"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND) {
-                std::cout << "Warning: Flash pass voltage ignored (not Flash)" << std::endl;
-            } else {
-                yamlValueFromNode(flashPassVoltage, config, "FlashPassVoltage_V");
-            }
-        }
-        if (config["FlashEraseTime_ms"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND) {
-                std::cout << "Warning: Flash erase time ignored (not Flash)" << std::endl;
-            } else {
-                if (yamlValueFromNode(flashEraseTime, config, "FlashEraseTime_ms")) {
-                    flashEraseTime /= 1e3;
+        const bool flashCell = memCellType == SLCNAND || memCellType == MLCNAND;
+        const auto fillFlash = [&fill, flashCell] <typename T> (std::type_identity<T> type, const std::string& key, double& field) {
+            double value = field;
+            if (fill(type, key, value)) {
+                if (!flashCell) {
+                    std::cout << "Warning: Flash parameter " << key << " ignored (not Flash)" << std::endl;
+                } else {
+                    field = value;
                 }
             }
-        }
-        if (config["FlashProgramTime_us"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND) {
-                std::cout << "Warning: Flash program time ignored (not Flash)" << std::endl;
-            } else {
-                if (yamlValueFromNode(flashProgramTime, config, "FlashProgramTime_us")) {
-                    flashProgramTime /= 1e6;
-                }
-            }
-        }
-        if (config["GateCouplingRatio"]) {
-            if (memCellType != SLCNAND && memCellType != MLCNAND) {
-                std::cout << "Warning: Gate coupling ratio ignored (not Flash)" << std::endl;
-            } else {
-                yamlValueFromNode(gateCouplingRatio, config, "GateCouplingRatio");
-            }
-        }
-
-        // Retention time
-        if (config["RetentionTime_us"]) {
-            if (memCellType != DRAM && memCellType != eDRAM && 
-                memCellType != eDRAM3T && memCellType != eDRAM3T333) {
-                std::cout << "Warning: Retention time ignored (not DRAM)" << std::endl;
-            } else {
-                if (yamlValueFromNode(retentionTime, config, "RetentionTime_us")) {
-                    retentionTime /= 1e6;
-                }
-            }
-        }
+        };
+        fillFlash(std::type_identity<Volt>{}, "Flash.EraseVoltage", flashEraseVoltage);
+        fillFlash(std::type_identity<Volt>{}, "Flash.ProgramVoltage", flashProgramVoltage);
+        fillFlash(std::type_identity<Volt>{}, "Flash.PassVoltage", flashPassVoltage);
+        fillFlash(std::type_identity<Second>{}, "Flash.EraseTime", flashEraseTime);
+        fillFlash(std::type_identity<Second>{}, "Flash.ProgramTime", flashProgramTime);
+        fillFlash(number, "Flash.GateCouplingRatio", gateCouplingRatio);
 
         // MLC specific
-        if (config["InputFingers"]) {
-            if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM) {
-                std::cout << "Warning: InputFingers used only for MLC SA" << std::endl;
+        const bool mlcCell = memCellType == MLCCTT || memCellType == MLCFeFET || memCellType == MLCRRAM;
+        int fingers = nFingers;
+        if (fill(std::type_identity<int>{}, "MultiLevel.SenseAmpFingers", fingers)) {
+            if (!mlcCell) {
+                std::cout << "Warning: MultiLevel.SenseAmpFingers used only for MLC SA" << std::endl;
             } else {
-                yamlValueFromNode(nFingers, config, "InputFingers");
+                nFingers = fingers;
+            }
+        }
+        double levels = nLvl;
+        if (fill(number, "MultiLevel.Levels", levels)) {
+            if (!mlcCell) {
+                std::cout << "Warning: MultiLevel.Levels used only for MLC" << std::endl;
+            } else {
+                nLvl = levels;
             }
         }
 
-        if (config["CellLevels"]) {
-            if (memCellType != MLCCTT && memCellType != MLCFeFET && memCellType != MLCRRAM) {
-                std::cout << "Warning: CellLevels used only for MLC" << std::endl;
-            } else {
-                yamlValueFromNode(nLvl, config, "CellLevels");
-            }
-        }
+        // Warns about keys no cell reads, like those of the older cell file layout
+        file.verifyStrictAccess();
 
     } catch (const YAML::Exception& e) {
         std::cout << "Error parsing YAML file: " << e.what() << std::endl;

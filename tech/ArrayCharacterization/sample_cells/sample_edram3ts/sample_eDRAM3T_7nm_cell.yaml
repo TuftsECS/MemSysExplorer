@@ -5,18 +5,20 @@
 
 MemCellType: eDRAM3T
 
-CellArea_F2: 836.7
-CellAspectRatio: 1.14
+Area: 836.7
+AspectRatio: 1.14
 
-ReadMode: voltage
+Read:
+  Mode: voltage
 
-AccessType: CMOS
-AccessCMOSWidth_F: 1.0
-AccessCMOSWidthR_F: 2.0
+Access:
+  Type: CMOS
+  Width: 1.0
+  ReadWidth: 2.0
 
-DRAMCellCapacitance_F: 2e-15
+Storage:
+  Capacitance: 2 fF
+  MaxNodeDrop: 0.2 V
+  RetentionTime: 51 us
 
-MinSenseVoltage_mV: 10
-MaxStorageNodeDrop_V: 0.2
-
-RetentionTime_us: 51
+MinSenseVoltage: 10 mV

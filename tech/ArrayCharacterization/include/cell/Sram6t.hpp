@@ -14,34 +14,30 @@ namespace mse::cell {
 struct Sram6tParameters final : MemoryCellParameters {
     std::reference_wrapper<const Technology> tech;
 
-    ScalarParameter<unit::Feature> inverterNmosGateWidth{"Nmos Width", "", unit::Feature(2.08)}; // Default value from CACTI
-    ScalarParameter<unit::Feature> inverterPmosGateWidth{"Pmos Width", "", unit::Feature(1.23)}; // Default value from CACTI
-    ScalarParameter<unit::Feature> accessNmosGateWidth{"Access CMOS Width", "", unit::Feature(1)};
+    ScalarParameter<unit::Feature> inverterNmosGateWidth{"Inverter.NmosWidth", "", unit::Feature(2.08)}; // Default value from CACTI
+    ScalarParameter<unit::Feature> inverterPmosGateWidth{"Inverter.PmosWidth", "", unit::Feature(1.23)}; // Default value from CACTI
+    ScalarParameter<unit::Feature> accessNmosGateWidth{"Access.Width", "", unit::Feature(0)};
 
     unit::Feature transistorRegionHeight;
 
     Sram6tParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
-        //fillParameter(inverterNmosGateWidth, inverterPmosGateWidth, accessNmosGateWidth);
-        // TODO
-        inverterNmosGateWidth.value() = unit::Feature(gCell.widthSRAMCellNMOS);
-        inverterPmosGateWidth.value() = unit::Feature(gCell.widthSRAMCellPMOS);
-        accessNmosGateWidth.value() = unit::Feature(gCell.widthAccessCMOS);
+        fillParameter(inverterNmosGateWidth, inverterPmosGateWidth, accessNmosGateWidth);
 
         unit::Number featureScale = (tech.get().featureSizeInNano <= 14 ? 2 : 1);
         inverterNmosGateWidth.value() *= featureScale;
         inverterPmosGateWidth.value() *= featureScale;
         accessNmosGateWidth.value() *= featureScale;
 
-        transistorRegionHeight = unit::Feature(gCell.widthInFeatureSize);
+        transistorRegionHeight = cellWidth;
     }
 };
 
 struct Sram6tProperties final : public MemoryCellProperties {
-    Sram6tProperties(const Sram6tParameters&) {
+    Sram6tProperties(const Sram6tParameters& parameters) {
         using namespace mse::unit;
 
         sensingMethod = SenseMethod::Voltage;
-        sensingVoltage = Volt(gCell.minSenseVoltage);
+        sensingVoltage = parameters.minSenseVoltage;
         prechargeVoltage = gTech.vdd * 0.5;
 
         sharedContact = true;

@@ -12,26 +12,25 @@
 namespace mse::cell {
 
 struct FbramParameters final : ResistiveCellParameters {
-    unit::Feature soiDeviceWidth;
-    unit::Number gateOxideThicknessFactor;
+    ScalarParameter<unit::Feature> soiDeviceWidth{"FloatingBody.Width", "", unit::Feature(0)};
+    ScalarParameter<unit::Number> gateOxideThicknessFactor{"FloatingBody.GateOxideThicknessFactor", "", 2.0}; // Thicker than a usual SOI device
 
     FbramParameters(YamlInputFile& file) : ResistiveCellParameters(file) {
-        // TODO use specific cell fields in config file
         using namespace mse::unit;
 
-        soiDeviceWidth = ((gTech.featureSizeInNano <= 14) ? 2_feat : 1_feat) * gCell.widthSOIDevice;
-        gateOxideThicknessFactor = gCell.gateOxThicknessFactor;
+        fillParameter(soiDeviceWidth, gateOxideThicknessFactor);
+        soiDeviceWidth.value() *= ((gTech.featureSizeInNano <= 14) ? 2.0 : 1.0);
 
         // The floating body device is driven with both the write voltage and current
-        if (resetEnergy == Joule(0)) {
-            resetEnergy = resetMode
-                ? Joule(std::fabs(resetVoltage.value()) * std::fabs(resetCurrent.value()) * resetPulse.value())
-                : currentPulseEnergy(resetVoltage == Volt(0), resetVoltage, resetCurrent, resetPulse);
+        if (resetEnergy.value() == Joule(0)) {
+            resetEnergy.value() = resetMode
+                ? Joule(std::fabs(resetVoltage.value().value()) * std::fabs(resetCurrent.value().value()) * resetPulse.value().value())
+                : currentPulseEnergy(resetVoltage.value() == Volt(0), resetVoltage, resetCurrent, resetPulse);
         }
-        if (setEnergy == Joule(0)) {
-            setEnergy = setMode
-                ? Joule(std::fabs(setVoltage.value()) * std::fabs(setCurrent.value()) * setPulse.value())
-                : currentPulseEnergy(resetVoltage == Volt(0), setVoltage, setCurrent, setPulse);
+        if (setEnergy.value() == Joule(0)) {
+            setEnergy.value() = setMode
+                ? Joule(std::fabs(setVoltage.value().value()) * std::fabs(setCurrent.value().value()) * setPulse.value().value())
+                : currentPulseEnergy(resetVoltage.value() == Volt(0), setVoltage, setCurrent, setPulse);
         }
     }
 };
@@ -73,7 +72,7 @@ private:
     static double soiWidth(const FbramParameters& parameters) {
         using namespace mse::unit;
 
-        return (parameters.soiDeviceWidth * parameters.tech.get().featureSize).value();
+        return (parameters.soiDeviceWidth.value() * parameters.tech.get().featureSize).value();
     }
 };
 

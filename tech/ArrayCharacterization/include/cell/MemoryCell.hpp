@@ -14,6 +14,7 @@
 #include "input.hpp"
 
 #include <array>
+#include <cmath>
 #include <functional>
 #include <span>
 #include <vector>
@@ -21,12 +22,26 @@
 namespace mse::cell {
 
 //==================================================
-// TODO comment when done
+// Parameters every cell reads from its cell file
+// Derived parameters add the keys of their own cell type and fill them with fillParameter
 
 class MemoryCellParameters {
 public:
 
-    MemoryCellParameters(YamlInputFile& inputFile) : _inputFile(inputFile) {}
+    ScalarParameter<double> area{"Area", "", 0.0}; // Unit: F^2
+    ScalarParameter<double> aspectRatio{"AspectRatio", "", 0.0}; // Height over width
+    ScalarParameter<unit::Volt> minSenseVoltage{"MinSenseVoltage", "", unit::Volt(0.08)};
+
+    unit::Feature cellWidth;
+    unit::Feature cellHeight;
+
+    MemoryCellParameters(YamlInputFile& inputFile) : _inputFile(inputFile) {
+        fillParameter(area, aspectRatio, minSenseVoltage);
+        if (aspectRatio.value() != 0) {
+            cellHeight = unit::Feature(std::sqrt(area.value() * aspectRatio.value()));
+            cellWidth = unit::Feature(std::sqrt(area.value() / aspectRatio.value()));
+        }
+    }
 
 protected:
 

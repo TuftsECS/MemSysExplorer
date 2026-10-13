@@ -5,33 +5,34 @@
 # Basic Cell Properties
 MemCellType: PCRAM
 ProcessNode: 90
-CellArea_F2: 9
-CellAspectRatio: 1
+Area: 9
+AspectRatio: 1
 
 # Resistance Values
-ResistanceOn_ohm: 1000
-ResistanceOff_ohm: 1000000
+Resistance:
+  On: 1 KOhm
+  Off: 1 MOhm
 
 # Read Operation
 Read:
   Mode: voltage
-  Current_uA: 40
-  Energy_pJ: 2
+  Current: 40 uA
+  # Energy_pJ: 2  (not read by msxac)
 
 # Reset Operation
 Reset:
   Mode: current
-  Current_uA: 300
-  Pulse_ns: 40
+  Current: 300 uA
+  Pulse: 40 ns
 
 # Set Operation
 Set:
   Mode: current
-  Current_uA: 150
-  Pulse_ns: 150
+  Current: 150 uA
+  Pulse: 150 ns
 
 # Access Device
 Access:
   Type: CMOS
-  VoltageDropAccessDevice_V: 0.3
-  CMOSWidth_F: 2
+  VoltageDrop: 0.3 V
+  Width: 2

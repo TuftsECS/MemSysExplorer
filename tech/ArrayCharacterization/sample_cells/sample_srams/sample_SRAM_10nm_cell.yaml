@@ -1,18 +1,19 @@
 MemCellType: SRAM
 
-CellArea_F2: 420
-CellAspectRatio: 1.46
+Area: 420
+AspectRatio: 1.46
 
-SRAMCellNMOSWidth_F: 2
-SRAMCellPMOSWidth_F: 1
+Inverter:
+  NmosWidth: 2
+  PmosWidth: 1
 
 Access:
   Type: CMOS
-  CMOSWidth_F: 1
+  Width: 1
 
-MinSenseVoltage_mV: 80
+MinSenseVoltage: 80 mV
 Read:
   Mode: voltage
-  Voltage_V: 1.1
+  Voltage: 1.1 V
 
-Stitching: 16
+# Stitching: 16  (not read by msxac)

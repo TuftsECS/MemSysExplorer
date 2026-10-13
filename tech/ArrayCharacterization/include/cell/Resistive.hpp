@@ -26,68 +26,56 @@ namespace mse::cell {
 struct ResistiveCellParameters : MemoryCellParameters {
     std::reference_wrapper<const Technology> tech;
 
-    CellAccessType accessType;
-    unit::Feature accessNmosGateWidth;
+    ScalarParameter<CellAccessType> accessType{"Access.Type", "", CMOS_access};
+    ScalarParameter<unit::Feature> accessNmosGateWidth{"Access.Width", "", unit::Feature(0)};
+    ScalarParameter<unit::Volt> voltageDropAccessDevice{"Access.VoltageDrop", "", unit::Volt(0)};
     unit::Feature transistorRegionHeight;
-    unit::Volt voltageDropAccessDevice;
 
-    unit::Ohm resistanceOn;
-    unit::Ohm resistanceOff;
-    unit::Ohm resistanceOnAtResetVoltage;
-    unit::Ohm resistanceOnAtSetVoltage;
-    unit::Farad capacitanceOn;
-    unit::Farad capacitanceOff;
+    ScalarParameter<unit::Ohm> resistanceOn{"Resistance.On", "", unit::Ohm(0)}; // At the read voltage
+    ScalarParameter<unit::Ohm> resistanceOff{"Resistance.Off", "", unit::Ohm(0)}; // At the read voltage
+    ScalarParameter<unit::Ohm> resistanceOnAtResetVoltage{"Resistance.OnAtResetVoltage", "", unit::Ohm(0)};
+    ScalarParameter<unit::Ohm> resistanceOnAtSetVoltage{"Resistance.OnAtSetVoltage", "", unit::Ohm(0)};
+    ScalarParameter<unit::Farad> capacitanceOn{"Capacitance.On", "", unit::Farad(0)};
+    ScalarParameter<unit::Farad> capacitanceOff{"Capacitance.Off", "", unit::Farad(0)};
 
+    ScalarParameter<std::string> readModeName{"Read.Mode", "", std::string("voltage")};
+    ScalarParameter<unit::Volt> readVoltage{"Read.Voltage", "", unit::Volt(0)}; // 0 means current-in voltage sensing
+    ScalarParameter<unit::Ampere> readCurrent{"Read.Current", "", unit::Ampere(0)};
+    ScalarParameter<unit::Watt> readPower{"Read.Power", "", unit::Watt(0)}; // Read power per bitline, calculated when not given
     bool readMode; // true = voltage sensing, false = current sensing
-    unit::Volt readVoltage; // 0 means current-in voltage sensing when readMode is true
-    unit::Ampere readCurrent;
-    unit::Watt readPower; // Read power per bitline
 
+    ScalarParameter<std::string> resetModeName{"Reset.Mode", "", std::string("voltage")};
+    ScalarParameter<unit::Volt> resetVoltage{"Reset.Voltage", "", unit::Volt(0)};
+    ScalarParameter<unit::Ampere> resetCurrent{"Reset.Current", "", unit::Ampere(0)};
+    ScalarParameter<unit::Second> resetPulse{"Reset.Pulse", "", unit::Second(0)};
+    ScalarParameter<unit::Joule> resetEnergy{"Reset.Energy", "", unit::Joule(0)}; // Calculated when not given
     bool resetMode; // true = voltage mode, false = current mode
-    unit::Volt resetVoltage;
-    unit::Ampere resetCurrent;
-    unit::Second resetPulse;
-    unit::Joule resetEnergy;
 
+    ScalarParameter<std::string> setModeName{"Set.Mode", "", std::string("voltage")};
+    ScalarParameter<unit::Volt> setVoltage{"Set.Voltage", "", unit::Volt(0)};
+    ScalarParameter<unit::Ampere> setCurrent{"Set.Current", "", unit::Ampere(0)};
+    ScalarParameter<unit::Second> setPulse{"Set.Pulse", "", unit::Second(0)};
+    ScalarParameter<unit::Joule> setEnergy{"Set.Energy", "", unit::Joule(0)}; // Calculated when not given
     bool setMode; // true = voltage mode, false = current mode
-    unit::Volt setVoltage;
-    unit::Ampere setCurrent;
-    unit::Second setPulse;
-    unit::Joule setEnergy;
 
     ResistiveCellParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
-        // TODO use specific cell fields in config file
-        // for now just steal from gCell, figure out new input style later
-        using namespace mse::unit;
+        fillParameter(accessType, accessNmosGateWidth, voltageDropAccessDevice);
+        fillParameter(resistanceOn, resistanceOff, resistanceOnAtResetVoltage, resistanceOnAtSetVoltage, capacitanceOn, capacitanceOff);
+        fillParameter(readModeName, readVoltage, readCurrent, readPower);
+        fillParameter(resetModeName, resetVoltage, resetCurrent, resetPulse, resetEnergy);
+        fillParameter(setModeName, setVoltage, setCurrent, setPulse, setEnergy);
 
-        accessType = gCell.accessType;
-        accessNmosGateWidth = ((gTech.featureSizeInNano <= 14) ? 2_feat : 1_feat) * gCell.widthAccessCMOS;
-        transistorRegionHeight = Feature(gCell.widthInFeatureSize);
-        voltageDropAccessDevice = Volt(gCell.voltageDropAccessDevice);
+        unit::Number featureScale = (tech.get().featureSizeInNano <= 14 ? 2 : 1);
+        accessNmosGateWidth.value() *= featureScale;
+        transistorRegionHeight = cellWidth;
 
-        resistanceOn = Ohm(gCell.resistanceOn);
-        resistanceOff = Ohm(gCell.resistanceOff);
-        resistanceOnAtResetVoltage = Ohm(gCell.resistanceOnAtResetVoltage);
-        resistanceOnAtSetVoltage = Ohm(gCell.resistanceOnAtSetVoltage);
-        capacitanceOn = Farad(gCell.capacitanceOn);
-        capacitanceOff = Farad(gCell.capacitanceOff);
+        readMode = readModeName.value() == "voltage";
+        resetMode = resetModeName.value() == "voltage";
+        setMode = setModeName.value() == "voltage";
 
-        readMode = gCell.readMode;
-        readVoltage = Volt(gCell.readVoltage);
-        readCurrent = Ampere(gCell.readCurrent);
-        readPower = Watt(gCell.readPower == 0 ? calculateReadPower() : gCell.readPower);
-
-        resetMode = gCell.resetMode;
-        resetVoltage = Volt(gCell.resetVoltage);
-        resetCurrent = Ampere(gCell.resetCurrent);
-        resetPulse = Second(gCell.resetPulse);
-        resetEnergy = Joule(gCell.resetEnergy);
-
-        setMode = gCell.setMode;
-        setVoltage = Volt(gCell.setVoltage);
-        setCurrent = Ampere(gCell.setCurrent);
-        setPulse = Second(gCell.setPulse);
-        setEnergy = Joule(gCell.setEnergy);
+        if (readPower.value() == unit::Watt(0)) {
+            readPower.value() = unit::Watt(calculateReadPower());
+        }
     }
 
 protected:
@@ -95,16 +83,16 @@ protected:
     // Fills in reset and set energy per cell for any not given in the cell file
     // In voltage mode the cell conducts through the given switching resistance for the whole pulse
     void fillWriteEnergy(unit::Ohm resetSwitchingResistance, unit::Ohm setSwitchingResistance) {
-        if (resetEnergy == unit::Joule(0)) {
-            resetEnergy = resetMode
+        if (resetEnergy.value() == unit::Joule(0)) {
+            resetEnergy.value() = resetMode
                 ? voltagePulseEnergy(resetVoltage, resetSwitchingResistance, resetPulse)
-                : currentPulseEnergy(resetVoltage == unit::Volt(0), resetVoltage, resetCurrent, resetPulse);
+                : currentPulseEnergy(resetVoltage.value() == unit::Volt(0), resetVoltage, resetCurrent, resetPulse);
         }
-        if (setEnergy == unit::Joule(0)) {
+        if (setEnergy.value() == unit::Joule(0)) {
             // Current mode checks the reset voltage to decide whether the set pulse is driven from vdd, kept from NVSim
-            setEnergy = setMode
+            setEnergy.value() = setMode
                 ? voltagePulseEnergy(setVoltage, setSwitchingResistance, setPulse)
-                : currentPulseEnergy(resetVoltage == unit::Volt(0), setVoltage, setCurrent, setPulse);
+                : currentPulseEnergy(resetVoltage.value() == unit::Volt(0), setVoltage, setCurrent, setPulse);
         }
     }
 
@@ -118,24 +106,34 @@ private:
 
     unit::Joule voltagePulseEnergy(unit::Volt voltage, unit::Ohm switchingResistance, unit::Second pulse) const {
         double v = std::fabs(voltage.value());
-        return unit::Joule(v * (v - voltageDropAccessDevice.value()) / switchingResistance.value() * pulse.value());
+        return unit::Joule(v * (v - voltageDropAccessDevice.value().value()) / switchingResistance.value() * pulse.value());
     }
 
     // Read power per bitline when the cell file doesn't give one
     double calculateReadPower() const {
-        if (gCell.readMode) {
-            if (gCell.readVoltage == 0) { // Current-in voltage sensing
-                return gTech.vdd.value() * gCell.readCurrent;
+        const double vdd = tech.get().vdd.value();
+        const double on = resistanceOn.value().value();
+        const double off = resistanceOff.value().value();
+        const double voltage = readVoltage.value().value();
+        const double current = readCurrent.value().value();
+        const double drop = voltageDropAccessDevice.value().value();
+
+        if (readMode) {
+            if (voltage == 0) { // Current-in voltage sensing
+                return vdd * current;
             }
-            if (gCell.readCurrent == 0) { // Voltage-divider sensing
-                double resInSerialForSenseAmp = std::sqrt(gCell.resistanceOn * gCell.resistanceOff);
-                double maxBitlineCurrent = (gCell.readVoltage - gCell.voltageDropAccessDevice) / (gCell.resistanceOn + resInSerialForSenseAmp);
-                return gTech.vdd.value() * maxBitlineCurrent;
+            if (current == 0) { // Voltage-divider sensing
+                double resInSerialForSenseAmp = std::sqrt(on * off);
+                double maxBitlineCurrent = (voltage - drop) / (on + resInSerialForSenseAmp);
+
+                return vdd * maxBitlineCurrent;
             }
+
             return -1.0;
         }
-        double maxBitlineCurrent = (gCell.readVoltage - gCell.voltageDropAccessDevice) / gCell.resistanceOn;
-        return gTech.vdd.value() * maxBitlineCurrent;
+        double maxBitlineCurrent = (voltage - drop) / on;
+
+        return vdd * maxBitlineCurrent;
     }
 };
 
@@ -249,7 +247,7 @@ protected:
               accessType(parameters.accessType),
               accessTransistor(makeAccessTransistor(parameters)),
               accessGateAdapter(accessGateCapacitance),
-              cellCapacitanceAdapter(std::max(parameters.capacitanceOn, parameters.capacitanceOff)) {
+              cellCapacitanceAdapter(std::max(parameters.capacitanceOn.value(), parameters.capacitanceOff.value())) {
         switch (accessType) {
             case CMOS_access:
                 wordlineList[0] = {accessGateAdapter};
@@ -295,7 +293,7 @@ struct ResistiveCellProperties : MemoryCellProperties {
         using namespace mse::unit;
 
         sensingMethod = parameters.readMode ? SenseMethod::Voltage : SenseMethod::Current;
-        sensingVoltage = Volt(gCell.minSenseVoltage);
+        sensingVoltage = parameters.minSenseVoltage;
         if (parameters.readMode) {
             prechargeVoltage = std::min(gTech.vdd, (topology.voltageMemCellOff() + topology.voltageMemCellOn()) / 2.0);
         }
@@ -337,7 +335,7 @@ inline ResistiveBitlineDelay resistiveBitlineDelay(
     }
 
     // Voltage sensing, current-in uses the cell resistance directly and voltage-in uses the voltage divider
-    bool currentInput = (parameters.readVoltage == Volt(0));
+    bool currentInput = (parameters.readVoltage.value() == Volt(0));
     double resOn = (currentInput ? topology.resMemCellOn() : topology.resEquivalentOn()).value();
     double resOff = (currentInput ? topology.resMemCellOff() : topology.resEquivalentOff()).value();
 
@@ -367,9 +365,9 @@ struct ResistiveWriteLatency {
 inline ResistiveWriteLatency pulsedWriteLatency(const ResistiveCellParameters& parameters, const MemoryCellLatencyContext& context) {
     ResistiveWriteLatency latency;
     latency.write = std::max(context.rowDecoderWriteLatency, context.columnDecoderLatency + context.chargeLatency);
-    latency.reset = latency.write + parameters.resetPulse;
-    latency.set = latency.write + parameters.setPulse;
-    latency.write += std::max(parameters.resetPulse, parameters.setPulse);
+    latency.reset = latency.write + parameters.resetPulse.value();
+    latency.set = latency.write + parameters.setPulse.value();
+    latency.write += std::max(parameters.resetPulse.value(), parameters.setPulse.value());
     return latency;
 }
 
@@ -382,7 +380,7 @@ inline ResistiveWriteLatency crosspointWriteLatency(const ResistiveCellParameter
         latency.write = std::max(context.rowDecoderWriteLatency, context.columnDecoderLatency + context.chargeLatency);
     }
     latency.write += context.chargeLatency;
-    latency.write += parameters.resetPulse + parameters.setPulse;
+    latency.write += parameters.resetPulse.value() + parameters.setPulse.value();
     return latency;
 }
 
@@ -409,7 +407,7 @@ inline unit::Joule resistiveReadDynamicEnergy(
         double resBitlineMux = context.bitlineMuxResistance.value();
         double resBitline = context.bitlineResistance.value();
         double resMemCellOn = topology.resMemCellOn().value();
-        double readVoltage = parameters.readVoltage.value();
+        double readVoltage = parameters.readVoltage.value().value();
         double vpreMin = readVoltage * resBitlineMux / (resBitlineMux + resBitline + resMemCellOn);
         double vpreMax = readVoltage * (resBitlineMux + resBitline) / (resBitlineMux + resBitline + resMemCellOn);
         double energy = capCellAccess * vpreMax * vpreMax + capMux * vpreMin * vpreMin
@@ -424,7 +422,7 @@ inline unit::Joule resistiveReadDynamicEnergy(
 
 // Energy of the cells being read, each read also passes current through a reference cell
 inline unit::Joule resistiveCellReadEnergy(const ResistiveCellParameters& parameters, const MemoryCellEnergyContext& context) {
-    unit::Joule energy(2 * parameters.readPower.value() * context.senseAmpReadLatency.value());
+    unit::Joule energy(2 * parameters.readPower.value().value() * context.senseAmpReadLatency.value());
     return energy * (context.numColumn / context.muxSenseAmp / context.muxOutputLev1 / context.muxOutputLev2);
 }
 
@@ -441,11 +439,11 @@ inline ResistiveWriteEnergy resistiveCellWriteEnergy(
         const ResistiveCellTopology& topology,
         const MemoryCellEnergyContext& context) {
     double capLine = topology.bitlineCapacitance(0).value() + context.bitlineCapacitance.value() + context.bitlineMuxPreviousPowerCapacitance.value();
-    double resetVoltage = parameters.resetMode ? parameters.resetVoltage.value() : gTech.vdd.value();
-    double setVoltage = parameters.setMode ? parameters.setVoltage.value() : gTech.vdd.value();
+    double resetVoltage = parameters.resetMode ? parameters.resetVoltage.value().value() : gTech.vdd.value();
+    double setVoltage = parameters.setMode ? parameters.setVoltage.value().value() : gTech.vdd.value();
 
-    unit::Joule resetEnergyPerBit = parameters.resetEnergy + unit::Joule(capLine * resetVoltage * resetVoltage);
-    unit::Joule setEnergyPerBit = parameters.setEnergy + unit::Joule(capLine * setVoltage * setVoltage);
+    unit::Joule resetEnergyPerBit = parameters.resetEnergy.value() + unit::Joule(capLine * resetVoltage * resetVoltage);
+    unit::Joule setEnergyPerBit = parameters.setEnergy.value() + unit::Joule(capLine * setVoltage * setVoltage);
 
     ResistiveWriteEnergy energy;
     energy.reset = resetEnergyPerBit * context.numColumn / context.muxSenseAmp / context.muxOutputLev1 / context.muxOutputLev2;
