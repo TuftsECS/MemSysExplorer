@@ -40,6 +40,10 @@
 #include <sstream>
 #include <iomanip>
 #include <math.h>
+#include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#endif
 #include "InputParameter.h"
 #include "MemCell.h"
 #include "RowDecoder.h"
@@ -274,7 +278,7 @@ int main(int argc, char *argv[])
 			temp << "_CUR";
 		temp << ".yaml";
 		outputFileName = temp.str();
-		outputFile.open(outputFileName.c_str(), ofstream::app);
+		outputFile.open(outputFileName.c_str(), ofstream::trunc);
 	}
 
 	cell->PrintCell();
@@ -375,7 +379,7 @@ int main(int argc, char *argv[])
 			if (localWire) delete localWire;
 			if (globalWire) delete globalWire;
 			outputFile.close();
-			return 0;
+			return 1;
 		} else {
 			numSolution = 0;
 			RESTORE_SEARCH_SIZE;
@@ -451,9 +455,6 @@ int main(int argc, char *argv[])
 				LOAD_GLOBAL_WIRE(bestDataResults[i]);
 				TRY_AND_UPDATE(bestDataResults[i], dataT);
 			}
-			if (inputParameter->optimizationTarget == full_exploration && !inputParameter->isPruningEnabled) {
-				OUTPUT_TO_FILE;
-			}
 		}
 		/* refine global wire type */
 		REFINE_GLOBAL_WIRE_FORLOOP {
@@ -463,9 +464,6 @@ int main(int argc, char *argv[])
 			for (int i = 0; i < (int)full_exploration; i++) {
 				LOAD_LOCAL_WIRE(bestDataResults[i]);
 				TRY_AND_UPDATE(bestDataResults[i], dataT);
-			}
-			if (inputParameter->optimizationTarget == full_exploration && !inputParameter->isPruningEnabled) {
-				OUTPUT_TO_FILE;
 			}
 		}
 	}
@@ -590,6 +588,11 @@ int main(int argc, char *argv[])
 			temp << outputDirectory << inputParameter->outputFilePrefix << ".yaml";
 			string yamlFileName = temp.str();
 			ofstream yamlFile;
+#ifdef _WIN32
+			_mkdir(outputDirectory.c_str());	/* create the output directory if it is missing */
+#else
+			mkdir(outputDirectory.c_str(), 0755);
+#endif
 			yamlFile.open(yamlFileName.c_str());
 			if (yamlFile.is_open()) {
 				if (inputParameter->designTarget == cache)
@@ -601,6 +604,9 @@ int main(int argc, char *argv[])
 					bestDataResults[inputParameter->optimizationTarget].printToYamlFile(yamlFile);
 				yamlFile.close();
 				cout << "Results written to " << yamlFileName << endl;
+			} else {
+				cout << "Error: cannot write " << yamlFileName << " (does the output directory exist?)" << endl;
+				numSolution = 0;
 			}
 		} else {
 			cout << "No valid solutions." << endl;
@@ -623,7 +629,7 @@ int main(int argc, char *argv[])
 	if (localWire) delete localWire;
 	if (globalWire) delete globalWire;
 
-	return 0;
+	return (numSolution > 0) ? 0 : 1;
 }
 
 void applyConstraint() {

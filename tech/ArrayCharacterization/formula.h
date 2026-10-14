@@ -84,6 +84,8 @@ double CalculateOnResistance(double width, int type, double temperature, Technol
 
 double CalculateTransconductance(double width, int type, Technology tech);
 
+double CalculateLayoutWidth(double widthEff, Technology tech);
+
 double horowitz(double tr, double beta, double rampInput, double *rampOutput);
 
 double CalculateWireResistance(

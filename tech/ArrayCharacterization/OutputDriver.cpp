@@ -62,7 +62,7 @@ void OutputDriver::Initialize(double _logicEffort, double _inputCap, double _out
 	areaOptimizationLevel = _areaOptimizationLevel;
 	minDriverCurrent = _minDriverCurrent;
 
-	double minNMOSDriverWidth = minDriverCurrent / tech->currentOnNmos[inputParameter->temperature - 300];
+	double minNMOSDriverWidth = CalculateLayoutWidth(minDriverCurrent / tech->currentOnNmos[inputParameter->temperature - 300], *tech);
 	minNMOSDriverWidth = MAX(MIN_NMOS_SIZE * tech->featureSize, minNMOSDriverWidth);
 
 	if (minNMOSDriverWidth > inputParameter->maxNmosSize * tech->featureSize) {

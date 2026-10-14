@@ -45,8 +45,40 @@ bool isPow2(int n) {
 	return !(n & (n - 1));
 }
 
+static bool IsPlanar(Technology tech) {
+	return tech.featureSizeInNano >= 22;
+}
+
+static bool IsGAA(Technology tech) {
+	return tech.featureSizeInNano < 3;
+}
+
+static int CalculateNumFins(double width, Technology tech) {
+	if (width <= 0)
+		return 0;
+	return (int)ceil(width / (2 * tech.featureSize) - 1e-9);
+}
+
+static double EffectiveWidthPerFin(Technology tech) {
+	if (IsGAA(tech))
+		return tech.effective_width * tech.max_sheet_num / tech.max_fin_per_GAA;
+	return tech.effective_width;
+}
+
+static double CalculateEffectiveWidth(double width, Technology tech) {
+	if (IsPlanar(tech))
+		return width;
+	return CalculateNumFins(width, tech) * EffectiveWidthPerFin(tech);
+}
+
+double CalculateLayoutWidth(double widthEff, Technology tech) {
+	if (IsPlanar(tech))
+		return widthEff;
+	return ceil(widthEff / EffectiveWidthPerFin(tech) - 1e-9) * 2 * tech.featureSize;
+}
+
 double CalculateGateCap(double width, Technology tech) {
-	return (tech.capIdealGate + tech.capOverlap + 3 * tech.capFringe) * width
+	return (tech.capIdealGate + tech.capOverlap + 3 * tech.capFringe) * CalculateEffectiveWidth(width, tech)
 			+ tech.phyGateLength * tech.capPolywire;
 }
 
@@ -57,7 +89,7 @@ double CalculateFBRAMGateCap(double width, double thicknessFactor, Technology te
 
 // To calculate FeFET cell gate cap, use scaled capIdealGateFeFET value
 double CalculateFeFETGateCap(double width, Technology tech) {
-	return (tech.capIdealGateFeFET + tech.capOverlap + 3 * tech.capFringe) * width
+	return (tech.capIdealGateFeFET + tech.capOverlap + 3 * tech.capFringe) * CalculateEffectiveWidth(width, tech)
 			+ tech.phyGateLength * tech.capPolywire;
 }
 
@@ -65,11 +97,83 @@ double CalculateFBRAMDrainCap(double width, Technology tech) {
 	return (3 * tech.capSidewall + tech.capDrainToChannel) * width;
 }
 
+/* FinFET / GAA gate layout, after NeuroSim 1.4's CalculateGateArea (as in NS-Cache).*/
+static double CalculateFinFETGateArea(
+		int gateType, int numInput,
+		double widthNMOS, double widthPMOS,
+		double heightTransistorRegion, Technology tech,
+		double *height, double *width) {
+	double F = tech.featureSize;
+	double cellHeight = MAX_TRANSISTOR_HEIGHT_FINFET, cpp = POLY_WIDTH_FINFET + MIN_GAP_BET_GATE_POLY_FINFET;
+	double gapPN = 0, outer = 0;
+	switch (tech.featureSizeInNano) {
+	case 14: cellHeight = MAX_TRANSISTOR_HEIGHT_14nm; cpp = CPP_14nm; gapPN = MIN_GAP_BET_P_AND_N_DIFFS_14nm; outer = OUTER_HEIGHT_REGION_14nm; break;
+	case 10: cellHeight = MAX_TRANSISTOR_HEIGHT_10nm; cpp = CPP_10nm; gapPN = MIN_GAP_BET_P_AND_N_DIFFS_10nm; outer = OUTER_HEIGHT_REGION_10nm; break;
+	case 7:  cellHeight = MAX_TRANSISTOR_HEIGHT_7nm;  cpp = CPP_7nm;  gapPN = MIN_GAP_BET_P_AND_N_DIFFS_7nm;  outer = OUTER_HEIGHT_REGION_7nm;  break;
+	case 5:  cellHeight = MAX_TRANSISTOR_HEIGHT_5nm;  cpp = CPP_5nm;  gapPN = MIN_GAP_BET_P_AND_N_DIFFS_5nm;  outer = OUTER_HEIGHT_REGION_5nm;  break;
+	case 3:  cellHeight = MAX_TRANSISTOR_HEIGHT_3nm;  cpp = CPP_3nm;  gapPN = MIN_GAP_BET_P_AND_N_DIFFS_3nm;  outer = OUTER_HEIGHT_REGION_3nm;  break;
+	case 2:  cellHeight = MAX_TRANSISTOR_HEIGHT_2nm;  cpp = CPP_2nm;  gapPN = MIN_GAP_BET_P_AND_N_DIFFS_2nm;  outer = OUTER_HEIGHT_REGION_2nm;  break;
+	case 1:  cellHeight = MAX_TRANSISTOR_HEIGHT_1nm;  cpp = CPP_1nm;  gapPN = MIN_GAP_BET_P_AND_N_DIFFS_1nm;  outer = OUTER_HEIGHT_REGION_1nm;  break;
+	}
+	bool standard = fabs(heightTransistorRegion - MAX_TRANSISTOR_HEIGHT * F) < 1e-3 * F || heightTransistorRegion > 1e-3;
+	double region = standard ? cellHeight * F : heightTransistorRegion;
+	int maxFin = IsGAA(tech) ? tech.max_fin_per_GAA : tech.max_fin_num;
+	if (!standard && gapPN > 0)
+		maxFin = (int)floor(((region - (gapPN + outer) * F) + tech.PitchFin) / 2.0 / (tech.widthFin + tech.PitchFin));
+	maxFin = MAX(maxFin, 1);
+
+	int numFinN = CalculateNumFins(widthNMOS, tech);
+	int numFinP = CalculateNumFins(widthPMOS, tech);
+	if (numFinN + numFinP == 0) {
+		*height = *width = 0;
+		return 0;
+	}
+	/* split the 2 x maxFin fin tracks between P and N by width */
+	int tracks = 2 * maxFin, maxFinP = tracks, maxFinN = tracks;
+	if (numFinP == 0) {
+		maxFinP = 0;
+	} else if (numFinN == 0) {
+		maxFinN = 0;
+	} else {
+		double ratio = widthPMOS / (widthPMOS + widthNMOS);
+		if (ratio > 0.5) {
+			maxFinN = (int)(tracks * (1 - ratio));
+			maxFinP = tracks - maxFinN;
+		} else {
+			maxFinP = (int)(tracks * ratio);
+			maxFinN = tracks - maxFinP;
+		}
+		if (maxFinP == 0) { maxFinP = 1; maxFinN = tracks - 1; }
+		if (maxFinN == 0) { maxFinN = 1; maxFinP = tracks - 1; }
+	}
+	int numFoldP = numFinP > 0 ? (numFinP + maxFinP - 1) / maxFinP : 0;
+	int numFoldN = numFinN > 0 ? (numFinN + maxFinN - 1) / maxFinN : 0;
+	double unitWidthP = numFoldP > 0 ? (numFoldP + 1) * cpp * F : 0;
+	double unitWidthN = numFoldN > 0 ? (numFoldN + 1) * cpp * F : 0;
+
+	double widthRegionP = 0, widthRegionN = 0;
+	if (gateType == INV) {
+		widthRegionP = unitWidthP;
+		widthRegionN = unitWidthN;
+	} else if (gateType == NOR || gateType == NAND) {
+		/* unfolded stacks share their inner contacts */
+		bool share = numFoldP <= 1 && numFoldN <= 1;
+		widthRegionP = unitWidthP * numInput - ((share && unitWidthP > 0) ? (numInput - 1) * cpp * F : 0);
+		widthRegionN = unitWidthN * numInput - ((share && unitWidthN > 0) ? (numInput - 1) * cpp * F : 0);
+	}
+	*width = MAX(widthRegionN, widthRegionP);
+	*height = region;
+	return (*width)*(*height);
+}
+
 double CalculateGateArea(
 		int gateType, int numInput,
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
 		double *height, double *width) {
+	if (!IsPlanar(tech))
+		return CalculateFinFETGateArea(gateType, numInput, widthNMOS, widthPMOS, heightTransistorRegion, tech, height, width);
+
 	double	ratio = widthPMOS / (widthPMOS + widthNMOS);
 
 	double maxWidthPMOS, maxWidthNMOS;
@@ -155,6 +259,22 @@ void CalculateGateCapacitance(
 		double widthNMOS, double widthPMOS,
 		double heightTransistorRegion, Technology tech,
 		double *capInput, double *capOutput) {
+	if (!IsPlanar(tech)) {
+		double drainN = CalculateEffectiveWidth(widthNMOS, tech) * tech.cap_draintotal;
+		double drainP = CalculateEffectiveWidth(widthPMOS, tech) * tech.cap_draintotal;
+		if (capOutput) {
+			switch (gateType) {
+			case INV:  *(capOutput) = drainN + drainP; break;
+			case NOR:  *(capOutput) = drainN * numInput + drainP; break;
+			case NAND: *(capOutput) = drainN + drainP * numInput; break;
+			default:   *(capOutput) = 0;
+			}
+		}
+		if (capInput)
+			*(capInput) = CalculateGateCap(widthNMOS, tech) + CalculateGateCap(widthPMOS, tech);
+		return;
+	}
+
 	/* TO-DO: most parts of this function is the same of CalculateGateArea,
 	 * perhaps they will be combined in future
 	 */
@@ -292,6 +412,8 @@ double CalculateGateLeakage(
 	double *leakN = tech.currentOffNmos;
 	double *leakP = tech.currentOffPmos;
 	double leakageN, leakageP;
+	widthNMOS = CalculateEffectiveWidth(widthNMOS, tech);
+	widthPMOS = CalculateEffectiveWidth(widthPMOS, tech);
 	switch (gateType) {
 	case INV:
 		leakageN = widthNMOS * leakN[tempIndex];
@@ -325,27 +447,18 @@ double CalculateOnResistance(double width, int type, double temperature, Technol
 		cout<<"Error: Temperature is out of range"<<endl;
 		exit(-1);
 	}
+	double widthEff = CalculateEffectiveWidth(width, tech);
 	if (type == NMOS)
-		r = tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * width);
+		r = tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnNmos[tempIndex] * widthEff);
 	else
-		r = tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnPmos[tempIndex] * width);
+		r = tech.effectiveResistanceMultiplier * tech.vdd / (tech.currentOnPmos[tempIndex] * widthEff);
 	return r;
 }
 
 double CalculateTransconductance(double width, int type, Technology tech) {
 	double gm;
 	double vsat;
-	double widthEff = 0;
-
-	if (tech.featureSize >= 22 * 1e-9) {
-		widthEff = width;
-	} else if ((tech.featureSize <= 14 * 1e-9) && (tech.featureSize >= 3 * 1e-9)) {
-		width = width/(2 * tech.featureSize);
-		widthEff = int(ceil(width))*(2*tech.heightFin + tech.widthFin)/tech.PitchFin;
-	} else {
-		width = width/(2 * tech.featureSize);
-		widthEff = int(ceil(width))*tech.effective_width*tech.max_sheet_num/tech.max_fin_per_GAA;       
-    }
+	double widthEff = CalculateEffectiveWidth(width, tech);
 
 	if (type == NMOS) {
 		if (tech.featureSize >= 22 * 1e-9) {

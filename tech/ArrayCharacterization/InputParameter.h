@@ -90,6 +90,7 @@ public:
 
 	RoutingMode routingMode;
 	bool internalSensing;
+	bool differentialWrite;			/* Model the subarray differential-write buffer (an NVM write-reduction circuit) */
 
 	double maxNmosSize;				/* Default value is MAX_NMOS_SIZE in constant.h, however, user might change it, Unit: F */
 

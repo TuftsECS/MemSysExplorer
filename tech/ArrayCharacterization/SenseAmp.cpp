@@ -83,25 +83,27 @@ void SenseAmp::CalculateArea() {
 		double tempHeight = 0;
 		double tempWidth = 0;
 
-		CalculateGateArea(INV, 1, 0, ((tech->featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * tech->featureSize,
+		CalculateGateArea(INV, 1, 0, ((tech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_P * tech->featureSize,
+				pitchSenseAmp, *tech, &tempWidth, &tempHeight);	/* exchange width and height for senseamp layout */
+		width = MAX(width, tempWidth);
+		height += 2 * tempHeight;
+		CalculateGateArea(INV, 1, 0, ((tech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_ISO * tech->featureSize,
 				pitchSenseAmp, *tech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += tempHeight;
-		
-		CalculateGateArea(INV, 1, 0, ((tech->featureSize <= 14*1e-9)? 2:1)*W_SA_P * tech->featureSize,
+		height += 2 * MIN_GAP_BET_SAME_TYPE_DIFFS * tech->featureSize;
+
+		CalculateGateArea(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_N * tech->featureSize, 0,
 				pitchSenseAmp, *tech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
 		height += 2 * tempHeight;
-		
-		CalculateGateArea(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*W_SA_N * tech->featureSize, 0,
+		CalculateGateArea(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_EN * tech->featureSize, 0,
 				pitchSenseAmp, *tech, &tempWidth, &tempHeight);
 		width = MAX(width, tempWidth);
-		height += 2 * tempHeight;
-		
-		CalculateGateArea(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * tech->featureSize, 0,
-				pitchSenseAmp, *tech, &tempWidth, &tempHeight);
-		width = MAX(width, tempWidth);
-		height += 2 * tempHeight;
+		height += tempHeight;
+		height += 2 * MIN_GAP_BET_SAME_TYPE_DIFFS * tech->featureSize;
+
+		height += MIN_GAP_BET_P_AND_N_DIFFS * tech->featureSize;
         
                 /* Scale SA area for MLC programming, or defer to ISLPED modeled values for FeFET sensing */
                 if (mlc && (cell->memCellType == MLCCTT || cell->memCellType == MLCRRAM)) {
@@ -149,11 +151,12 @@ void SenseAmp::CalculateRC() {
 	} else if (invalid) {
 		readLatency = writeLatency = invalid_value;
 	} else {
-	    capLoad = CalculateGateCap(((tech->featureSize <= 14*1e-9)? 2:1)*(W_SA_P + W_SA_N) * tech->featureSize, *tech)
-				+ CalculateDrainCap(((tech->featureSize <= 14*1e-9)? 2:1)*W_SA_N * tech->featureSize, NMOS, pitchSenseAmp, *tech)
-				+ CalculateDrainCap(((tech->featureSize <= 14*1e-9)? 2:1)*W_SA_P * tech->featureSize, PMOS, pitchSenseAmp, *tech)
-				+ CalculateDrainCap(((tech->featureSize <= 14*1e-9)? 2:1)*W_SA_TOP * tech->featureSize, PMOS, pitchSenseAmp, *tech)
-				+ CalculateDrainCap(((tech->featureSize <= 14*1e-9)? 2:1)*W_SA_BOT * tech->featureSize, NMOS, pitchSenseAmp, *tech);
+	    /* load as in NeuroSim 1.4: the latch, isolation and mux devices */
+	    capLoad = CalculateGateCap(((tech->featureSize <= 14*1e-9)? 2:1)*(W_SENSE_P + W_SENSE_N) * tech->featureSize, *tech)
+				+ CalculateDrainCap(((tech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_N * tech->featureSize, NMOS, pitchSenseAmp, *tech)
+				+ CalculateDrainCap(((tech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_P * tech->featureSize, PMOS, pitchSenseAmp, *tech)
+				+ CalculateDrainCap(((tech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_ISO * tech->featureSize, PMOS, pitchSenseAmp, *tech)
+				+ CalculateDrainCap(((tech->featureSize <= 14*1e-9)? 2:1)*W_SENSE_MUX * tech->featureSize, NMOS, pitchSenseAmp, *tech);
             /* Scale SA capload for MLC programming, or defer to ISLPED modeled values for FeFET sensing */
             if (mlc && (cell->memCellType == MLCCTT || cell->memCellType == MLCRRAM)) {
                 if (numF == 8)

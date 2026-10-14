@@ -63,7 +63,7 @@ void Mux::Initialize(int _numInput, long long _numMux, double _capLoad, double _
 	minDriverCurrent = _minDriverCurrent;
 
 	if ((numInput > 1) && (numMux > 0 )) {
-		double minNMOSWidth = minDriverCurrent / tech->currentOnNmos[inputParameter->temperature - 300];
+		double minNMOSWidth = CalculateLayoutWidth(minDriverCurrent / tech->currentOnNmos[inputParameter->temperature - 300], *tech);
 		if (cell->memCellType == MRAM || cell->memCellType == PCRAM || cell->memCellType == memristor || cell->memCellType == FeFET || cell->memCellType == MLCFeFET || cell->memCellType == MLCRRAM) {
 			/* Mux resistance should be small enough for voltage dividing */
 			double maxResNMOSPassTransistor = cell->resistanceOn * IR_DROP_TOLERANCE;

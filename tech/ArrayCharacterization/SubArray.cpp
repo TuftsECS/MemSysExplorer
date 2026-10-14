@@ -168,7 +168,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 				maxWordlineCurrent = resetCurrent * numSelectedColumnPerRow + cell->leakageCurrentAccessDevice
 						* (numColumn - numSelectedColumnPerRow);
 			}
-			double minWordlineDriverWidth = maxWordlineCurrent / tech->currentOnNmos[inputParameter->temperature - 300];
+			double minWordlineDriverWidth = CalculateLayoutWidth(maxWordlineCurrent / tech->currentOnNmos[inputParameter->temperature - 300], *tech);
 			if (minWordlineDriverWidth > inputParameter->maxNmosSize * tech->featureSize) {
 				invalid = true;
 				return;
@@ -182,7 +182,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 		}
 	}
 
-	double minBitlineMuxWidth = maxBitlineCurrent / tech->currentOnNmos[inputParameter->temperature - 300];
+	double minBitlineMuxWidth = CalculateLayoutWidth(maxBitlineCurrent / tech->currentOnNmos[inputParameter->temperature - 300], *tech);
 	minBitlineMuxWidth = MAX(MIN_NMOS_SIZE * tech->featureSize, minBitlineMuxWidth);
 	if (minBitlineMuxWidth > inputParameter->maxNmosSize * tech->featureSize) {
 		invalid = true;
@@ -243,6 +243,7 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 
 	/* Calculate wire resistance/capacitance */
 	capWordline = lenWordline * localWire->capWirePerUnit;
+	capWordlineR = capWordline;
 	resWordline = lenWordline * localWire->resWirePerUnit;
 	capBitline = lenBitline * localWire->capWirePerUnit;
 	resBitline = lenBitline * localWire->resWirePerUnit;
@@ -287,10 +288,17 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 	} else if (cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
 		/* DRAM and eDRAM only has one access transistors */
 		resCellAccessW = CalculateOnResistance(((techW->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * techW->featureSize, NMOS, inputParameter->temperature, *techW);
-		resCellAccessR = CalculateOnResistance(((techR->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOSR * techR->featureSize, NMOS, inputParameter->temperature, *techR);
+		if (cell->readDeviceCurrent > 0) {
+			resCellAccessR = techR->effectiveResistanceMultiplier * techR->vdd / cell->readDeviceCurrent;
+		} else {
+			/* the read device's gate is the storage node, so it never sees ION's Vgs = VDD */
+			resCellAccessR = CalculateOnResistance(((techR->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOSR * techR->featureSize, NMOS, inputParameter->temperature, *techR)
+					/ READ_DEVICE_ION_THRESHOLD;
+		}
 		capCellAccessW = CalculateDrainCap(((techW->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * techW->featureSize, NMOS, cell->widthInFeatureSize * tech->featureSize, *techW);
 		capCellAccessR = CalculateDrainCap(((techR->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOSR * techR->featureSize, NMOS, cell->widthInFeatureSize * tech->featureSize, *techR);
-		capWordline += MAX(CalculateGateCap(((techR->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOSR * techR->featureSize, *techR), CalculateGateCap(((techW->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * techW->featureSize, *techW)) * numColumn;
+		capWordline += CalculateGateCap(((techW->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * techW->featureSize, *techW) * numColumn;
+		capWordlineR += CalculateGateCap(((techR->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOSR * techR->featureSize, *techR) * numColumn;
 		capBitline  += MAX(capCellAccessW, capCellAccessR) * numRow;
 		voltagePrecharge = tech->vdd;	/* DRAM read voltage is always half of vdd */
 	} else if (cell->memCellType == FBRAM){ /* Floating Body RAM */
@@ -414,12 +422,27 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 	precharger.Initialize(tech->vdd, numColumn, capBitline, resBitline);
 	precharger.CalculateRC();
 
+	/* one write driver per column for a 3T row write (the WWL opens the whole row),
+	 * otherwise one per sense-amp group, driving through the bitline mux */
+	long long numWriteDriver = (cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) ? numColumn : numColumn / muxSenseAmp;
+	writeDriver.Initialize(tech->vdd, (int)numWriteDriver, capBitline, resBitline);
+	writeDriver.CalculateRC();
+
 	rowDecoder.Initialize(numRow, capWordline, resWordline, multipleRowPerSet, areaOptimizationLevel, maxWordlineCurrent);
 	if (rowDecoder.invalid) {
 		invalid = true;
 		return;
 	}
 	rowDecoder.CalculateRC();
+
+	if (cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
+		readRowDecoder.Initialize(numRow, capWordlineR, resWordline, multipleRowPerSet, areaOptimizationLevel, maxWordlineCurrent);
+		if (readRowDecoder.invalid) {
+			invalid = true;
+			return;
+		}
+		readRowDecoder.CalculateRC();
+	}
 
 	if (!invalid) {
 		bitlineMuxDecoder.Initialize(muxSenseAmp, capMuxLoad, resMuxLoad /* TO-DO: need to fix */, false, areaOptimizationLevel, 0);
@@ -478,11 +501,13 @@ void SubArray::Initialize(long long _numRow, long long _numColumn, bool _multipl
 	}
 	
 	//Qing: initialize subarray buffer,
-	//do not consider buffering control signals for now
-	subarrayBuffer.Initialize(1, numColumn);
-	subarrayBuffer.CalculateArea();
-	subarrayBuffer.CalculateLatency();
-	subarrayBuffer.CalculatePower();
+	// differential (data-comparison) write is an NVM write-reduction circuit
+	if (inputParameter->differentialWrite) {
+		subarrayBuffer.Initialize(1, numColumn);
+		subarrayBuffer.CalculateArea();
+		subarrayBuffer.CalculateLatency();
+		subarrayBuffer.CalculatePower();
+	}
 	//Qing.
 
 	initialized = true;
@@ -495,7 +520,7 @@ void SubArray::CalculateArea() {
 		height = width = area = invalid_value;
 	} else {
 		double addWidth = 0, addHeight = 0;
-		double widthPeripherals = 0, heightPeripherals = 0;
+		double decoderHeight = 0;	/* height of the decoder strip, a folded decoder spanning the array */
 
 		width = lenWordline;
 		height = lenBitline;
@@ -508,6 +533,7 @@ void SubArray::CalculateArea() {
 			/* allow white space */
 			addWidth = rowDecoder.width;
 		}
+		decoderHeight = MIN(rowDecoder.height, height);
 
 		precharger.CalculateArea();
 		if (precharger.width > width) {
@@ -516,6 +542,27 @@ void SubArray::CalculateArea() {
 		} else {
 			/* allow white space */
 			addHeight = precharger.height;
+		}
+
+		double writeDriverHeight;
+		writeDriver.CalculateArea();
+		if (writeDriver.width > width) {
+			/* assume magic folding */
+			writeDriverHeight = writeDriver.area / writeDriver.width;
+		} else {
+			/* allow white space */
+			writeDriverHeight = writeDriver.height;
+		}
+		if (cell->memCellType != eDRAM3T333)	/* 333-eDRAM: under the array, see below */
+			addHeight += writeDriverHeight;
+
+		if (cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
+			readRowDecoder.CalculateArea();
+			if (readRowDecoder.height > height)
+				addWidth += readRowDecoder.area / height;	/* assume magic folding */
+			else
+				addWidth += readRowDecoder.width;		/* allow white space */
+			decoderHeight = MAX(decoderHeight, MIN(readRowDecoder.height, height));
 		}
 
 		bitlineMux.CalculateArea();
@@ -545,21 +592,24 @@ void SubArray::CalculateArea() {
 		addWidth = MAX(addWidth, senseAmpMuxLev1Decoder.width);
 		senseAmpMuxLev2Decoder.CalculateArea();
 		addWidth = MAX(addWidth, senseAmpMuxLev2Decoder.width);
+		decoderHeight = MAX(decoderHeight, MAX(bitlineMuxDecoder.height,
+				MAX(senseAmpMuxLev1Decoder.height, senseAmpMuxLev2Decoder.height)));
 
 		//Qing: add subarray buffer's height
 		//assume the buffer has the same width as the subarray
-		addHeight += subarrayBuffer.height;
+		if (inputParameter->differentialWrite)
+			addHeight += subarrayBuffer.height;
 		//Qing.
 		
-		width += addWidth;
-		height += addHeight;
-
 		if (cell->memCellType == eDRAM3T333) {
-			// monolithic 3D cells fit above peripherals
-			widthPeripherals = (width - lenWordline);
-			heightPeripherals = (height - lenBitline);
-			width = MAX(width, widthPeripherals);
-			height = MAX(height, heightPeripherals);
+			/* M3D: the decoders and write drivers sit under the cell array and add width or height
+			 * only where they do not fit within it; the pitch-matched precharger, sense amps and
+			 * muxes stay next to the cell array. */
+			width = MAX(lenWordline, addWidth);
+			height = MAX(lenBitline, decoderHeight + writeDriverHeight) + addHeight;
+		} else {
+			width += addWidth;
+			height += addHeight;
 		}
 		area = width * height;
 	}
@@ -572,6 +622,7 @@ void SubArray::CalculateLatency(double _rampInput) {
 		readLatency = writeLatency = invalid_value;
 	} else {
 		precharger.CalculateLatency(_rampInput);
+		writeDriver.CalculateLatency(_rampInput);
 		rowDecoder.CalculateLatency(_rampInput);
 		bitlineMuxDecoder.CalculateLatency(_rampInput);
 		senseAmpMuxLev1Decoder.CalculateLatency(_rampInput);
@@ -629,27 +680,31 @@ void SubArray::CalculateLatency(double _rampInput) {
 			/* assume symmetric read/write for DRAM/eDRAM bitline delay */
 			writeLatency = readLatency;
 		} else if (cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
-			// Write path
-			double totalCapW = capCellAccessW + cell->capDRAMCell + capBitline + bitlineMux.capForPreviousDelayCalculation;
-			double tauW = 2.3*(resCellAccessW * totalCapW
-						+ resBitline * (bitlineMux.capForPreviousDelayCalculation + capBitline / 2.0));
+			readRowDecoder.CalculateLatency(_rampInput);
+			double readDecoderLatency = MAX(readRowDecoder.readLatency, columnDecoderLatency);
+			// Write path: the write driver sets the write bitline while the WWL is decoded, and the
+			// write device then only charges the storage node (the read device's gate and its own drain)
+			double capStorageNode = cell->capDRAMCell + capCellAccessW
+					+ CalculateGateCap(((techR->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOSR * techR->featureSize, *techR);
+			double tauW = 2.3 * resCellAccessW * capStorageNode;
 			// Read path
 			double totalCapR = capCellAccessR + cell->capDRAMCell + capBitline + bitlineMux.capForPreviousDelayCalculation;
 			double tauR = 2.3*(resCellAccessR * totalCapR
 						+ resBitline * (bitlineMux.capForPreviousDelayCalculation + capBitline / 2.0));
 			double bitlineRamp = 0;
 			bitlineDelayW = horowitz(tauW, 0, rowDecoder.rampOutput, &bitlineRamp);			
-			bitlineDelayR = horowitz(tauR, 0, rowDecoder.rampOutput, &bitlineRamp);
+			horowitz(tauR, 0, readRowDecoder.rampOutput, &bitlineRamp);	/* ramp into the sense amp */
+			/* the sense amp fires once the read bitline has moved by senseVoltage, not after a
+			 * full swing (the sense-margin form NS-Cache uses for gain cells) */
+			bitlineDelayR = tauR / 2.3 * log(voltagePrecharge / (voltagePrecharge - senseVoltage));
 			senseAmp.CalculateLatency(bitlineRamp);
 			senseAmpMuxLev1.CalculateLatency(1e20);
 			senseAmpMuxLev2.CalculateLatency(senseAmpMuxLev1.rampOutput);
 
-            /* Refresh operation does not pass sense amplifier. */
-            refreshLatency = decoderLatency + bitlineDelayW + senseAmp.readLatency;
+            refreshLatency = readDecoderLatency + bitlineDelayR + senseAmp.readLatency + writeDriver.readLatency + bitlineDelayW;
             refreshLatency *= numRow; // TOTAL refresh latency for subarray
-			readLatency = decoderLatency + bitlineDelayR + senseAmp.readLatency
-					+ senseAmpMuxLev1.readLatency + senseAmpMuxLev2.readLatency;
-			writeLatency = decoderLatency + bitlineDelayW;
+			readLatency = readDecoderLatency + bitlineDelayR + senseAmp.readLatency + senseAmpMuxLev1.readLatency + senseAmpMuxLev2.readLatency;
+			writeLatency = MAX(decoderLatency, writeDriver.readLatency) + bitlineDelayW;
 		} else if (cell->memCellType == MRAM || cell->memCellType == PCRAM || cell->memCellType == memristor || cell->memCellType == FBRAM || cell->memCellType == FeFET || cell->memCellType == MLCFeFET || cell->memCellType == MLCRRAM) {
 			double bitlineRamp = 0;
 			if (cell->readMode == false) {	/* current-sensing */
@@ -796,6 +851,7 @@ void SubArray::CalculatePower() {
 		readDynamicEnergy = writeDynamicEnergy = leakage = invalid_value;
 	} else {
 		precharger.CalculatePower();
+		writeDriver.CalculatePower();
 		rowDecoder.CalculatePower();
 		bitlineMuxDecoder.CalculatePower();
 		senseAmpMuxLev1Decoder.CalculatePower();
@@ -822,21 +878,21 @@ void SubArray::CalculatePower() {
 		} else if (cell->memCellType == DRAM || cell->memCellType == eDRAM) {
 			/* Codes below calculate the DRAM bitline power */
 			readDynamicEnergy = (capCellAccess + capBitline + bitlineMux.capForPreviousPowerCalculation) * senseVoltage * tech->vdd * numColumn;
-			double writeVoltage = tech->vpp;	/* should also equal to setVoltage, for DRAM, it is Vdd */
+			double writeVoltage = tech->vdd;	/* the bitline swings to vdd; vpp only boosts the wordline */
 			writeDynamicEnergy = (capBitline + bitlineMux.capForPreviousPowerCalculation) * writeVoltage * writeVoltage * numColumn;
             refreshDynamicEnergy = readDynamicEnergy + writeDynamicEnergy;
-			leakage += CalculateGateLeakage(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * tech->featureSize, 0,
-					inputParameter->temperature, *tech) * tech->vdd;
-			leakage *= numColumn;
+			leakage = CalculateGateLeakage(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * tech->featureSize, 0, inputParameter->temperature, *tech) * tech->vdd;
+			leakage *= numRow * numColumn;
 		} else if (cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
+			readRowDecoder.CalculatePower();
 			/* Codes below calculate the DRAM bitline power */
 			readDynamicEnergy = (capCellAccessR + capBitline + bitlineMux.capForPreviousPowerCalculation) * senseVoltage * techR->vdd * numColumn;
-			double writeVoltage = techW->vpp;	/* should also equal to setVoltage, for DRAM, it is Vdd */
+			double writeVoltage = tech->vdd;	/* the bitline swings to vdd; vpp only boosts the wordline */
 			writeDynamicEnergy = (capBitline + bitlineMux.capForPreviousPowerCalculation) * writeVoltage * writeVoltage * numColumn;
             refreshDynamicEnergy = readDynamicEnergy + writeDynamicEnergy;
-			leakage = CalculateGateLeakage(INV, 1, ((tech->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * tech->featureSize, 0,
-					inputParameter->temperature, *tech) * tech->vdd;
-			leakage *= numColumn;
+			leakage = CalculateGateLeakage(INV, 1, ((techW->featureSize <= 14*1e-9)? 2:1)*cell->widthAccessCMOS * techW->featureSize, 0,
+					inputParameter->temperature, *techW) * techW->vdd;
+			leakage *= numRow * numColumn;	/* one write device per cell */
 		} else if (cell->memCellType == MRAM || cell->memCellType == PCRAM || cell->memCellType == memristor || cell->memCellType == FBRAM || cell->memCellType == FeFET || cell->memCellType == MLCFeFET || cell->memCellType == MLCRRAM) {
 			if (cell->readMode == false) {	/* current-sensing */
 				/* Use ICCAD 2009 model */
@@ -994,7 +1050,14 @@ void SubArray::CalculatePower() {
 				+ senseAmp.readDynamicEnergy + senseAmpMuxLev1.readDynamicEnergy + senseAmpMuxLev2.readDynamicEnergy;
 		writeDynamicEnergy += rowDecoder.writeDynamicEnergy + bitlineMuxDecoder.writeDynamicEnergy + senseAmpMuxLev1Decoder.writeDynamicEnergy
 				+ senseAmpMuxLev2Decoder.writeDynamicEnergy + bitlineMux.writeDynamicEnergy
-				+ senseAmp.writeDynamicEnergy + senseAmpMuxLev1.writeDynamicEnergy + senseAmpMuxLev2.writeDynamicEnergy;
+				+ senseAmp.writeDynamicEnergy + senseAmpMuxLev1.writeDynamicEnergy + senseAmpMuxLev2.writeDynamicEnergy
+				+ writeDriver.readDynamicEnergy;
+
+		if (cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
+			readDynamicEnergy += readRowDecoder.readDynamicEnergy - rowDecoder.readDynamicEnergy;
+			refreshDynamicEnergy += readRowDecoder.readDynamicEnergy + writeDriver.readDynamicEnergy;	/* write-back */
+			leakage += readRowDecoder.leakage;
+		}
 
         /* Read all column energy + row decoder + sense amp + precharger is enough for one subarray row REF. */
         refreshDynamicEnergy += rowDecoder.readDynamicEnergy + precharger.readDynamicEnergy
@@ -1015,9 +1078,10 @@ void SubArray::CalculatePower() {
 		}
 		leakage += rowDecoder.leakage + bitlineMuxDecoder.leakage + senseAmpMuxLev1Decoder.leakage
 				+ senseAmpMuxLev2Decoder.leakage + precharger.leakage + bitlineMux.leakage
-				+ senseAmp.leakage + senseAmpMuxLev1.leakage + senseAmpMuxLev2.leakage
-				//Qing: subarray buffer leakage
-				+ subarrayBuffer.leakage + subarrayBuffer.xorLeakage;
+				+ senseAmp.leakage + senseAmpMuxLev1.leakage + senseAmpMuxLev2.leakage + writeDriver.leakage;
+		//Qing: subarray buffer leakage
+		if (inputParameter->differentialWrite)
+			leakage += subarrayBuffer.leakage + subarrayBuffer.xorLeakage;
 	}
 }
 
@@ -1069,6 +1133,7 @@ SubArray & SubArray::operator=(const SubArray &rhs) {
 	lenWordline = rhs.lenWordline;
 	lenBitline = rhs.lenBitline;
 	capWordline = rhs.capWordline;
+	capWordlineR = rhs.capWordlineR;
 	capBitline = rhs.capBitline;
 	resWordline = rhs.resWordline;
 	resBitline = rhs.resBitline;
@@ -1100,6 +1165,8 @@ SubArray & SubArray::operator=(const SubArray &rhs) {
 	senseAmpMuxLev2 = rhs.senseAmpMuxLev2;
 	precharger = rhs.precharger;
 	senseAmp = rhs.senseAmp;
+	readRowDecoder = rhs.readRowDecoder;
+	writeDriver = rhs.writeDriver;
 	subarrayBuffer = rhs.subarrayBuffer;
 
 	return *this;

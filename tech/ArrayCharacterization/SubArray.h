@@ -82,6 +82,7 @@ public:
 	double lenWordline;	/* Length of wordlines, Unit: m */
 	double lenBitline;	/* Length of bitlines, Unit: m */
 	double capWordline;	/* Wordline capacitance, Unit: F */
+	double capWordlineR; /* Read wordline capacitance, Unit: F */
 	double capBitline;	/* Bitline capacitance, Unit: F */
 	double resWordline;	/* Wordline resistance, Unit: ohm */
 	double resBitline;	/* Bitline resistance, Unit: ohm */
@@ -114,7 +115,9 @@ public:
 	RowDecoder    senseAmpMuxLev2Decoder;
 	Mux           senseAmpMuxLev2;
 	Precharger    precharger;
+	Precharger    writeDriver;	/* write-bitline drivers, modelled as a precharger (as in NS-Cache) */
 	SenseAmp      senseAmp;
+	RowDecoder    readRowDecoder;
 	//Qing: subarray buffer for differential write
 	Buffer        subarrayBuffer;
 };

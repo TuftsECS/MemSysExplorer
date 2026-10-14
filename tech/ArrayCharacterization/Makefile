@@ -9,7 +9,7 @@ RM := rm -f
 
 # define build options
 # compile options
-CXXFLAGS := -g -Wall
+CXXFLAGS := -O2 -g -Wall
 # link options
 LDFLAGS := -g 
 # link librarires

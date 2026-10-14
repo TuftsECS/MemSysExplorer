@@ -326,7 +326,8 @@ void Result::print() {
 	cout << " |--- Mat Latency    = " << TO_SECOND(bank->mat.readLatency) << endl;
 	cout << "    |--- Predecoder Latency = " << TO_SECOND(bank->mat.predecoderLatency) << endl;
 	cout << "    |--- Subarray Latency   = " << TO_SECOND(bank->mat.subarray.readLatency) << endl;
-	cout << "       |--- Row Decoder Latency = " << TO_SECOND(bank->mat.subarray.rowDecoder.readLatency) << endl;
+	cout << "       |--- Row Decoder Latency = " << TO_SECOND((cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) ?
+			bank->mat.subarray.readRowDecoder.readLatency : bank->mat.subarray.rowDecoder.readLatency) << endl;
 	if (cell->memCellType != eDRAM3T333 && cell->memCellType != eDRAM3T)
 		cout << "       |--- Bitline Latency     = " << TO_SECOND(bank->mat.subarray.bitlineDelay) << endl;
 	else
@@ -429,7 +430,8 @@ void Result::print() {
 														* bank->numActiveSubarrayPerRow * bank->numActiveSubarrayPerColumn)
 														<< endl;
 	cout << "    |--- Subarray Dynamic Energy   = " << TO_JOULE(bank->mat.subarray.readDynamicEnergy) << " per active subarray" << endl;
-	cout << "       |--- Row Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.rowDecoder.readDynamicEnergy) << endl;
+	cout << "       |--- Row Decoder Dynamic Energy = " << TO_JOULE((cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) ?
+			bank->mat.subarray.readRowDecoder.readDynamicEnergy : bank->mat.subarray.rowDecoder.readDynamicEnergy) << endl;
 	cout << "       |--- Mux Decoder Dynamic Energy = " << TO_JOULE(bank->mat.subarray.bitlineMuxDecoder.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev1Decoder.readDynamicEnergy
 													+ bank->mat.subarray.senseAmpMuxLev2Decoder.readDynamicEnergy) << endl;
@@ -577,6 +579,7 @@ void Result::print() {
 	if (cell->memCellType == eDRAM || cell->memCellType == eDRAM3T || cell->memCellType == eDRAM3T333) {
 		// David Note: refresh period could be shorter than retention time 
         cout << " - Refresh Power = " << TO_WATT(bank->refreshDynamicEnergy / (cell->retentionTime)) << endl;
+        cout << " - Retention Time = " << TO_SECOND(cell->retentionTime) << endl;
     }
 }
 
@@ -1053,6 +1056,7 @@ YAML::Node Result::toYamlNode() {
         cell->memCellType == eDRAM3T333) {
         result["Results"]["Power"]["RefreshPower_W"] = 
             (bank->refreshDynamicEnergy / cell->retentionTime);
+        result["Results"]["Power"]["RetentionTime_us"] = cell->retentionTime * 1e6;
     }
 
     return result;

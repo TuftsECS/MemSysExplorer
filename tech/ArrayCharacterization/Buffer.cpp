@@ -42,6 +42,10 @@ Buffer::Buffer() {
 	// TODO Auto-generated constructor stub
 	initialized = false;
 	invalid = false;
+	numRow = numColumn = 0;
+	xorLatency = 0;
+	xorDynamicEnergy = 0;
+	xorLeakage = 0;
 }
 
 Buffer::~Buffer() {

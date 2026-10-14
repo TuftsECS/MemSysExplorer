@@ -65,6 +65,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 	featureSizeInNano = _featureSizeInNano;
 	featureSize = _featureSizeInNano * 1e-9;
 	deviceRoadmap = _deviceRoadmap;
+	vpp = 0; // vpp is set to vdd if not specified in the roadmap
         is_FeFET = _is_FeFET;
 
 	if (_featureSizeInNano >= 200) { //TO-DO : only for test
@@ -1847,6 +1848,10 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 			double b = currentOffPmos[i / 10 * 10 + 10];
 			currentOffPmos[i] = a + (b-a) * (i % 10) / 10;
 		}
+	}
+
+	if (vpp <= 0) {
+		vpp = vdd;
 	}
 
 	initialized = true;

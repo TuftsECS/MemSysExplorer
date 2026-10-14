@@ -66,6 +66,39 @@
 #define CONTACT_SIZE				1
 #define MIN_WIDTH_POWER_RAIL		2
 
+/* FinFET & GAA layout rules, in units of F, from NeuroSim 1.4 constant.h */
+#define MAX_TRANSISTOR_HEIGHT_FINFET	34.0
+#define MAX_TRANSISTOR_HEIGHT_14nm		41.142	/* standard cell height, Samsung */
+#define MAX_TRANSISTOR_HEIGHT_10nm		33.0	/* TSMC */
+#define MAX_TRANSISTOR_HEIGHT_7nm		34.285	/* TSMC */
+#define MAX_TRANSISTOR_HEIGHT_5nm		36.0	/* IRDS 2021 */
+#define MAX_TRANSISTOR_HEIGHT_3nm		48.0	/* IRDS 2022 */
+#define MAX_TRANSISTOR_HEIGHT_2nm		57.0	/* IRDS 2022 */
+#define MAX_TRANSISTOR_HEIGHT_1nm		80.0	/* IRDS 2022 */
+#define MIN_GAP_BET_P_AND_N_DIFFS_14nm	9.71	/* P/N fin gap: 3 fin pitches - fin width */
+#define OUTER_HEIGHT_REGION_14nm		10.285	/* cell height - P/N gap - fin region */
+#define MIN_GAP_BET_P_AND_N_DIFFS_10nm	10.0
+#define OUTER_HEIGHT_REGION_10nm		8.2
+#define MIN_GAP_BET_P_AND_N_DIFFS_7nm	11.85
+#define OUTER_HEIGHT_REGION_7nm			12.28
+#define MIN_GAP_BET_P_AND_N_DIFFS_5nm	12.8	/* IRDS 2021 */
+#define OUTER_HEIGHT_REGION_5nm			19.4
+#define MIN_GAP_BET_P_AND_N_DIFFS_3nm	15.0	/* IRDS 2022 */
+#define OUTER_HEIGHT_REGION_3nm			12.666
+#define MIN_GAP_BET_P_AND_N_DIFFS_2nm	20.0	/* IRDS 2022 */
+#define OUTER_HEIGHT_REGION_2nm			22.0
+#define MIN_GAP_BET_P_AND_N_DIFFS_1nm	15.0	/* IRDS 2022 */
+#define OUTER_HEIGHT_REGION_1nm			40.0
+#define POLY_WIDTH_FINFET				1.4
+#define MIN_GAP_BET_GATE_POLY_FINFET	3.9
+#define CPP_14nm	5.571	/* contacted poly pitch, Samsung */
+#define CPP_10nm	6.4		/* TSMC */
+#define CPP_7nm		8.1428	/* TSMC */
+#define CPP_5nm		10.2	/* IRDS 2021 */
+#define CPP_3nm		16.0	/* IRDS 2022 */
+#define CPP_2nm		22.5	/* IRDS 2022 */
+#define CPP_1nm		40.0	/* IRDS 2022 */
+
 #define AVG_RATIO_LEAK_2INPUT_NAND 0.48
 #define AVG_RATIO_LEAK_3INPUT_NAND 0.31
 #define AVG_RATIO_LEAK_2INPUT_NOR  0.95
@@ -76,18 +109,14 @@
 #define W_SENSE_ISO     12.5
 #define W_SENSE_EN      5.0
 #define W_SENSE_MUX     9.0
-//Qing: new S/A numbers
-#define W_SA_TOP        40
-#define W_SA_P          2
-#define W_SA_N          2
-#define W_SA_BOT        20
-//Qing.
 #define VBITSENSEMIN	0.08
 #define IV_CONVERTER_AREA 50000 /*TO-DO: technology and design dependent parameter, 649606 is used in PCRAMSim*/
 
 #define STITCHING_OVERHEAD	7.5
 
 #define DRAM_REFRESH_PERIOD	64e-3
+
+#define READ_DEVICE_ION_THRESHOLD	0.5
 
 #define SHAPER_EFFICIENCY_CONSERVATIVE	0.2
 #define SHAPER_EFFICIENCY_AGGRESSIVE	1.0

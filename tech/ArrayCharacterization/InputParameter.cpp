@@ -99,6 +99,7 @@ InputParameter::InputParameter() {
 	associativity = 1;				/* Default value for non-cache design */
 	routingMode = h_tree;
 	internalSensing = true;
+	differentialWrite = false;
 
 	useCactiAssumption = false;
 
@@ -564,6 +565,16 @@ void InputParameter::ReadInputParameterFromFile(const std::string & inputFile) {
                 internalSensing = (sensing == "true" || sensing == "True" || sensing == "yes" || sensing == "Yes");
             } else {
                 internalSensing = config["InternalSensing"].as<bool>();
+            }
+        }
+
+        if (config["DifferentialWrite"]) {
+            if (config["DifferentialWrite"].IsScalar()) {
+                string diffWrite = config["DifferentialWrite"].as<string>();
+                differentialWrite = (diffWrite == "true" || diffWrite == "True"
+                        || diffWrite == "yes" || diffWrite == "Yes");
+            } else {
+                differentialWrite = config["DifferentialWrite"].as<bool>();
             }
         }
         

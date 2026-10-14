@@ -96,6 +96,7 @@ public:
 	double widthSOIDevice; /* The gate width of SOI device as FBRAM element, Unit: F*/
 	double widthAccessCMOS;	/* The gate width of CMOS access transistor, Unit: F */
 	double widthAccessCMOSR;	/* The gate width of CMOS access transistor, Unit: F */
+	double readDeviceCurrent;	/* 3T read-path current at the sensing bias, 0 = means use ION. Unit: A. */
 	double voltageDropAccessDevice;  /* The voltage drop on the access device, Unit: V */
 	double leakageCurrentAccessDevice;  /* Reverse current of access device, Unit: uA */
 	double capDRAMCell;		/* The DRAM cell capacitance if the memory cell is DRAM, Unit: F */

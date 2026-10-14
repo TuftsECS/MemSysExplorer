@@ -74,6 +74,7 @@ MemCell::MemCell() {
 	widthSOIDevice = 0;
 	widthAccessCMOS   = 0;
 	widthAccessCMOSR   = 0;
+	readDeviceCurrent  = 0;
 	voltageDropAccessDevice = 0;
 	leakageCurrentAccessDevice = 0;
 	capDRAMCell		  = 0;
@@ -323,6 +324,8 @@ void MemCell::ReadCellFromFile(const string & inputFile)
             else
                 widthAccessCMOSR = config["AccessCMOSWidthR_F"].as<double>();
         }
+        if (config["ReadDeviceCurrent_uA"])
+            readDeviceCurrent = config["ReadDeviceCurrent_uA"].as<double>() / 1e6;
         if (config["VoltageDropAccessDevice_V"])
             voltageDropAccessDevice = config["VoltageDropAccessDevice_V"].as<double>();
         if (config["LeakageCurrentAccessDevice_uA"])
