@@ -174,6 +174,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string& inputFile) {
         // Routing
         yamlValueFromNode(routingMode, config, "Routing");
         yamlValueFromNode(internalSensing, config, "InternalSensing");
+        yamlValueFromNode(differentialWrite, config, "DifferentialWrite");
 
         // Operating Conditions
         yamlValueFromNode(temperature, config, "Temperature");

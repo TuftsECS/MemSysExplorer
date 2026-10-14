@@ -86,6 +86,7 @@ public:
 
 	RoutingMode routingMode = h_tree;
 	bool internalSensing = true;
+	bool differentialWrite = false;			/* Model the subarray differential-write buffer (an NVM write-reduction circuit) */
 
 	double maxNmosSize = mse::constant::maxNmosSize.value();
 

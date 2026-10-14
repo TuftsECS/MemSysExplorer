@@ -31,11 +31,12 @@ mse::unit::Farad mse::component::SenseAmp::calculateLoadCapacitance() const noex
     const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
     const Feature pitch = _senseAmpPitch / gTech.featureSize;
 
-    Farad capacitance = NmosTransistor(gTech, finFactor * (senseAmpAltWidthP + senseAmpAltWidthN), pitch).gateCapacitance()
-            + NmosTransistor(gTech, finFactor * senseAmpAltWidthN, pitch).drainCapacitance()
-            + PmosTransistor(gTech, finFactor * senseAmpAltWidthP, pitch).drainCapacitance()
-            + PmosTransistor(gTech, finFactor * senseAmpAltWidthTop, pitch).drainCapacitance()
-            + NmosTransistor(gTech, finFactor * senseAmpAltWidthBottom, pitch).drainCapacitance();
+    // Load as in NeuroSim 1.4, the latch, isolation and mux devices
+    Farad capacitance = NmosTransistor(gTech, finFactor * (senseAmpWidthP + senseAmpWidthN), pitch).gateCapacitance()
+            + NmosTransistor(gTech, finFactor * senseAmpWidthN, pitch).drainCapacitance()
+            + PmosTransistor(gTech, finFactor * senseAmpWidthP, pitch).drainCapacitance()
+            + PmosTransistor(gTech, finFactor * senseAmpWidthIsolation, pitch).drainCapacitance()
+            + NmosTransistor(gTech, finFactor * senseAmpWidthMux, pitch).drainCapacitance();
 
     if (usesMlcModel(_mlc)) {
         if (auto mlcCap = mlcValue(_fingers, {831E-18, 1.092E-15, 1.351E-15, 1.609E-15, 1.868E-15, 2.125E-15, 2.383E-15})) {
@@ -53,23 +54,26 @@ mse::Dimensions mse::component::SenseAmp::calculateDimensions() const noexcept {
     const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
     const Feature pitch = _senseAmpPitch / gTech.featureSize;
 
-    const Dimensions top = PmosTransistor(gTech, finFactor * senseAmpAltWidthTop, pitch).dimensions();
-    const Dimensions p = PmosTransistor(gTech, finFactor * senseAmpAltWidthP, pitch).dimensions();
-    const Dimensions n = NmosTransistor(gTech, finFactor * senseAmpAltWidthN, pitch).dimensions();
-    const Dimensions bottom = NmosTransistor(gTech, finFactor * senseAmpAltWidthBottom, pitch).dimensions();
+    // The devices are laid out sideways along the pitch, so their widths stack up the sense amp height
+    const Dimensions p = PmosTransistor(gTech, finFactor * senseAmpWidthP, pitch).dimensions();
+    const Dimensions isolation = PmosTransistor(gTech, finFactor * senseAmpWidthIsolation, pitch).dimensions();
+    const Dimensions n = NmosTransistor(gTech, finFactor * senseAmpWidthN, pitch).dimensions();
+    const Dimensions enable = NmosTransistor(gTech, finFactor * senseAmpWidthEnable, pitch).dimensions();
 
     Dimensions dimensions;
     if (usesMlcModel(_mlc)) {
         if (auto mlcWidth = mlcValue(_fingers, {2.4E-6, 3.8E-6, 5.2E-6, 6.8E-6, 8.2E-6, 9.6E-6, 11E-6})) {
             dimensions.width = Meter(*mlcWidth);
         } else {
-            dimensions.width = std::max({top.height, p.height, n.height, bottom.height});
+            dimensions.width = std::max({p.height, isolation.height, n.height, enable.height});
         }
         dimensions.height = 1.4E-6_m;
         dimensions.width *= _levels - 1.0;
     } else {
-        dimensions.width = std::max({top.height, p.height, n.height, bottom.height});
-        dimensions.height = top.width + 2 * p.width + 2 * n.width + 2 * bottom.width;
+        dimensions.width = std::max({p.height, isolation.height, n.height, enable.height});
+        dimensions.height = 2 * p.width + isolation.width + 2 * minimumGapBetweenSameDiffusions * gTech.featureSize
+                + 2 * n.width + enable.width + 2 * minimumGapBetweenSameDiffusions * gTech.featureSize
+                + minimumGapBetweenPandNDiffusions * gTech.featureSize;
     }
 
     dimensions.height = dimensions.height * dimensions.width / _senseAmpPitch;

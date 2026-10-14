@@ -4,6 +4,7 @@
 #include "utility.hpp"
 #include "Technology.hpp"
 #include "global.hpp"
+#include "formula.hpp"
 
 #include <cassert>
 
@@ -56,14 +57,32 @@ static mse::unit::Farad computeDrainCapacitance(const Technology& tech, mse::uni
     return junction + channel + sidewall;
 }
 
+// Below 22nm a transistor only conducts through whole fins or nanosheet stacks
+static mse::unit::Meter effectiveWidth(const Technology& tech, mse::unit::Feature gateWidth) {
+    return mse::unit::Meter(CalculateEffectiveWidth((gateWidth * tech.featureSize).value(), tech));
+}
+
 static mse::unit::Farad computeGateCapacitance(const Technology& tech, mse::unit::Feature gateWidth) {
     using namespace mse::unit;
-    return (tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * (gateWidth * tech.featureSize) + tech.phyGateLength * tech.capPolywire;
+    return (tech.capIdealGate + tech.capOverlap + 3.0 * tech.capFringe) * effectiveWidth(tech, gateWidth) + tech.phyGateLength * tech.capPolywire;
 }
 
 static mse::unit::Ohm computeOnResistance(const Technology& tech, const Technology::TemperatureTable& onCurrent, mse::unit::Feature gateWidth, int tempIndex) {
     using namespace mse::unit;
-    return tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * (gateWidth * tech.featureSize));
+    return tech.effectiveResistanceMultiplier * tech.vdd / (onCurrent[tempIndex] * effectiveWidth(tech, gateWidth));
+}
+
+// FinFET and GAA layout from fin tracks and contacted poly pitches, after NeuroSim 1.4
+static mse::Dimensions finfetDimensions(const Technology& tech, GateType type, int inputs, mse::unit::Feature nmosWidth, mse::unit::Feature pmosWidth, mse::unit::Feature regionHeight) {
+    double height = 0;
+    double width = 0;
+    CalculateFinFETGateArea(type, inputs, (nmosWidth * tech.featureSize).value(), (pmosWidth * tech.featureSize).value(),
+            (regionHeight * tech.featureSize).value(), tech, &height, &width);
+
+    return mse::Dimensions{
+        .width = mse::unit::Meter(width),
+        .height = mse::unit::Meter(height)
+    };
 }
 
 //==================================================
@@ -83,6 +102,10 @@ mse::CmosTransistor::CmosTransistor(const Technology& tech, unit::Feature gateWi
 mse::Dimensions mse::CmosTransistor::dimensions() const noexcept {
     using namespace mse::unit;
 
+    if (!IsPlanar(*_tech)) {
+        return finfetDimensions(*_tech, ::GateType::INV, 1, _gateWidth, Feature(), _regionHeight);
+    }
+
     const int fingersAfterFolding = calculateFolding(_gateWidth, _regionHeight);
     const Feature foldedFingerTotalWidth = fingersAfterFolding * polyWidth + (fingersAfterFolding - 1) * diffusionRegionWidth;
 
@@ -94,6 +117,10 @@ mse::Dimensions mse::CmosTransistor::dimensions() const noexcept {
 
 mse::unit::Farad mse::CmosTransistor::drainCapacitance() const noexcept {
     using namespace mse::unit;
+
+    if (!IsPlanar(*_tech)) {
+        return effectiveWidth(*_tech, _gateWidth) * _tech->capDrainTotal;
+    }
 
     const int fingersAfterFolding = calculateFolding(_gateWidth, _regionHeight);
 
@@ -112,7 +139,7 @@ mse::unit::Farad mse::CmosTransistor::gateCapacitance() const noexcept {
 mse::unit::Ampere mse::CmosTransistor::leakageCurrent() const noexcept {
     using namespace mse::unit;
 
-    return _gateWidth * _tech->featureSize * (*_offCurrent)[_tempIndex];
+    return effectiveWidth(*_tech, _gateWidth) * (*_offCurrent)[_tempIndex];
 }
 
 mse::unit::Ohm mse::CmosTransistor::channelResistance() const noexcept {
@@ -131,12 +158,7 @@ mse::unit::Siemens mse::CmosTransistor::transconductance() const noexcept {
         return (_mobility * tech.capOx) / 2 * width / tech.phyGateLength * vsat;
     }
 
-    if (tech.featureSizeInNano <= 14 && tech.featureSizeInNano >= 3) {
-        // TODO the fin count times (2 * fin height + fin width) / fin pitch has no unit, so this is not in siemens like the other nodes
-        return Siemens(tech.onCurrentTransconductance.value() * static_cast<int>(std::ceil(_gateWidth.value() / 2.0)) * (2.0 * tech.heightFin + tech.widthFin).value() / tech.finPitch.value());
-    }
-
-    return tech.onCurrentTransconductance * static_cast<int>(std::ceil(_gateWidth.value() / 2.0)) * tech.effectiveWidth * tech.maximumSheetCount / tech.maximumFinsPerGAA;
+    return tech.onCurrentTransconductance * effectiveWidth(tech, _gateWidth);
 }
 
 mse::NmosTransistor::NmosTransistor(const Technology& tech, unit::Feature gateWidth, unit::Feature transistorRegionHeight)
@@ -157,6 +179,7 @@ mse::CmosGate<Gate, Inputs>::CmosGate(const Technology& tech, int inputs, unit::
           _inputs(inputs),
           _unitNmosWidth(unitNmosGateWidth),
           _unitPmosWidth(unitPmosGateWidth),
+          _regionHeight(gateRegionHeight),
           _tempIndex(temperatureIndex()) {
     using namespace mse::unit;
 
@@ -189,9 +212,22 @@ typename mse::CmosGate<Gate, Inputs>::Layout mse::CmosGate<Gate, Inputs>::layout
     };
 }
 
+// The layout gate type for a gate type
+static constexpr ::GateType layoutGateType(mse::GateType gate) {
+    switch (gate) {
+        case mse::GateType::Nand: return ::GateType::NAND;
+        case mse::GateType::Nor: return ::GateType::NOR;
+        default: return ::GateType::INV;
+    }
+}
+
 template <mse::GateType Gate, int Inputs>
 mse::Dimensions mse::CmosGate<Gate, Inputs>::dimensions() const noexcept {
     using namespace mse::unit;
+
+    if (!IsPlanar(*_tech)) {
+        return finfetDimensions(*_tech, layoutGateType(Gate), _inputs, _nmosWidth, _pmosWidth, _regionHeight);
+    }
 
     const Layout gate = layout();
 
@@ -212,6 +248,18 @@ mse::Dimensions mse::CmosGate<Gate, Inputs>::dimensions() const noexcept {
 template <mse::GateType Gate, int Inputs>
 mse::unit::Farad mse::CmosGate<Gate, Inputs>::drainCapacitance() const noexcept {
     using namespace mse::unit;
+
+    if (!IsPlanar(*_tech)) {
+        const Farad nmosDrain = effectiveWidth(*_tech, _nmosWidth) * _tech->capDrainTotal;
+        const Farad pmosDrain = effectiveWidth(*_tech, _pmosWidth) * _tech->capDrainTotal;
+        if constexpr (Gate == GateType::Inverter) {
+            return nmosDrain + pmosDrain;
+        } else if constexpr (Gate == GateType::Nor) {
+            return nmosDrain * _inputs + pmosDrain;
+        } else {
+            return nmosDrain + pmosDrain * _inputs;
+        }
+    }
 
     const Layout gate = layout();
 
@@ -265,14 +313,14 @@ mse::unit::Ampere mse::CmosGate<Gate, Inputs>::leakageCurrent() const noexcept {
     const Technology& tech = *_tech;
 
     if constexpr (Gate == GateType::Inverter) {
-        return std::max(_unitNmosWidth * tech.featureSize * tech.currentOffNmos[_tempIndex], _unitPmosWidth * tech.featureSize * tech.currentOffPmos[_tempIndex]);
+        return std::max(effectiveWidth(tech, _unitNmosWidth) * tech.currentOffNmos[_tempIndex], effectiveWidth(tech, _unitPmosWidth) * tech.currentOffPmos[_tempIndex]);
     } else if constexpr (Gate == GateType::Nand) {
-        Ampere leakageCurrent = _unitPmosWidth * tech.featureSize * tech.currentOffPmos[_tempIndex] * _inputs;
+        Ampere leakageCurrent = effectiveWidth(tech, _unitPmosWidth) * tech.currentOffPmos[_tempIndex] * _inputs;
         leakageCurrent *= _inputs == 2 ? constant::averageLeakRatioNand2 : constant::averageLeakRatioNand3;
 
         return leakageCurrent;
     } else {
-        Ampere leakageCurrent = _unitNmosWidth * tech.featureSize * tech.currentOffNmos[_tempIndex] * _inputs;
+        Ampere leakageCurrent = effectiveWidth(tech, _unitNmosWidth) * tech.currentOffNmos[_tempIndex] * _inputs;
         leakageCurrent *= _inputs == 2 ? constant::averageLeakRatioNor2 : constant::averageLeakRatioNor3;
 
         return leakageCurrent;

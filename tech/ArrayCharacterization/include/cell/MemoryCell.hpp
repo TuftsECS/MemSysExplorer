@@ -16,6 +16,7 @@
 #include <array>
 #include <cmath>
 #include <functional>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -74,6 +75,7 @@ struct MemoryCellProperties { // TODO expand properties
 
     bool isMLC = false;
     bool columnLeak = false;
+    std::optional<unit::Volt> leakageVoltage; // Supply the cells leak from, the peripheral vdd if empty
 };
 
 //==================================================
@@ -212,6 +214,9 @@ struct MemoryCellLatencyContext {
     unit::Second bitlineMuxReadLatency;
     unit::Second rowDecoderReadLatency;
     unit::Second rowDecoderWriteLatency;
+    unit::SecondExp<-1> readRowDecoderRampOutput; // Cells with a separate read wordline
+    unit::Second readDecoderLatency;
+    unit::Second writeDriverLatency;
     unit::Second columnDecoderLatency;
     unit::Second chargeLatency;
     unit::Second senseAmpReadLatency;

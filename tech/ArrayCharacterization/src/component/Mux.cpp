@@ -1,6 +1,7 @@
 #include "component/Mux.hpp"
 #include "cmosDevice.hpp"
 #include "global.hpp"
+#include "formula.hpp"
 
 mse::unit::Meter mse::component::Mux::calculatePassTransistorWidth() const noexcept {
     using namespace mse::unit;
@@ -11,7 +12,7 @@ mse::unit::Meter mse::component::Mux::calculatePassTransistorWidth() const noexc
 
     const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
     const Meter minWidth = 6 * constant::minNmosSize * gTech.featureSize;
-    const Meter minDriverWidth = _minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300];
+    const Meter minDriverWidth(CalculateLayoutWidth((_minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300]).value(), gTech));
 
     const bool resistiveCell = gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor
             || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM;

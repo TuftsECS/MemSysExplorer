@@ -3,6 +3,8 @@
 
 #include "unit.hpp"
 
+#include <array>
+
 namespace mse::constant {
 
 // TODO replace with log interface
@@ -33,6 +35,32 @@ inline constexpr Feature maxNmosSize{100};
 inline constexpr Feature minNmosSize{1.5};
 inline constexpr Feature maxTransistorHeight{20};
 
+// FinFET and GAA layout rules from NeuroSim 1.4
+inline constexpr Feature maxTransistorHeightFinfet{34};
+inline constexpr Feature polyWidthFinfet{1.4};
+inline constexpr Feature minimumGapBetweenGatePolyFinfet{3.9};
+
+struct FinfetLayoutRules {
+    int featureSizeInNano;
+    Feature cellHeight; // Standard cell height
+    Feature contactedPolyPitch;
+    Feature gapBetweenPandNDiffusions; // Gap between the P and N fins
+    Feature outerRegionHeight; // Cell height left after the P and N gap and the fin region
+};
+
+inline constexpr std::array<FinfetLayoutRules, 7> finfetLayoutRules = {{
+    {14, Feature(41.142), Feature(5.571), Feature(9.71), Feature(10.285)}, // Samsung, the gap is 3 fin pitches less a fin width
+    {10, Feature(33.0), Feature(6.4), Feature(10.0), Feature(8.2)}, // TSMC
+    {7, Feature(34.285), Feature(8.1428), Feature(11.85), Feature(12.28)}, // TSMC
+    {5, Feature(36.0), Feature(10.2), Feature(12.8), Feature(19.4)}, // IRDS 2021
+    {3, Feature(48.0), Feature(16.0), Feature(15.0), Feature(12.666)}, // IRDS 2022
+    {2, Feature(57.0), Feature(22.5), Feature(20.0), Feature(22.0)}, // IRDS 2022
+    {1, Feature(80.0), Feature(40.0), Feature(15.0), Feature(40.0)} // IRDS 2022
+}};
+
+// The 3T read device's gate is the storage node, so it never sees the on current's Vgs = vdd
+inline constexpr double readDeviceOnCurrentRatio = 0.5;
+
 inline constexpr double optimalStageEffort = 4;
 inline constexpr double areaOptimizationConstraint = 1;
 
@@ -42,10 +70,6 @@ inline constexpr Feature senseAmpWidthIsolation{12.5};
 inline constexpr Feature senseAmpWidthEnable{5};
 inline constexpr Feature senseAmpWidthMux{9};
 
-inline constexpr Feature senseAmpAltWidthTop{40};
-inline constexpr Feature senseAmpAltWidthP{2};
-inline constexpr Feature senseAmpAltWidthN{2};
-inline constexpr Feature senseAmpAltWidthBottom{20};
 
 inline constexpr Volt minBitlineSenseVoltage{0.08};
 inline constexpr FeatureExp<2> ivConverterArea{50000};

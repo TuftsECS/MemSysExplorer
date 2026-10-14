@@ -113,6 +113,7 @@ private:
     unit::Feature _pmosWidth;
     unit::Feature _nmosMaxWidth;
     unit::Feature _pmosMaxWidth;
+    unit::Feature _regionHeight;
     unit::Number _logicalEffort;
     int _tempIndex = 0;
 

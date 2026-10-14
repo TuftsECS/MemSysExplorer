@@ -43,6 +43,7 @@ public:
         prechargeVoltage = gTech.vdd * 0.5;
 
         sharedContact = true;
+        columnLeak = true;
     }
 
     bool isValid() {
@@ -157,7 +158,7 @@ public:
         Energy energy;
 
         energy.readDynamic = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * context.senseVoltage * gTech.vdd * context.numColumn;
-        Volt writeVoltage = gTech.vpp; // should also equal to setVoltage, for DRAM it is Vdd
+        Volt writeVoltage = gTech.vdd; // The bitline swings to vdd, vpp only boosts the wordline
         energy.writeDynamic = (context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * writeVoltage * writeVoltage * context.numColumn;
         energy.refreshDynamic = energy.readDynamic + energy.writeDynamic;
 

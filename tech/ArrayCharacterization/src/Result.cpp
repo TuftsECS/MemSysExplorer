@@ -205,8 +205,10 @@ void Result::print() {
 			/ bank->matColumns / bank->subarrayRows / bank->subarrayColumns
 			/ subarray.dimensions().area().value() * 100 << "%)\n";
 	//Qing: subarray buffer area
-	std::cout << " |--- Subarray Buffer Area = " << subarray.buffer.dimensions().height << " x "
-			<< subarray.buffer.dimensions().width << " = " << subarray.buffer.dimensions().area() << "\n";
+	if (subarray.buffer) {
+		std::cout << " |--- Subarray Buffer Area = " << subarray.buffer->dimensions().height << " x "
+				<< subarray.buffer->dimensions().width << " = " << subarray.buffer->dimensions().area() << "\n";
+	}
 	//Qing.
 	std::cout << " - Area Efficiency = " << gCell.area * gTech.featureSize.value() * gTech.featureSize.value()
 			* bank->capacity / bank->dimensions().area().value() * 100 << "%\n";
@@ -221,7 +223,8 @@ void Result::print() {
 	std::cout << " |--- Mat Latency    = " << bank->mat.timing().readLatency << "\n";
 	std::cout << "    |--- Predecoder Latency = " << bank->mat.timing().predecoderLatency << "\n";
 	std::cout << "    |--- Subarray Latency   = " << subarray.timing().readLatency << "\n";
-	std::cout << "       |--- Row Decoder Latency = " << subarray.rowDecoder.timing().readLatency << "\n";
+	std::cout << "       |--- Row Decoder Latency = " << (subarray.readRowDecoder ? subarray.readRowDecoder->timing().readLatency
+			: subarray.rowDecoder.timing().readLatency) << "\n";
 	if (gCell.memCellType != eDRAM3T333 && gCell.memCellType != eDRAM3T)
 		std::cout << "       |--- Bitline Latency     = " << subarray.timing().bitlineLatency << "\n";
 	else
@@ -290,8 +293,10 @@ void Result::print() {
 		}
 
 	//Qing: subarray buffer latency
-	std::cout << "- Subarray Buf R/W Latency  = " << subarray.buffer.timing().readLatency << "\n";
-	std::cout << "- Subarray Buf XOR Latency  = " << subarray.buffer.timing().xorLatency << "\n";
+	if (subarray.buffer) {
+		std::cout << "- Subarray Buf R/W Latency  = " << subarray.buffer->timing().readLatency << "\n";
+		std::cout << "- Subarray Buf XOR Latency  = " << subarray.buffer->timing().xorLatency << "\n";
+	}
 	//Qing.
 	Unit<BytesAtom<>, SecondAtom<-1>> readBandwidth((double)bank->blockSize /
 			(subarray.timing().readLatency.value() - subarray.rowDecoder.timing().readLatency.value()
@@ -452,8 +457,10 @@ void Result::print() {
 	}
 
 	//Qing: subarray buffer energy
-	std::cout << "- Subarray Buf R/W Energy = " << subarray.buffer.power().dynamicReadEnergy << "\n";
-	std::cout << "- Subarray Buf XOR Energy = " << subarray.buffer.power().xorDynamicEnergy << "\n";
+	if (subarray.buffer) {
+		std::cout << "- Subarray Buf R/W Energy = " << subarray.buffer->power().dynamicReadEnergy << "\n";
+		std::cout << "- Subarray Buf XOR Energy = " << subarray.buffer->power().xorDynamicEnergy << "\n";
+	}
 	//Qing.
 
 	std::cout << " - Leakage Power = " << bank->power().leakage << "\n";
@@ -469,6 +476,7 @@ void Result::print() {
 	if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
 		// David Note: refresh period could be shorter than retention time 
         std::cout << " - Refresh Power = " << Watt(bank->power().refreshDynamicEnergy.value() / (gCell.retentionTime)) << "\n";
+        std::cout << " - Retention Time = " << Second(gCell.retentionTime) << "\n";
     }
 }
 
@@ -938,6 +946,7 @@ YAML::Node Result::toYamlNode() {
         gCell.memCellType == eDRAM3T333) {
         result["Results"]["Power"]["RefreshPower_W"] = 
             (bank->power().refreshDynamicEnergy.value() / gCell.retentionTime);
+        result["Results"]["Power"]["RetentionTime_us"] = gCell.retentionTime * 1e6;
     }
 
     return result;

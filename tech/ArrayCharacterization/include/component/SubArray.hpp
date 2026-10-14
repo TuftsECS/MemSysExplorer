@@ -44,6 +44,7 @@ struct SubArrayPower : BasicPower {
 
 struct SubArrayRC {
     unit::Farad wordlineCapacitance;
+    unit::Farad readWordlineCapacitance; // Cells with a separate read wordline, which has its own row decoder
     unit::Ohm wordlineResistance;
     unit::Farad bitlineCapacitance;
     unit::Ohm bitlineResistance;
@@ -79,15 +80,17 @@ public:
     long long columns = 0;
 
     RowDecoder rowDecoder;
+    std::optional<RowDecoder> readRowDecoder; // Cells with a separate read wordline
     RowDecoder bitlineMuxDecoder;
     RowDecoder senseAmpMuxLevel1Decoder;
     RowDecoder senseAmpMuxLevel2Decoder;
     std::optional<SenseAmp> senseAmp;
     Precharger precharger;
+    Precharger writeDriver; // Write bitline drivers, modelled as a precharger (as in NS-Cache)
     Mux bitlineMux;
     Mux senseAmpMuxLevel1;
     Mux senseAmpMuxLevel2;
-    Buffer buffer;
+    std::optional<Buffer> buffer; // Differential write buffer, an NVM write-reduction circuit
 
     static inline cell::MemoryCellVariant cell;
 

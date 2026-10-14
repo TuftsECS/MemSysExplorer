@@ -77,6 +77,22 @@ system:
   OptimizationTarget: WriteEDP
 ```
 
+**Sweeping multiple optimization targets:** `OptimizationTarget` can also be provided as a list. NVSim will be invoked once per tech config × capacity × optimization target combination and all results will land in the same output CSV.
+
+```yaml
+system:
+  DesignTarget: cache
+  Capacity:
+    Value: 128
+    Unit: KB
+  WordWidth: 128
+  OptimizationTarget:
+    - WriteEDP
+    - ReadLatency
+```
+
+When using `run: existing` for the tech stage, the pipeline validates that each result file's stored optimization target is a member of the list you provide — not an exact match against the full list. A single result file covering one target is valid as long as that target appears somewhere in your `OptimizationTarget` list.
+
 ---
 
 ### `apps`

@@ -17,18 +17,17 @@ struct Edram3t333Parameters final : MemoryCellParameters {
     ScalarParameter<unit::Feature> accessWidth{"Access.Width", "", unit::Feature(0)}; // Write access transistor
     ScalarParameter<unit::Feature> readAccessWidth{"Access.ReadWidth", "", unit::Feature(0)};
     ScalarParameter<unit::Farad> internalCapacitance{"Storage.Capacitance", "", unit::Farad(0)};
+    ScalarParameter<unit::Ampere> readCurrent{"Access.ReadCurrent", "", unit::Ampere(0)}; // Read device current at the sensing bias, zero uses its on current
 
-    unit::Feature accessNmosGateWidth;
     unit::Feature accessNmosGateWidthR;
     unit::Feature accessNmosGateWidthW;
     unit::Feature transistorRegionHeight;
 
     Edram3t333Parameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech), techR(gTechR), techW(gTechW) {
-        fillParameter(accessWidth, readAccessWidth, internalCapacitance);
+        fillParameter(accessWidth, readAccessWidth, internalCapacitance, readCurrent);
 
         using namespace mse::unit;
 
-        accessNmosGateWidth = ((gTech.featureSizeInNano <= 14) ? 2.0 : 1.0) * accessWidth.value();
         accessNmosGateWidthR = ((gTechR.featureSizeInNano <= 14) ? 2.0 : 1.0) * readAccessWidth.value();
         accessNmosGateWidthW = ((gTechW.featureSizeInNano <= 14) ? 2.0 : 1.0) * accessWidth.value();
 
@@ -37,7 +36,7 @@ struct Edram3t333Parameters final : MemoryCellParameters {
 };
 
 struct Edram3t333Properties final : MemoryCellProperties {
-    Edram3t333Properties(const Edram3t333Parameters&) {
+    Edram3t333Properties(const Edram3t333Parameters& parameters) {
         using namespace mse::unit;
 
         sensingMethod = SenseMethod::Voltage;
@@ -47,14 +46,17 @@ struct Edram3t333Properties final : MemoryCellProperties {
         prechargeVoltage = gTech.vdd;
 
         sharedContact = false;
+        columnLeak = true;
+        // Only the write device holds off the storage node
+        leakageVoltage = parameters.techW.get().vdd;
     }
 };
 
 struct Edram3t333Topology final : MemoryCellTopology {
-    NmosTransistor accessTransistor;
     NmosTransistor accessTransistorR;
     NmosTransistor accessTransistorW;
     unit::Farad internalCapacitance;
+    unit::Ohm readResistance;
 
     CellLineAdapter<CmosTransistor> accessTransistorAdapterR{accessTransistorR};
     CellLineAdapter<CmosTransistor> accessTransistorAdapterW{accessTransistorW};
@@ -84,21 +86,27 @@ struct Edram3t333Topology final : MemoryCellTopology {
     unit::Ohm bitlinePullDownResistance(int bitline, [[maybe_unused]] int path = 0) const noexcept {
         using namespace mse::unit;
         switch (bitline) {
-            case 0: return accessTransistorR.channelResistance();
+            case 0: return readResistance;
             case 1: return accessTransistorW.channelResistance();
             default: return 0.0_Ohm;
         }
     }
 
     unit::Ampere leakageCurrent() const noexcept override {
-        return accessTransistor.leakageCurrent();
+        return accessTransistorW.leakageCurrent();
     }
 
     Edram3t333Topology(const Edram3t333Parameters& parameters)
-            : accessTransistor(parameters.tech, parameters.accessNmosGateWidth, parameters.transistorRegionHeight),
-              accessTransistorR(parameters.techR, parameters.accessNmosGateWidthR, parameters.transistorRegionHeight),
+            : accessTransistorR(parameters.techR, parameters.accessNmosGateWidthR, parameters.transistorRegionHeight),
               accessTransistorW(parameters.techW, parameters.accessNmosGateWidthW, parameters.transistorRegionHeight),
-              internalCapacitance(parameters.internalCapacitance) {}
+              internalCapacitance(parameters.internalCapacitance) {
+        const Technology& techR = parameters.techR;
+        if (parameters.readCurrent.value() > unit::Ampere(0)) {
+            readResistance = techR.effectiveResistanceMultiplier * techR.vdd / parameters.readCurrent.value();
+        } else {
+            readResistance = accessTransistorR.channelResistance() / constant::readDeviceOnCurrentRatio;
+        }
+    }
 };
 
 struct Edram3t333Cell : MemoryCell {
@@ -134,10 +142,14 @@ struct Edram3t333Cell : MemoryCell {
         using namespace mse::unit;
 
         Farad readCapacitance = _topology.bitlineCapacitance(0) + _topology.storageCapacitance() + context.bitlineCapacitance + context.bitlineMuxCapacitance;
-        Farad writeCapacitance = _topology.bitlineCapacitance(1) + _topology.storageCapacitance() + context.bitlineCapacitance + context.bitlineMuxCapacitance;;
         Second tauRead = 2.3 * (_topology.bitlinePullDownResistance(0) * readCapacitance + context.bitlineResistance * (context.bitlineMuxCapacitance + context.bitlineCapacitance / 2.0));
-        Second tauWrite = 2.3 * (_topology.bitlinePullDownResistance(1) * writeCapacitance + context.bitlineResistance * (context.bitlineMuxCapacitance + context.bitlineCapacitance / 2.0));
-        Second bitlineDelayR = physics::horowitz(tauRead, 0.0, context.rowDecoderRampOutput).delay;
+        // The write driver sets the write bitline while the write wordline is decoded,
+        // then the write device only charges the storage node, the read device's gate and its own drain
+        Farad storageNodeCapacitance = _topology.storageCapacitance() + _topology.bitlineCapacitance(1) + _topology.accessTransistorR.gateCapacitance();
+        Second tauWrite = 2.3 * _topology.bitlinePullDownResistance(1) * storageNodeCapacitance;
+        // The sense amp fires once the read bitline moves by the sense voltage, not after a full swing
+        Volt precharge = _properties.prechargeVoltage;
+        Second bitlineDelayR = tauRead / 2.3 * std::log((precharge / (precharge - context.senseVoltage)).value());
         Second bitlineDelayW = physics::horowitz(tauWrite, 0.0, context.rowDecoderRampOutput).delay;
 
         Latency latency;
@@ -146,8 +158,9 @@ struct Edram3t333Cell : MemoryCell {
         latency.bitlineW = bitlineDelayW;
         latency.read = bitlineDelayR;
         Second decoderLatency = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency);
-        latency.write = bitlineDelayW + decoderLatency;
-        latency.refresh = (decoderLatency + bitlineDelayW + context.senseAmpReadLatency) * context.numRow;
+        latency.write = std::max(decoderLatency, context.writeDriverLatency) + bitlineDelayW;
+        latency.refresh = (context.readDecoderLatency + bitlineDelayR + context.senseAmpReadLatency + context.writeDriverLatency + bitlineDelayW)
+                * context.numRow;
 
         return latency;
     }
@@ -158,7 +171,7 @@ struct Edram3t333Cell : MemoryCell {
         Energy energy;
 
         energy.readDynamic = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * context.senseVoltage * _parameters.techR.get().vdd * context.numColumn;
-        Volt writeVoltage = _parameters.techW.get().vpp; // should also equal to setVoltage, for DRAM, it is Vdd
+        Volt writeVoltage = _parameters.tech.get().vdd; // The bitline swings to vdd, vpp only boosts the wordline
         energy.writeDynamic = (context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * writeVoltage * writeVoltage * context.numColumn;
         energy.refreshDynamic = energy.readDynamic + energy.writeDynamic;
 

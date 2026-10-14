@@ -1,6 +1,7 @@
 #include "component/OutputDriver.hpp"
 #include "cmosDevice.hpp"
 #include "global.hpp"
+#include "formula.hpp"
 
 #include <cmath>
 
@@ -20,7 +21,7 @@ mse::component::OutputDriverChain mse::component::OutputDriver::calculateChain()
         return std::max(0, static_cast<int>(std::log(totalEffort) / std::log(constant::optimalStageEffort) + 0.5) - 1);
     };
 
-    const Meter minDriverWidth = std::max(minWidth, _minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300]);
+    const Meter minDriverWidth = std::max(minWidth, Meter(CalculateLayoutWidth((_minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300]).value(), gTech)));
 
     if (minDriverWidth > maxWidth) {
         return chain;

@@ -51,6 +51,7 @@
 #include <bit>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <sstream>
 #include <iomanip>
 #include <math.h>
@@ -291,7 +292,7 @@ int main(int argc, char* argv[])
 			temp << "_CUR";
 		temp << ".yaml";
 		outputFileName = temp.str();
-		outputFile.open(outputFileName.c_str(), std::ofstream::app);
+		outputFile.open(outputFileName.c_str(), std::ofstream::trunc);
 	}
 
 	gCell.PrintCell();
@@ -432,7 +433,7 @@ int main(int argc, char* argv[])
 			std::cout << "No valid solutions for tags." << std::endl;
 			std::cout << std::endl << "Finished!" << std::endl;
 			outputFile.close();
-			return 0;
+			return 1;
 		} else {
 			numSolution = 0;
 			RESTORE_SEARCH_SIZE;
@@ -550,9 +551,6 @@ int main(int argc, char* argv[])
 				LOAD_GLOBAL_WIRE(bestDataResults[i]);
 				TRY_AND_UPDATE(bestDataResults[i], dataT);
 			}
-			if (gInputParameter.optimizationTarget == full_exploration && !gInputParameter.isPruningEnabled) {
-				OUTPUT_TO_FILE;
-			}
 		}
 		/* refine global wire type */
 		REFINE_GLOBAL_WIRE_FORLOOP {
@@ -562,9 +560,6 @@ int main(int argc, char* argv[])
 			for (int i = 0; i < (int)full_exploration; i++) {
 				LOAD_LOCAL_WIRE(bestDataResults[i]);
 				TRY_AND_UPDATE(bestDataResults[i], dataT);
-			}
-			if (gInputParameter.optimizationTarget == full_exploration && !gInputParameter.isPruningEnabled) {
-				OUTPUT_TO_FILE;
 			}
 		}
 	}
@@ -694,6 +689,8 @@ int main(int argc, char* argv[])
 			temp << outputDirectory << gInputParameter.outputFilePrefix << ".yaml";
 			std::string yamlFileName = temp.str();
 			std::ofstream yamlFile;
+			std::error_code directoryError;
+			std::filesystem::create_directory(outputDirectory, directoryError);	/* create the output directory if it is missing */
 			yamlFile.open(yamlFileName.c_str());
 			if (yamlFile.is_open()) {
 				if (gInputParameter.designTarget == cache)
@@ -705,6 +702,9 @@ int main(int argc, char* argv[])
 					bestDataResults[gInputParameter.optimizationTarget].printToYamlFile(yamlFile);
 				yamlFile.close();
 				std::cout << "Results written to " << yamlFileName << std::endl;
+			} else {
+				std::cout << "Error: cannot write " << yamlFileName << " (does the output directory exist?)" << std::endl;
+				numSolution = 0;
 			}
 		} else {
 			std::cout << "No valid solutions." << std::endl;
@@ -725,7 +725,7 @@ int main(int argc, char* argv[])
 	if (outputFile.is_open())
 		outputFile.close();
 
-	return 0;
+	return (numSolution > 0) ? 0 : 1;
 }
 
 void applyConstraint() {

@@ -53,8 +53,23 @@ enum class CmosType {
     PMOS
 };
 
+/* planar transistors are at 22nm and above, FinFET and GAA ones below */
+bool IsPlanar(const Technology& tech);
+
+/* the effective width of a transistor drawn width wide, counted in whole fins or nanosheet stacks below 22nm */
+double CalculateEffectiveWidth(double width, const Technology& tech);
+
+/* the drawn width that gives an effective width of widthEff */
+double CalculateLayoutWidth(double widthEff, const Technology& tech);
+
 /* calculate the gate capacitance */
 double CalculateGateCap(double width, Technology tech);
+
+double CalculateFinFETGateArea(
+		GateType type, int numInput,
+		double widthNMOS, double widthPMOS,
+		double heightTransistorRegion, const Technology& tech,
+		double* height, double* width);
 
 double CalculateGateArea(
 		GateType type, int numInput,

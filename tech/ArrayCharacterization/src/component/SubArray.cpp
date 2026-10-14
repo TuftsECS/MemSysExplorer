@@ -17,6 +17,9 @@ mse::component::SubArray::SubArray(long long rows, long long columns, bool multi
 
 void mse::component::SubArray::forEachSubcomponent(const SubcomponentVisitor& visit) noexcept {
     visit(rowDecoder);
+    if (readRowDecoder) {
+        visit(*readRowDecoder);
+    }
     visit(bitlineMuxDecoder);
     visit(senseAmpMuxLevel1Decoder);
     visit(senseAmpMuxLevel2Decoder);
@@ -24,10 +27,13 @@ void mse::component::SubArray::forEachSubcomponent(const SubcomponentVisitor& vi
         visit(*senseAmp);
     }
     visit(precharger);
+    visit(writeDriver);
     visit(bitlineMux);
     visit(senseAmpMuxLevel1);
     visit(senseAmpMuxLevel2);
-    visit(buffer);
+    if (buffer) {
+        visit(*buffer);
+    }
 }
 
 bool mse::component::SubArray::setup() noexcept {
@@ -39,6 +45,8 @@ bool mse::component::SubArray::setup() noexcept {
             || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333;
     const bool resistiveCell = gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor
             || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM;
+    // 3T cells read through their own wordline, which has its own row decoder
+    const bool separateReadWordline = gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333;
 
     // Each column holds part of the data in all the ways
     if (gInputParameter.designTarget == cache && gInputParameter.cacheAccessMode != sequential_access_mode
@@ -94,7 +102,7 @@ bool mse::component::SubArray::setup() noexcept {
                         * (columns - selectedColumns);
             }
 
-            const Meter minWordlineDriverWidth = maxWordlineCurrent / gTech.currentOnNmos[temperatureIndex];
+            const Meter minWordlineDriverWidth(CalculateLayoutWidth((maxWordlineCurrent / gTech.currentOnNmos[temperatureIndex]).value(), gTech));
             if (minWordlineDriverWidth > Feature(gInputParameter.maxNmosSize) * gTech.featureSize) {
                 return false;
             }
@@ -109,7 +117,7 @@ bool mse::component::SubArray::setup() noexcept {
     }
 
     const Meter minBitlineMuxWidth = std::max(constant::minNmosSize * gTech.featureSize,
-            _maxBitlineCurrent / gTech.currentOnNmos[temperatureIndex]);
+            Meter(CalculateLayoutWidth((_maxBitlineCurrent / gTech.currentOnNmos[temperatureIndex]).value(), gTech)));
     if (minBitlineMuxWidth > Feature(gInputParameter.maxNmosSize) * gTech.featureSize) {
         return false;
     }
@@ -178,7 +186,13 @@ bool mse::component::SubArray::setup() noexcept {
             cellBitlineCapacitance = std::max(cellBitlineCapacitance, topology.bitlineCapacitance(bitline));
         }
 
-        _rc.wordlineCapacitance += cellWordlineCapacitance * columns;
+        if (separateReadWordline) {
+            // Wordline 0 reads and wordline 1 writes
+            _rc.readWordlineCapacitance = _rc.wordlineCapacitance + topology.wordlineCapacitance(0) * columns;
+            _rc.wordlineCapacitance += topology.wordlineCapacitance(1) * columns;
+        } else {
+            _rc.wordlineCapacitance += cellWordlineCapacitance * columns;
+        }
         _rc.bitlineCapacitance += cellBitlineCapacitance * rows * (properties.sharedContact ? 0.5 : 1.0);
         _rc.prechargeVoltage = properties.prechargeVoltage;
 
@@ -205,7 +219,19 @@ bool mse::component::SubArray::setup() noexcept {
         return false;
     }
 
+    // One write driver per column for a 3T row write, since the write wordline opens the whole row,
+    // otherwise one per sense amp group, driving through the bitline mux
+    const long long writeDrivers = separateReadWordline ? columns : columns / _bitlineMuxInputs;
+    if (!build("Write Driver", writeDriver, gTech.vdd, writeDrivers, _rc.bitlineCapacitance, _rc.bitlineResistance)) {
+        return false;
+    }
+
     if (!build("Row", rowDecoder, rows, _rc.wordlineCapacitance, _rc.wordlineResistance, _multipleRowsPerSet, _areaOptimizationLevel, maxWordlineCurrent)) {
+        return false;
+    }
+
+    if (separateReadWordline && !build("Read Row", readRowDecoder, rows, _rc.readWordlineCapacitance, _rc.wordlineResistance, _multipleRowsPerSet,
+            _areaOptimizationLevel, maxWordlineCurrent)) {
         return false;
     }
 
@@ -255,7 +281,11 @@ bool mse::component::SubArray::setup() noexcept {
     }
 
     // Control signals are not buffered for now
-    return build(buffer, 1, columns);
+    if (gInputParameter.differentialWrite) {
+        return build(buffer, 1, columns);
+    }
+
+    return true;
 }
 
 void mse::component::SubArray::reset() noexcept {
@@ -279,6 +309,8 @@ mse::Dimensions mse::component::SubArray::calculateDimensions() const noexcept {
         // Allow white space
         addedWidth = rowDecoderDimensions.width;
     }
+    // Height of the decoder strip, a folded decoder spanning the array
+    Meter decoderHeight = std::min(rowDecoderDimensions.height, height);
 
     const Dimensions& prechargerDimensions = precharger.dimensions();
     if (prechargerDimensions.width > width) {
@@ -287,6 +319,32 @@ mse::Dimensions mse::component::SubArray::calculateDimensions() const noexcept {
     } else {
         // Allow white space
         addedHeight = prechargerDimensions.height;
+    }
+
+    const Dimensions& writeDriverDimensions = writeDriver.dimensions();
+    Meter writeDriverHeight;
+    if (writeDriverDimensions.width > width) {
+        // Assume magic folding
+        writeDriverHeight = writeDriverDimensions.area() / writeDriverDimensions.width;
+    } else {
+        // Allow white space
+        writeDriverHeight = writeDriverDimensions.height;
+    }
+    // 333-eDRAM puts its write drivers under the array, see below
+    if (gCell.memCellType != eDRAM3T333) {
+        addedHeight += writeDriverHeight;
+    }
+
+    if (readRowDecoder) {
+        const Dimensions& readRowDecoderDimensions = readRowDecoder->dimensions();
+        if (readRowDecoderDimensions.height > height) {
+            // Assume magic folding
+            addedWidth += readRowDecoderDimensions.area() / height;
+        } else {
+            // Allow white space
+            addedWidth += readRowDecoderDimensions.width;
+        }
+        decoderHeight = std::max(decoderHeight, std::min(readRowDecoderDimensions.height, height));
     }
 
     addedHeight += bitlineMux.dimensions().height;
@@ -306,19 +364,22 @@ mse::Dimensions mse::component::SubArray::calculateDimensions() const noexcept {
     addedWidth = std::max(addedWidth, bitlineMuxDecoder.dimensions().width);
     addedWidth = std::max(addedWidth, senseAmpMuxLevel1Decoder.dimensions().width);
     addedWidth = std::max(addedWidth, senseAmpMuxLevel2Decoder.dimensions().width);
+    decoderHeight = std::max({decoderHeight, bitlineMuxDecoder.dimensions().height, senseAmpMuxLevel1Decoder.dimensions().height,
+            senseAmpMuxLevel2Decoder.dimensions().height});
 
     // Assume the buffer is as wide as the subarray
-    addedHeight += buffer.dimensions().height;
+    if (buffer) {
+        addedHeight += buffer->dimensions().height;
+    }
 
-    width += addedWidth;
-    height += addedHeight;
-
-    // Monolithic 3D cells fit above the peripherals
     if (gCell.memCellType == eDRAM3T333) {
-        const Meter peripheralWidth = width - _wordlineLength;
-        const Meter peripheralHeight = height - _bitlineLength;
-        width = std::max(width, peripheralWidth);
-        height = std::max(height, peripheralHeight);
+        // Monolithic 3D cells are above the peripherals, so the decoders and write drivers sit under the cell array and add width
+        // or height only where they do not fit within it, and the pitch matched precharger, sense amps and muxes stay next to it
+        width = std::max(_wordlineLength, addedWidth);
+        height = std::max(_bitlineLength, decoderHeight + writeDriverHeight) + addedHeight;
+    } else {
+        width += addedWidth;
+        height += addedHeight;
     }
 
     return Dimensions{
@@ -338,7 +399,11 @@ mse::component::SubArrayTiming mse::component::SubArray::calculateTiming(physics
     }
 
     precharger.setInputRamp(inputRamp);
+    writeDriver.setInputRamp(inputRamp);
     rowDecoder.setInputRamp(inputRamp);
+    if (readRowDecoder) {
+        readRowDecoder->setInputRamp(inputRamp);
+    }
     bitlineMuxDecoder.setInputRamp(inputRamp);
     senseAmpMuxLevel1Decoder.setInputRamp(inputRamp);
     senseAmpMuxLevel2Decoder.setInputRamp(inputRamp);
@@ -346,6 +411,8 @@ mse::component::SubArrayTiming mse::component::SubArray::calculateTiming(physics
     timing.columnDecoderLatency = std::max({bitlineMuxDecoder.timing().readLatency, senseAmpMuxLevel1Decoder.timing().readLatency,
             senseAmpMuxLevel2Decoder.timing().readLatency});
     const Second decoderLatency = std::max(rowDecoder.timing().readLatency, timing.columnDecoderLatency);
+    // Cells with a separate read wordline read through its row decoder
+    const Second readDecoderLatency = readRowDecoder ? std::max(readRowDecoder->timing().readLatency, timing.columnDecoderLatency) : decoderLatency;
 
     // TODO revisit this equation
     const Farad passCapacitance = bitlineMux.rc().passCapacitance + senseAmpMuxLevel1.rc().passCapacitance + senseAmpMuxLevel2.rc().passCapacitance;
@@ -364,6 +431,9 @@ mse::component::SubArrayTiming mse::component::SubArray::calculateTiming(physics
         context.bitlineMuxReadLatency = bitlineMux.timing().readLatency;
         context.rowDecoderReadLatency = rowDecoder.timing().readLatency;
         context.rowDecoderWriteLatency = rowDecoder.timing().writeLatency;
+        context.readRowDecoderRampOutput = readRowDecoder ? readRowDecoder->timing().outputRamp : rowDecoder.timing().outputRamp;
+        context.readDecoderLatency = readDecoderLatency;
+        context.writeDriverLatency = writeDriver.timing().readLatency;
         context.columnDecoderLatency = timing.columnDecoderLatency;
         context.chargeLatency = timing.chargeLatency;
         context.senseAmpReadLatency = senseAmpLatency;
@@ -396,7 +466,7 @@ mse::component::SubArrayTiming mse::component::SubArray::calculateTiming(physics
             if constexpr (requires { latency.reset; }) timing.resetLatency = latency.reset;
         }, latency);
 
-        timing.readLatency += decoderLatency + senseAmpLatency + senseAmpMuxLevel1.timing().readLatency + senseAmpMuxLevel2.timing().readLatency;
+        timing.readLatency += readDecoderLatency + senseAmpLatency + senseAmpMuxLevel1.timing().readLatency + senseAmpMuxLevel2.timing().readLatency;
     }
 
     return timing;
@@ -406,7 +476,8 @@ mse::component::SubArrayPower mse::component::SubArray::calculatePower() const n
     using namespace mse::unit;
 
     SubArrayPower power;
-    power.rowDecoderReadDynamicEnergy = rowDecoder.power().dynamicReadEnergy;
+    // Cells with a separate read wordline read through its row decoder
+    power.rowDecoderReadDynamicEnergy = readRowDecoder ? readRowDecoder->power().dynamicReadEnergy : rowDecoder.power().dynamicReadEnergy;
     power.rowDecoderWriteDynamicEnergy = rowDecoder.power().dynamicWriteEnergy;
     Joule rowDecoderSetDynamicEnergy;
     Joule rowDecoderResetDynamicEnergy;
@@ -455,7 +526,7 @@ mse::component::SubArrayPower mse::component::SubArray::calculatePower() const n
             if constexpr (requires { energy.rowDecoderResetDynamic; }) rowDecoderResetDynamicEnergy = energy.rowDecoderResetDynamic;
         }, energy);
 
-        power.leakage = memoryCell->topology().leakageCurrent() * gTech.vdd * columns;
+        power.leakage = memoryCell->topology().leakageCurrent() * memoryCell->properties().leakageVoltage.value_or(gTech.vdd) * columns;
         if (memoryCell->properties().columnLeak) {
             power.leakage *= rows;
         }
@@ -476,10 +547,15 @@ mse::component::SubArrayPower mse::component::SubArray::calculatePower() const n
     power.dynamicWriteEnergy += power.rowDecoderWriteDynamicEnergy + bitlineMuxDecoder.power().dynamicWriteEnergy
             + senseAmpMuxLevel1Decoder.power().dynamicWriteEnergy + senseAmpMuxLevel2Decoder.power().dynamicWriteEnergy
             + bitlineMux.power().dynamicWriteEnergy + senseAmpPower.dynamicWriteEnergy
-            + senseAmpMuxLevel1.power().dynamicWriteEnergy + senseAmpMuxLevel2.power().dynamicWriteEnergy;
+            + senseAmpMuxLevel1.power().dynamicWriteEnergy + senseAmpMuxLevel2.power().dynamicWriteEnergy
+            + writeDriver.power().dynamicReadEnergy;
 
     // Reading every column with the row decoder, sense amps and precharger refreshes one row
     power.refreshDynamicEnergy += power.rowDecoderReadDynamicEnergy + precharger.power().dynamicReadEnergy + senseAmpPower.dynamicReadEnergy;
+    if (readRowDecoder) {
+        // Writing the row back drives the write wordline and the write drivers
+        power.refreshDynamicEnergy += rowDecoder.power().dynamicReadEnergy + writeDriver.power().dynamicReadEnergy;
+    }
     power.refreshDynamicEnergy *= rows;
 
     // Asymmetric set and reset only
@@ -497,10 +573,15 @@ mse::component::SubArrayPower mse::component::SubArray::calculatePower() const n
                 + senseAmpMuxLevel1.power().dynamicWriteEnergy + senseAmpMuxLevel2.power().dynamicWriteEnergy;
     }
 
+    if (readRowDecoder) {
+        power.leakage += readRowDecoder->power().leakage;
+    }
     power.leakage += rowDecoder.power().leakage + bitlineMuxDecoder.power().leakage + senseAmpMuxLevel1Decoder.power().leakage
             + senseAmpMuxLevel2Decoder.power().leakage + precharger.power().leakage + bitlineMux.power().leakage
-            + senseAmpPower.leakage + senseAmpMuxLevel1.power().leakage + senseAmpMuxLevel2.power().leakage
-            + buffer.power().leakage + buffer.power().xorLeakage;
+            + senseAmpPower.leakage + senseAmpMuxLevel1.power().leakage + senseAmpMuxLevel2.power().leakage + writeDriver.power().leakage;
+    if (buffer) {
+        power.leakage += buffer->power().leakage + buffer->power().xorLeakage;
+    }
 
     return power;
 }
