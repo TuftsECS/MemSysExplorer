@@ -38,6 +38,7 @@
 #include "Wire.hpp"
 #include "global.hpp"
 #include "formula.hpp"
+#include "physics/Horowitz.hpp"
 #include "constant.hpp"
 
 #include <math.h>
@@ -539,19 +540,19 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				tr = resPullUp * capLoad;
 				gm = CalculateTransconductance(widthPmos, CmosType::PMOS, gTech);
 				beta = 1 / (resPullUp * gm);
-				horowitz(tr, beta, 1e20, &riseTime);
+				riseTime = mse::physics::horowitz(mse::unit::Second(tr), beta, mse::physics::stepRamp).outputRamp.value();
 				resPullDown = CalculateOnResistance(widthNmos, CmosType::NMOS, gInputParameter.temperature, gTech);
 				tr = resPullDown * capLoad;
 				gm = CalculateTransconductance(widthNmos, CmosType::NMOS, gTech);
 				beta = 1 / (resPullDown * gm);
-				horowitz(tr, beta, riseTime, &fallTime);
+				fallTime = mse::physics::horowitz(mse::unit::Second(tr), beta, mse::physics::HorowitzRamp(riseTime)).outputRamp.value();
 				rampInput = fallTime;
 
 				/* Calculate FO4 delay */
 				double delayFO4;
 				capLoad = capOutput + 4 * capInput;
 				tr = resPullDown * capLoad;
-				delayFO4 = horowitz(tr, beta, 1e20, &temp);
+				delayFO4 = mse::physics::horowitz(mse::unit::Second(tr), beta, mse::physics::stepRamp).delay.value();
 
 				/* Caluculate the size of driver */
 				double wireLength = _wireLength;
@@ -588,9 +589,10 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				CalculateGateCapacitance(GateType::INV, 1, sizeInverter * widthNmos, sizeInverter * widthPmos, gTech.featureSize*40, gTech, &capInput, &capOutput);
 				capLoad = capNandOutput + capInput;
 				tr = resPullDown * capLoad;
-				*(delay) = horowitz(tr, beta, rampInput, &temp);
+				const mse::physics::HorowitzResult nandStage = mse::physics::horowitz(mse::unit::Second(tr), beta, mse::physics::HorowitzRamp(rampInput));
+				*(delay) = nandStage.delay.value();
 				*(dynamicEnergy) = capLoad * gTech.vdd * gTech.vdd;
-				rampInput = temp; /* for the next stage */
+				rampInput = nandStage.outputRamp.value(); // For the next stage
 
 				/* Inverter *(delay):
 				 *    * The load capacitance of this inv depends on
@@ -602,21 +604,21 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				beta = 1 / (resPullDown * gm);
 				capLoad = capOutput + capGateDriver;
 				tr = resPullDown * capLoad;
-				*(delay) += horowitz(tr, beta, rampInput, &temp);
+				const mse::physics::HorowitzResult inverterStage = mse::physics::horowitz(mse::unit::Second(tr), beta, mse::physics::HorowitzRamp(rampInput));
+				*(delay) += inverterStage.delay.value();
 				*(dynamicEnergy) += capLoad * gTech.vdd * gTech.vdd;
-				rampInput = temp; /* for the next stage */
+				rampInput = inverterStage.outputRamp.value(); // For the next stage
 
 				*(leakagePower) = 2 * gTech.vdd * CalculateGateLeakage(GateType::INV, 1, sizeInverter * widthNmos, sizeInverter * widthPmos, gInputParameter.temperature, gTech);
 				*(leakagePower) += 2 * gTech.vdd * CalculateGateLeakage(GateType::NAND, 2, 2 * widthNmos, widthPmos, gInputParameter.temperature, gTech);
 				*(leakagePower) *= 2;
 
-				SenseAmp senseAmp;
 				bool mlc = false;
                 if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
                     mlc = true;
                 }
-                senseAmp.Initialize(1, false, gCell.minSenseVoltage, 1 /* for test */, mlc, gCell.nLvl, gCell.nFingers);
-				senseAmp.CalculateRC();
+				mse::component::SenseAmp senseAmp(1, false, mse::unit::Volt(gCell.minSenseVoltage), mse::unit::Meter(1), mlc, gCell.nLvl, gCell.nFingers); // Sense amp pitch of 1 m is for test
+				double capSenseAmp = senseAmp.loadCapacitance().value();
 
 				/* nmos *(delay) + wire *(delay) */
 				/*
@@ -626,27 +628,19 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				 *			   * (for a detailed graph ref: On-Chip Wires: Scaling and Efficiency)
 			   */
 				double drainCapDriver = CalculateDrainCap(widthNmosDriver, CmosType::NMOS, gTech.featureSize*40, gTech);
-				capLoad = capWire + drainCapDriver * 2 + senseAmp.capLoad;
+				capLoad = capWire + drainCapDriver * 2 + capSenseAmp;
 				resPullDown = CalculateOnResistance(widthNmosDriver, CmosType::NMOS, gInputParameter.temperature, gTech);
 				gm = CalculateTransconductance(widthNmosDriver, CmosType::NMOS, gTech);
 				beta = 1 / (resPullDown * gm);
-				tr = resPullDown * mse::constant::resistanceAdjustment *(capWire + drainCapDriver * 2) + capWire * resWire / 2 + (resPullDown + resWire) * senseAmp.capLoad;
+				tr = resPullDown * mse::constant::resistanceAdjustment *(capWire + drainCapDriver * 2) + capWire * resWire / 2 + (resPullDown + resWire) * capSenseAmp;
 				if (delay)
-					*(delay) += horowitz(tr, beta, rampInput, &temp); //TO-DO: inconsistent with Cacti 6.5
+					*(delay) += mse::physics::horowitz(mse::unit::Second(tr), beta, mse::physics::HorowitzRamp(rampInput)).delay.value(); //TO-DO: inconsistent with Cacti 6.5
 				if (dynamicEnergy) {
 					*(dynamicEnergy) += capLoad * mse::constant::voltageSwing.value() * 0.4; /* .4v is the over drive voltage */
 					*(dynamicEnergy) *=2;
 				}
 				if (leakagePower)
 					*(leakagePower) += 4 * gTech.vdd * CalculateGateLeakage(GateType::INV, 1, widthNmosDriver, 0, gInputParameter.temperature, gTech);
-
-				/* SA *(delay) and power */
-				if (delay)
-					*(delay) += senseAmp.readLatency;
-				if (dynamicEnergy)
-					*(dynamicEnergy) += senseAmp.readDynamicEnergy;
-				if (leakagePower)
-					*(leakagePower) += senseAmp.leakage;
 
 			} else {
 				std::cout<<"Error: Low Swing Wires with Repeaters is not supported in this version!" << std::endl;

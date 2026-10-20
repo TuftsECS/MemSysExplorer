@@ -3,13 +3,15 @@
 #include "log.hpp"
 #include "unit.hpp"
 
+#include <format>
+
 //==================================================
 // Terminates the program if not all keys in the input file were accessed
 
 bool mse::YamlInputFile::verifyStrictAccess() const noexcept {
     bool result = strictlyAccessed();
     if (!result) {
-        log::warn("Error parsing YAML file \"{}\": strict access check failed, ensure there are no unused fields in the file", _filePath);
+        log::warn(std::format("Error parsing YAML file \"{}\": strict access check failed, ensure there are no unused fields in the file", _filePath));
     }
     return result;
 }
@@ -33,8 +35,8 @@ bool mse::YamlInputFile::checkForKey(const YAML::Node& node, const InputFilePara
     return true;
 }
 
-void mse::YamlInputFile::touchKey(const std::string& key) {
-    _touchedKeys.insert(key);
+void mse::YamlInputFile::touchKey(std::string key) {
+    _touchedKeys.insert(std::move(key));
 }
 
 bool mse::YamlInputFile::strictlyAccessed() const {
@@ -42,7 +44,7 @@ bool mse::YamlInputFile::strictlyAccessed() const {
     for (const auto& kv : _fileRoot) {
         std::string key = kv.first.as<std::string>();
         if (_touchedKeys.find(key) == _touchedKeys.cend()) {
-            log::warn("Key \"{}\" not accessed in YAML input file \"{}\"", key, _filePath);
+            log::warn(std::format("Key \"{}\" not accessed in YAML input file \"{}\"", key, _filePath));
             return false;
         }
     }

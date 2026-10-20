@@ -1,3 +1,7 @@
+// Simple struct to represent a set of dimension values
+// Uses Unit types and includes helper methods to manipulate dimensions easier
+// Also supports printing through streams
+
 #ifndef MSE_DIMENSIONS_HPP
 #define MSE_DIMENSIONS_HPP
 

@@ -37,22 +37,15 @@
 
 #include "InputParameter.hpp"
 #include "MemCell.hpp"
-#include "RowDecoder.hpp"
-#include "Precharger.hpp"
-#include "OutputDriver.hpp"
-#include "SenseAmp.hpp"
 #include "Technology.hpp"
-#include "BasicDecoder.hpp"
-#include "PredecodeBlock.hpp"
-#include "SubArray.hpp"
-#include "Mat.hpp"
-#include "BankWithHtree.hpp"
-#include "BankWithoutHtree.hpp"
+#include "component/BankWithHtree.hpp"
+#include "component/BankWithoutHtree.hpp"
 #include "Wire.hpp"
 #include "Result.hpp"
 #include "formula.hpp"
 #include "macros.hpp"
 
+#include <bit>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -68,6 +61,32 @@ Wire gLocalWire;
 Wire gGlobalWire;
 
 void applyConstraint();
+
+// Builds the bank for the configured routing mode
+static std::shared_ptr<mse::component::Bank> makeBank(int matRows, int matColumns, long long capacity, long blockSize, int associativity,
+		int rowsPerSet, int activeMatsPerRow, int activeMatsPerColumn, int bitlineMuxInputs, bool internalSenseAmp,
+		int senseAmpMuxLevel1Inputs, int senseAmpMuxLevel2Inputs, int subarrayRows, int subarrayColumns,
+		int activeSubarraysPerRow, int activeSubarraysPerColumn, BufferDesignTarget areaOptimizationLevel, MemoryType memoryType) {
+	if (gInputParameter.routingMode == h_tree) {
+		return std::make_shared<mse::component::BankWithHtree>(matRows, matColumns, capacity, blockSize, associativity, rowsPerSet,
+				activeMatsPerRow, activeMatsPerColumn, bitlineMuxInputs, internalSenseAmp, senseAmpMuxLevel1Inputs, senseAmpMuxLevel2Inputs,
+				subarrayRows, subarrayColumns, activeSubarraysPerRow, activeSubarraysPerColumn, areaOptimizationLevel, memoryType);
+	}
+	return std::make_shared<mse::component::BankWithoutHtree>(matRows, matColumns, capacity, blockSize, associativity, rowsPerSet,
+			activeMatsPerRow, activeMatsPerColumn, bitlineMuxInputs, internalSenseAmp, senseAmpMuxLevel1Inputs, senseAmpMuxLevel2Inputs,
+			subarrayRows, subarrayColumns, activeSubarraysPerRow, activeSubarraysPerColumn, areaOptimizationLevel, memoryType);
+}
+
+// Sets up a bank and evaluates it right away, since the wire globals change between candidates
+static bool calculateBank(mse::component::Bank& bank) {
+	if (!bank.setup()) {
+		return false;
+	}
+	bank.dimensions();
+	bank.timing();
+	bank.power();
+	return true;
+}
 
 int main(int argc, char* argv[])
 {
@@ -289,7 +308,7 @@ int main(int argc, char* argv[])
 
 	/* for cache data array, memory array */
 	Result bestDataResults[(int)full_exploration];	/* full_exploration is always set as the last element in the enum, so if full_exploration is 8, what we want here is a 0-7 array, which is correct */
-	Bank* dataBank;
+	std::shared_ptr<mse::component::Bank> dataBank;
 	for (int i = 0; i < (int)full_exploration; i++)
 		bestDataResults[i].optimizationTarget = (OptimizationTarget)i;
 
@@ -354,20 +373,18 @@ int main(int argc, char* argv[])
 						}
 						long long capacity = (long long)gInputParameter.capacity * 8 / gInputParameter.wordWidth * blockSize;
 						int associativity = gInputParameter.associativity;
-						Bank *tagBank;
-						CALCULATE(tagBank, tag);
-						if (!tagBank->invalid) {
+						std::shared_ptr<mse::component::Bank> tagBank;
+						if (CALCULATE(tagBank, tag)) {
 							Result tempResult;
 							VERIFY_TAG_CAPACITY;
 							numSolutionTask++;
 							// UPDATE_BEST_TAG;
-							*(tempResult.bank) = *tagBank;
+							tempResult.bank = tagBank;
 							*(tempResult.localWire) = gLocalWire;
 							*(tempResult.globalWire) = gGlobalWire;
 							for (int i = 0; i < (int)full_exploration; i++)
 								bestTagResultsTask[i].compareAndUpdate(tempResult);
 						}
-						delete tagBank;
 					}
 
 					#pragma omp critical
@@ -381,7 +398,6 @@ int main(int argc, char* argv[])
 			}
 		}
 		if (numSolution > 0) {
-			Bank* trialBank;
 			Result tempResult;
 			/* refine local wire type */
 			REFINE_LOCAL_WIRE_FORLOOP {
@@ -489,14 +505,13 @@ int main(int argc, char* argv[])
 						/* To aggressive partitioning */
 						continue;
 					}
-					Bank *dataBank;
-					CALCULATE(dataBank, dataT);
-					if (!dataBank->invalid) {
+					std::shared_ptr<mse::component::Bank> dataBank;
+					if (CALCULATE(dataBank, dataT)) {
 						Result tempResult;
 						VERIFY_DATA_CAPACITY;
 						numSolutionTask++;
 						// UPDATE_BEST_DATA;
-						*(tempResult.bank) = *dataBank;
+						tempResult.bank = dataBank;
 						*(tempResult.localWire) = gLocalWire;
 						*(tempResult.globalWire) = gGlobalWire;
 						for (int i = 0; i < (int)full_exploration; i++)
@@ -505,7 +520,6 @@ int main(int argc, char* argv[])
 							OUTPUT_TO_FILE;
 						}
 					}
-					delete dataBank;
 				}
 
 				#pragma omp critical
@@ -519,7 +533,6 @@ int main(int argc, char* argv[])
 	}
 
 	if (numSolution > 0) {
-		Bank* trialBank;
 		Result tempResult;
 		/* refine local wire type */
 		REFINE_LOCAL_WIRE_FORLOOP {
@@ -572,28 +585,28 @@ int main(int argc, char* argv[])
 					*(pruningResults[i][j][k]->globalWire) = *(bestDataResults[i].globalWire);
 					switch ((OptimizationTarget)j) {
 					case read_latency_optimized:
-						pruningResults[i][j][k]->limitReadLatency = bestDataResults[j].bank->readLatency * (1 + (k + 1.0) / 10);
+						pruningResults[i][j][k]->limitReadLatency = bestDataResults[j].readLatency() * (1 + (k + 1.0) / 10);
 						break;
 					case write_latency_optimized:
-						pruningResults[i][j][k]->limitWriteLatency = bestDataResults[j].bank->writeLatency * (1 + (k + 1.0) / 10);
+						pruningResults[i][j][k]->limitWriteLatency = bestDataResults[j].writeLatency() * (1 + (k + 1.0) / 10);
 						break;
 					case read_energy_optimized:
-						pruningResults[i][j][k]->limitReadDynamicEnergy = bestDataResults[j].bank->readDynamicEnergy * (1 + (k + 1.0) / 10);
+						pruningResults[i][j][k]->limitReadDynamicEnergy = bestDataResults[j].readDynamicEnergy() * (1 + (k + 1.0) / 10);
 						break;
 					case write_energy_optimized:
-						pruningResults[i][j][k]->limitWriteDynamicEnergy = bestDataResults[j].bank->writeDynamicEnergy * (1 + (k + 1.0) / 10);
+						pruningResults[i][j][k]->limitWriteDynamicEnergy = bestDataResults[j].writeDynamicEnergy() * (1 + (k + 1.0) / 10);
 						break;
 					case read_edp_optimized:
-						pruningResults[i][j][k]->limitReadEdp = bestDataResults[j].bank->readLatency * bestDataResults[j].bank->readDynamicEnergy * (1 + (k + 1.0) / 10);
+						pruningResults[i][j][k]->limitReadEdp = bestDataResults[j].readLatency() * bestDataResults[j].readDynamicEnergy() * (1 + (k + 1.0) / 10);
 						break;
 					case write_edp_optimized:
-						pruningResults[i][j][k]->limitWriteEdp = bestDataResults[j].bank->writeLatency * bestDataResults[j].bank->writeDynamicEnergy * (1 + (k + 1.0) / 10);
+						pruningResults[i][j][k]->limitWriteEdp = bestDataResults[j].writeLatency() * bestDataResults[j].writeDynamicEnergy() * (1 + (k + 1.0) / 10);
 						break;
 					case area_optimized:
-						pruningResults[i][j][k]->limitArea = bestDataResults[j].bank->area * (1 + (k + 1.0) / 10);
+						pruningResults[i][j][k]->limitArea = bestDataResults[j].area() * (1 + (k + 1.0) / 10);
 						break;
 					case leakage_optimized:
-						pruningResults[i][j][k]->limitLeakage = bestDataResults[j].bank->leakage * (1 + (k + 1.0) / 10);
+						pruningResults[i][j][k]->limitLeakage = bestDataResults[j].leakage() * (1 + (k + 1.0) / 10);
 						break;
 					default:
 						/* nothing should happen here */
@@ -620,16 +633,16 @@ int main(int argc, char* argv[])
 
 	/* If design constraint is applied */
 	if (gInputParameter.optimizationTarget != full_exploration && gInputParameter.isConstraintApplied) {
-		double allowedDataReadLatency = bestDataResults[read_latency_optimized].bank->readLatency * (gInputParameter.readLatencyConstraint + 1);
-		double allowedDataWriteLatency = bestDataResults[write_latency_optimized].bank->writeLatency * (gInputParameter.writeLatencyConstraint + 1);
-		double allowedDataReadDynamicEnergy = bestDataResults[read_energy_optimized].bank->readDynamicEnergy * (gInputParameter.readDynamicEnergyConstraint + 1);
-		double allowedDataWriteDynamicEnergy = bestDataResults[write_energy_optimized].bank->writeDynamicEnergy * (gInputParameter.writeDynamicEnergyConstraint + 1);
-		double allowedDataLeakage = bestDataResults[leakage_optimized].bank->leakage * (gInputParameter.leakageConstraint + 1);
-		double allowedDataArea = bestDataResults[area_optimized].bank->area * (gInputParameter.areaConstraint + 1);
-		double allowedDataReadEdp = bestDataResults[read_edp_optimized].bank->readLatency
-				* bestDataResults[read_edp_optimized].bank->readDynamicEnergy * (gInputParameter.readEdpConstraint + 1);
-		double allowedDataWriteEdp = bestDataResults[write_edp_optimized].bank->writeLatency
-				* bestDataResults[write_edp_optimized].bank->writeDynamicEnergy * (gInputParameter.writeEdpConstraint + 1);
+		double allowedDataReadLatency = bestDataResults[read_latency_optimized].readLatency() * (gInputParameter.readLatencyConstraint + 1);
+		double allowedDataWriteLatency = bestDataResults[write_latency_optimized].writeLatency() * (gInputParameter.writeLatencyConstraint + 1);
+		double allowedDataReadDynamicEnergy = bestDataResults[read_energy_optimized].readDynamicEnergy() * (gInputParameter.readDynamicEnergyConstraint + 1);
+		double allowedDataWriteDynamicEnergy = bestDataResults[write_energy_optimized].writeDynamicEnergy() * (gInputParameter.writeDynamicEnergyConstraint + 1);
+		double allowedDataLeakage = bestDataResults[leakage_optimized].leakage() * (gInputParameter.leakageConstraint + 1);
+		double allowedDataArea = bestDataResults[area_optimized].area() * (gInputParameter.areaConstraint + 1);
+		double allowedDataReadEdp = bestDataResults[read_edp_optimized].readLatency()
+				* bestDataResults[read_edp_optimized].readDynamicEnergy() * (gInputParameter.readEdpConstraint + 1);
+		double allowedDataWriteEdp = bestDataResults[write_edp_optimized].writeLatency()
+				* bestDataResults[write_edp_optimized].writeDynamicEnergy() * (gInputParameter.writeEdpConstraint + 1);
 		for (int i = 0; i < (int)full_exploration; i++) {
 			APPLY_LIMIT(bestDataResults[i]);
 		}
@@ -641,17 +654,22 @@ int main(int argc, char* argv[])
 				/* To aggressive partitioning */
 				continue;
 			}
-			CALCULATE(dataBank, dataT);
-			if (!dataBank->invalid && dataBank->readLatency <= allowedDataReadLatency && dataBank->writeLatency <= allowedDataWriteLatency
-					&& dataBank->readDynamicEnergy <= allowedDataReadDynamicEnergy && dataBank->writeDynamicEnergy <= allowedDataWriteDynamicEnergy
-					&& dataBank->leakage <= allowedDataLeakage && dataBank->area <= allowedDataArea
-					&& dataBank->readLatency * dataBank->readDynamicEnergy <= allowedDataReadEdp && dataBank->writeLatency * dataBank->writeDynamicEnergy <= allowedDataWriteEdp) {
+			if (!CALCULATE(dataBank, dataT)) {
+				continue;
+			}
+			const double readLatency = dataBank->timing().readLatency.value();
+			const double writeLatency = dataBank->timing().writeLatency.value();
+			const double readDynamicEnergy = dataBank->power().dynamicReadEnergy.value();
+			const double writeDynamicEnergy = dataBank->power().dynamicWriteEnergy.value();
+			if (readLatency <= allowedDataReadLatency && writeLatency <= allowedDataWriteLatency
+					&& readDynamicEnergy <= allowedDataReadDynamicEnergy && writeDynamicEnergy <= allowedDataWriteDynamicEnergy
+					&& dataBank->power().leakage.value() <= allowedDataLeakage && dataBank->dimensions().area().value() <= allowedDataArea
+					&& readLatency * readDynamicEnergy <= allowedDataReadEdp && writeLatency * writeDynamicEnergy <= allowedDataWriteEdp) {
 				Result tempResult;
 				VERIFY_DATA_CAPACITY;
 				numSolution++;
 				UPDATE_BEST_DATA;
 			}
-			delete dataBank;
 		}
 	}
 
@@ -727,7 +745,7 @@ void applyConstraint() {
 		gInputParameter.associativity = 1;
 	}
 
-	if (!isPow2(gInputParameter.associativity)) {
+	if (!std::has_single_bit(static_cast<unsigned>(gInputParameter.associativity))) {
 		std::cout << "[ERROR] The associativity value has to be a power of 2 in this version" << std::endl;
 		exit(-1);
 	}

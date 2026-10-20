@@ -11,7 +11,7 @@ void mse::log::setLogStream(std::ostream& stream) noexcept {
     logStream = &stream;
 }
 
-void mse::log::write(const std::string& tag, const std::string& message) {
+void mse::log::write(std::string_view tag, std::string_view message) noexcept {
     std::lock_guard lock(logMutex);
     *logStream << tag << message << std::endl;
 }

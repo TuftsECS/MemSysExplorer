@@ -14,7 +14,6 @@
 // The level can be changed by writing to the atomic level variable
 //
 // Writing to the log is protected with a mutex for thread safety
-// Each function expects arguments for use in std::format
 // All messages are appended with a newline and flush the log stream
 
 #ifndef MSE_LOG_HPP
@@ -23,9 +22,8 @@
 #include "utility.hpp"
 
 #include <ostream>
-#include <format>
 #include <string>
-#include <utility>
+#include <string_view>
 #include <atomic>
 
 namespace mse::log {
@@ -43,35 +41,31 @@ inline std::atomic<Level> level = Level::Warn;
 // These operations require a lock
 
 void setLogStream(std::ostream& stream) noexcept; // Change the log output stream
-void write(const std::string& tag, const std::string& message); // Write to the log output stream
+void write(std::string_view tag, std::string_view message) noexcept; // Write to the log output stream
 
 //==================================================
 // Functions to call for logging
 
-template <typename... Ts>
-void debug(std::format_string<Ts...> format, Ts&&... args) {
+inline void debug(std::string_view message) noexcept {
     if (level <= Level::Debug) {
-        write("", std::format(format, std::forward<Ts>(args)...));
+        write("", message);
     }
 }
 
-template <typename... Ts>
-void warn(std::format_string<Ts...> format, Ts&&... args) {
+inline void warn(std::string_view message) noexcept {
     if (level <= Level::Warn) {
-        write("[WARN] ", std::format(format, std::forward<Ts>(args)...));
+        write("[WARN] ", message);
     }
 }
 
-template <typename... Ts>
-void error(std::format_string<Ts...> format, Ts&&... args) {
+inline void error(std::string_view message) noexcept {
     if (level <= Level::Error) {
-        write("[ERROR] ", std::format(format, std::forward<Ts>(args)...));
+        write("[ERROR] ", message);
     }
 }
 
-template <typename... Ts>
-[[noreturn]] void fatal(std::format_string<Ts...> format, Ts&&... args) {
-    write("[FATAL] ", std::format(format, std::forward<Ts>(args)...));
+[[noreturn]] inline void fatal(std::string_view message) noexcept {
+    write("[FATAL] ", message);
     mse::exit(ExitCode::Failure);
 }
 

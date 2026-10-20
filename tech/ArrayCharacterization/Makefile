@@ -17,7 +17,7 @@ INC := $(addprefix -I, $(incdirs))
 # list of warning flags to feed to compiler
 CXXWARN := -Wall -Wpedantic -Wextra -Werror
 # final list of flags to feed to compiler, -MMD and -MP generate dependencies
-CXXFLAGS := -std=$(CXXVERSION) $(CXXWARN) $(INC) -MMD -MP -fopenmp
+CXXFLAGS := -std=$(CXXVERSION) $(CXXWARN) $(INC) -MMD -MP -fopenmp -O1
 # list of flags to feed to linker
 LDFLAGS := -fopenmp
 

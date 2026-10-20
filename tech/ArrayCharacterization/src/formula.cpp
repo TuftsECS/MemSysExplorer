@@ -40,12 +40,6 @@
 
 #include <stdlib.h>
 
-bool isPow2(int n) {
-	if (n < 1)
-		return false;
-	return !(n & (n - 1));
-}
-
 double CalculateGateCap(double width, Technology tech) {
 	return (tech.capIdealGate + tech.capOverlap + 3 * tech.capFringe) * width
 			+ tech.phyGateLength * tech.capPolywire;
@@ -366,16 +360,6 @@ double CalculateTransconductance(double width, CmosType type, Technology tech) {
         }
     }
 	return gm;
-}
-
-double horowitz(double tr, double beta, double rampInput, double* rampOutput) {
-	double alpha;
-	alpha = 1 / rampInput / tr;
-	double vs = 0.5;	/* Normalized switching voltage */
-	double result = tr * sqrt(log(vs) * log(vs) + 2 * alpha * beta * (1 - vs));
-	if (rampOutput)
-		*rampOutput = (1 - vs) / result;
-	return result;
 }
 
 double CalculateWireResistance(
