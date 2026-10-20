@@ -44,6 +44,7 @@
 #include "Result.hpp"
 #include "formula.hpp"
 #include "macros.hpp"
+#include "flags.hpp"
 
 #include <bit>
 #include <iostream>
@@ -91,24 +92,25 @@ static bool calculateBank(mse::component::Bank& bank) {
 int main(int argc, char* argv[])
 {
 	std::cout << std::fixed << std::setprecision(3);
-	std::string inputFileName;
 
-	if (argc == 1) {
-		inputFileName = "nvsim.cfg";
-		std::cout << "Default configuration file (nvsim.cfg) is loaded" << std::endl;
-	} else if (argc == 2) {
-		inputFileName = argv[1];
-		std::cout << "User-defined configuration file (" << inputFileName << ") is loaded" << std::endl;
+    //==================================================
+    // Flag parsing
+
+	mse::flags::parseFlags(argc, argv);
+
+	// The config file defaults to nvsim.cfg when no positional gives one
+	const std::string configFile(mse::flags::settings.configFile.value_or("nvsim.cfg"));
+	if (mse::flags::settings.configFile) {
+		std::cout << "User-defined configuration file (" << configFile << ") is loaded\n";
 	} else {
-		std::cout << "[NVSIM Error]: Please use the correct format as follows" << std::endl;
-		std::cout << "  Use the default configuration: " << argv[0] << std::endl;
-		std::cout << "  Use the customized configuration: " << argv[0] << " <.cfg file>"  << std::endl;
-		exit(-1);
+		std::cout << "Default configuration file (" << configFile << ") is loaded\n";
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
+
+    //==================================================
 
 	RESTORE_SEARCH_SIZE;
-	gInputParameter.ReadInputParameterFromFile(inputFileName);
+	gInputParameter.ReadInputParameterFromFile(configFile);
 
 	gCell.ReadCellFromFile(gInputParameter.fileMemCell);
 
@@ -429,7 +431,7 @@ int main(int argc, char* argv[])
 		} else {
 			numSolution = 0;
 			RESTORE_SEARCH_SIZE;
-			gInputParameter.ReadInputParameterFromFile(inputFileName);	/* just for restoring the search space */
+			gInputParameter.ReadInputParameterFromFile(configFile);	/* just for restoring the search space */
 			applyConstraint();
 		}
 	}
