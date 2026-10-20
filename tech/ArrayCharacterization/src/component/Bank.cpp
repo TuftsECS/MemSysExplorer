@@ -76,6 +76,23 @@ bool mse::component::Bank::meetsAspectRatio() const noexcept {
     return !(heightRatio > constant::bankAspectRatioConstraint || widthRatio > constant::bankAspectRatioConstraint);
 }
 
+void mse::component::Bank::report(Reporter& reporter) const noexcept {
+    BasicComponent::report(reporter);
+
+    const BankTiming& timing = this->timing();
+    reporter.report(ReportGroup::Timing, "Set Latency", timing.setLatency);
+    reporter.report(ReportGroup::Timing, "Reset Latency", timing.resetLatency);
+    reporter.report(ReportGroup::Timing, "Refresh Latency", timing.refreshLatency);
+
+    const BankPower& power = this->power();
+    reporter.report(ReportGroup::Power, "Set Dynamic Energy", power.setDynamicEnergy);
+    reporter.report(ReportGroup::Power, "Reset Dynamic Energy", power.resetDynamicEnergy);
+    reporter.report(ReportGroup::Power, "Refresh Dynamic Energy", power.refreshDynamicEnergy);
+    reporter.report(ReportGroup::Power, "Cell Read Energy", power.cellReadEnergy);
+    reporter.report(ReportGroup::Power, "Cell Set Energy", power.cellSetEnergy);
+    reporter.report(ReportGroup::Power, "Cell Reset Energy", power.cellResetEnergy);
+}
+
 void mse::component::Bank::reset() noexcept {
     BasicComponent::reset();
     forEachSubcomponent([] (Component& subcomponent) noexcept { subcomponent.reset(); });

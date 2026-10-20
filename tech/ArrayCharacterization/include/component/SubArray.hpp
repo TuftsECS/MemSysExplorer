@@ -111,6 +111,8 @@ public:
 
     bool setup() noexcept override;
 
+    void report(Reporter& reporter) const noexcept override;
+
     void reset() noexcept override;
 
     const SubArrayRC& rc() const noexcept { return _rc; }

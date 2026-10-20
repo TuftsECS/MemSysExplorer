@@ -74,6 +74,17 @@ static const BufferTable& selectTable() {
     return node22;
 }
 
+void mse::component::Buffer::report(Reporter& reporter) const noexcept {
+    BasicComponent::report(reporter);
+
+    const BufferTiming& t = timing();
+    reporter.report(ReportGroup::Timing, "XOR Latency", t.xorLatency);
+
+    const BufferPower& p = power();
+    reporter.report(ReportGroup::Power, "XOR Dynamic Energy", p.xorDynamicEnergy);
+    reporter.report(ReportGroup::Power, "XOR Leakage", p.xorLeakage);
+}
+
 mse::Dimensions mse::component::Buffer::calculateDimensions() const noexcept {
     const BufferTable& t = selectTable();
 

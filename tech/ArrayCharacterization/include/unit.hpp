@@ -19,9 +19,9 @@
 #define MSE_UNIT_HPP
 
 #include <cmath>
-#include <string>
-#include <format>
-#include <iostream>
+#include <array>
+#include <cstddef>
+#include <ostream>
 
 namespace mse::unit {
 
@@ -423,98 +423,87 @@ public:
     constexpr auto operator<=>(const Unit&) const noexcept = default;
 
     //==================================================
-    // A handy string function that automatically scales and adds units to the unit value for printing
-    // If scaleUnit == true and the value is less than 1, the number is adjusted with a scale factor
+    // Streams the value with an automatic scale and its units
+    // Uses the stream's own format, and values below 1 are adjusted with a scale factor
     //   For example 0.010 volts -> "10.000mV"
     //   And 0.0005 farads -> "500.000uF"
-    // Otherwise the true value at a scale of 1 is used
-    //   For example 0.0005 volts -> "0.0005V"
+    // A zero value prints as "0" with its units
     // The unit is placed directly aginst the number
     // No exponent is shown for exponents of 1
     // To keep it simple, no scaling happens for units with negative exponents
 
-    std::string toString(int precision = 3, bool scaleUnit = true) const {
-        UnitValueType v = _value;
-        std::string num;
-        std::string scale;
-        if (_value != 0) {
+    friend std::ostream& operator<<(std::ostream& stream, const Unit& unit) {
+        if (unit._value != 0) {
+            UnitValueType v = unit._value;
+            const char* scale = "";
             // No unitless scaling, no scaling for negative exponents
             // TODO add negative exponent scaling for non-compound units
             if constexpr (sizeof...(Atoms) > 0) {
                 if constexpr (AtomAt<Unit, 0>::type::exponent >= 1) {
-                    if (scaleUnit) {
-                        constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
-                        if (_value < std::pow(1e-15, exponent)) {
-                            v *= std::pow(1e18, exponent);
-                            scale = "a";
-                        } else if (_value < std::pow(1e-12, exponent)) {
-                            v *= std::pow(1e15, exponent);
-                            scale = "f";
-                        } else if (_value < std::pow(1e-9, exponent)) {
-                            v *= std::pow(1e12, exponent);
-                            scale = "p";
-                        } else if (_value < std::pow(1e-6, exponent)) {
-                            v *= std::pow(1e9, exponent);
-                            scale = "n";
-                        } else if (_value < std::pow(1e-3, exponent)) {
-                            v *= std::pow(1e6, exponent);
-                            scale = "u";
-                        } else if (_value < std::pow(1e0, exponent)) {
-                            v *= std::pow(1e3, exponent);
-                            scale = "m";
-                        } else if (_value < std::pow(1e3, exponent)) {
-                            //v *= std::pow(1e0, exponent);
-                            scale = "";
-                        } else if (_value < std::pow(1e6, exponent)) {
-                            v *= std::pow(1e-3, exponent);
-                            scale = "K";
-                        } else if (_value < std::pow(1e9, exponent)) {
-                            v *= std::pow(1e-6, exponent);
-                            scale = "M";
-                        } else if (_value < std::pow(1e12, exponent)) {
-                            v *= std::pow(1e-9, exponent);
-                            scale = "G";
-                        } else if (_value < std::pow(1e15, exponent)) {
-                            v *= std::pow(1e-12, exponent);
-                            scale = "T";
-                        }
+                    constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
+                    if (unit._value < std::pow(1e-15, exponent)) {
+                        v *= std::pow(1e18, exponent);
+                        scale = "a";
+                    } else if (unit._value < std::pow(1e-12, exponent)) {
+                        v *= std::pow(1e15, exponent);
+                        scale = "f";
+                    } else if (unit._value < std::pow(1e-9, exponent)) {
+                        v *= std::pow(1e12, exponent);
+                        scale = "p";
+                    } else if (unit._value < std::pow(1e-6, exponent)) {
+                        v *= std::pow(1e9, exponent);
+                        scale = "n";
+                    } else if (unit._value < std::pow(1e-3, exponent)) {
+                        v *= std::pow(1e6, exponent);
+                        scale = "u";
+                    } else if (unit._value < std::pow(1e0, exponent)) {
+                        v *= std::pow(1e3, exponent);
+                        scale = "m";
+                    } else if (unit._value < std::pow(1e3, exponent)) {
+                        //v *= std::pow(1e0, exponent);
+                        scale = "";
+                    } else if (unit._value < std::pow(1e6, exponent)) {
+                        v *= std::pow(1e-3, exponent);
+                        scale = "K";
+                    } else if (unit._value < std::pow(1e9, exponent)) {
+                        v *= std::pow(1e-6, exponent);
+                        scale = "M";
+                    } else if (unit._value < std::pow(1e12, exponent)) {
+                        v *= std::pow(1e-9, exponent);
+                        scale = "G";
+                    } else if (unit._value < std::pow(1e15, exponent)) {
+                        v *= std::pow(1e-12, exponent);
+                        scale = "T";
                     }
                 }
             }
-            num = std::format("{:.{}f}", v, precision);
+            stream << v << scale;
         } else {
-            num = "0";
+            stream << "0";
         }
 
         constexpr std::array<const char*, sizeof...(Atoms)> units{ Atoms::unitString()... };
         constexpr std::array<const char*, sizeof...(Atoms)> separators{ Atoms::unitFractionSeparator()... };
         constexpr std::array<int, sizeof...(Atoms)> exponents{ Atoms::exponent... };
 
-        std::string allUnits;
         for (size_t i = 0; i < sizeof...(Atoms); ++i) {
             if (i > 0) {
-                allUnits += separators[i];
+                stream << separators[i];
             }
-            allUnits += units[i];
-            if (exponents[i] != 1 && exponents[i] != -1 && exponents[i] != 0) {
-                int exp = exponents[i];
-                if (i > 0 && exp < 0) {
-                    exp *= -1;
-                }
-                allUnits += "^" + std::to_string(exp);
+            stream << units[i];
+            // Later atoms show a negative exponent through their fraction separator instead
+            int exp = exponents[i];
+            if (i > 0 && exp < 0) {
+                exp *= -1;
+            }
+            if (exp != 1 && exp != 0) {
+                stream << "^" << exp;
             }
         }
 
-        return num + scale + allUnits;
+        return stream;
     }
 };
-
-// Custom stream insertion operator to print units naturally
-template<typename... Ts>
-inline std::ostream& operator<<(std::ostream& stream, Unit<Ts...> u) {
-    stream << u.toString(stream.precision());
-    return stream;
-}
 
 //==================================================
 // Shorthand types for writing each UnitType in a UnitAtom to make compound units

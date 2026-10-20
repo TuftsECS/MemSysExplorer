@@ -33,6 +33,8 @@ public:
 
     constexpr std::string_view componentName() const noexcept override { return "Buffer"; }
 
+    void report(Reporter& reporter) const noexcept override;
+
     Dimensions calculateDimensions() const noexcept override;
     BufferTiming calculateTiming() const noexcept override;
     BufferPower calculatePower() const noexcept override;

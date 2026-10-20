@@ -73,6 +73,8 @@ public:
 
     bool setup() noexcept override;
 
+    void report(Reporter& reporter) const noexcept override;
+
     void reset() noexcept override;
 
     Dimensions calculateDimensions() const noexcept override;

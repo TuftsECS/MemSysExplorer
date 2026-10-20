@@ -53,6 +53,8 @@ public:
 
     void forEachSubcomponent(const SubcomponentVisitor& visit) noexcept override;
 
+    void report(Reporter& reporter) const noexcept override;
+
     void reset() noexcept override;
 
     // EDRAM has to refresh every row within the cell retention time

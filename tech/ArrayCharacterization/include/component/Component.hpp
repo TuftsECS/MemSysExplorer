@@ -10,6 +10,7 @@
 #include "log.hpp"
 #include "utility.hpp"
 #include "component/Lazy.hpp"
+#include "component/Reporter.hpp"
 
 #include <algorithm>
 #include <string>
@@ -46,6 +47,9 @@ public:
     // Checks the component's inputs and builds its subcomponents with build() in dependency order, returning if the component is valid
     // Subcomponents are only built here and never in constructors, so an invalid component fails before building any of them
     virtual bool setup() noexcept { return true; }
+
+    // Reporter visiting interface to print component values to output
+    virtual void report(Reporter& reporter) const noexcept = 0;
 
     // Resets any cached values in a component for recomputation of values with potentially different arguments
     virtual void reset() noexcept = 0;
