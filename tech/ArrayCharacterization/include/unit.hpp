@@ -19,7 +19,9 @@
 #define MSE_UNIT_HPP
 
 #include <cmath>
+#include <algorithm>
 #include <array>
+#include <utility>
 #include <cstddef>
 #include <ostream>
 
@@ -424,60 +426,52 @@ public:
 
     //==================================================
     // Streams the value with an automatic scale and its units
-    // Uses the stream's own format, and values below 1 are adjusted with a scale factor
+    // Uses the stream's own format, and the value is scaled by the prefix that puts it in [1, 1000) per power of the first unit
     //   For example 0.010 volts -> "10.000mV"
     //   And 0.0005 farads -> "500.000uF"
+    //   And 2e9 per second -> "2.000ns^-1", the prefix applies to the first unit and is raised with it
+    // Values too small for every prefix use the one that makes them largest, and values too large print in scientific notation
     // A zero value prints as "0" with its units
     // The unit is placed directly aginst the number
     // No exponent is shown for exponents of 1
-    // To keep it simple, no scaling happens for units with negative exponents
+    // Unitless values are printed as they are
 
     friend std::ostream& operator<<(std::ostream& stream, const Unit& unit) {
         if (unit._value != 0) {
             UnitValueType v = unit._value;
             const char* scale = "";
-            // No unitless scaling, no scaling for negative exponents
-            // TODO add negative exponent scaling for non-compound units
+            bool scientific = false;
             if constexpr (sizeof...(Atoms) > 0) {
-                if constexpr (AtomAt<Unit, 0>::type::exponent >= 1) {
-                    constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
-                    if (unit._value < std::pow(1e-15, exponent)) {
-                        v *= std::pow(1e18, exponent);
-                        scale = "a";
-                    } else if (unit._value < std::pow(1e-12, exponent)) {
-                        v *= std::pow(1e15, exponent);
-                        scale = "f";
-                    } else if (unit._value < std::pow(1e-9, exponent)) {
-                        v *= std::pow(1e12, exponent);
-                        scale = "p";
-                    } else if (unit._value < std::pow(1e-6, exponent)) {
-                        v *= std::pow(1e9, exponent);
-                        scale = "n";
-                    } else if (unit._value < std::pow(1e-3, exponent)) {
-                        v *= std::pow(1e6, exponent);
-                        scale = "u";
-                    } else if (unit._value < std::pow(1e0, exponent)) {
-                        v *= std::pow(1e3, exponent);
-                        scale = "m";
-                    } else if (unit._value < std::pow(1e3, exponent)) {
-                        //v *= std::pow(1e0, exponent);
-                        scale = "";
-                    } else if (unit._value < std::pow(1e6, exponent)) {
-                        v *= std::pow(1e-3, exponent);
-                        scale = "K";
-                    } else if (unit._value < std::pow(1e9, exponent)) {
-                        v *= std::pow(1e-6, exponent);
-                        scale = "M";
-                    } else if (unit._value < std::pow(1e12, exponent)) {
-                        v *= std::pow(1e-9, exponent);
-                        scale = "G";
-                    } else if (unit._value < std::pow(1e15, exponent)) {
-                        v *= std::pow(1e-12, exponent);
-                        scale = "T";
-                    }
+                constexpr int exponent = AtomAt<Unit, 0>::type::exponent;
+
+                constexpr std::array<std::pair<int, const char*>, 11> prefixes{{
+                    {12, "T"}, {9, "G"}, {6, "M"}, {3, "K"}, {0, ""},
+                    {-3, "m"}, {-6, "u"}, {-9, "n"}, {-12, "p"}, {-15, "f"}, {-18, "a"}
+                }};
+
+                auto scaled = [&unit] (int power) { return std::abs(unit._value) / std::pow(10.0, power * exponent); };
+                const UnitValueType top = std::pow(1e3, std::abs(exponent));
+                auto fits = std::ranges::find_if(prefixes, [&scaled, top] (const auto& prefix) {
+                    UnitValueType value = scaled(prefix.first);
+                    return value >= 1 && value < top;
+                });
+                if (fits != prefixes.end()) {
+                    v = unit._value / std::pow(10.0, fits->first * exponent);
+                    scale = fits->second;
+                } else if (const auto& smallest = exponent > 0 ? prefixes.back() : prefixes.front(); scaled(smallest.first) < 1) {
+                    v = unit._value / std::pow(10.0, smallest.first * exponent);
+                    scale = smallest.second;
+                } else {
+                    scientific = true;
                 }
             }
-            stream << v << scale;
+            if (scientific) {
+                std::ios_base::fmtflags flags = stream.flags();
+                stream << std::scientific << v;
+                stream.flags(flags);
+            } else {
+                stream << v << scale;
+            }
         } else {
             stream << "0";
         }

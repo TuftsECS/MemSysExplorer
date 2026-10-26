@@ -69,7 +69,12 @@ public:
             const Timing& t = timing();
             reporter.report(ReportGroup::Timing, "Read Latency", t.readLatency);
             reporter.report(ReportGroup::Timing, "Write Latency", t.writeLatency);
-            reporter.report(ReportGroup::Timing, "Output Ramp", t.outputRamp);
+            // An infinite ramp means no ramp was worked out
+            if (t.outputRamp < physics::infiniteRamp) {
+                reporter.report(ReportGroup::Timing, "Output Ramp", t.outputRamp);
+            } else {
+                reporter.report(ReportGroup::Timing, "Output Ramp", "infinite");
+            }
         }
 
         if constexpr (std::derived_from<Power, BasicPower>) {
