@@ -41,12 +41,15 @@
 #include "macros.hpp"
 #include "enumInfo.hpp"
 #include "unit.hpp"
+#include "flags.hpp"
 
 #include "yaml-cpp/yaml.h"
 
 #include <iostream>
 #include <fstream>
 #include <format>
+#include <ranges>
+#include <algorithm>
 
 // The DRAM read paths leave the bitline mux out of the subarray latency, so it is left out here too
 // The retention time of cells that refresh in seconds, 0 for the rest
@@ -169,7 +172,7 @@ static void printLine(unsigned level, std::string_view title, const mse::compone
 }
 
 // Prints what one reporter holds at a level: each group under its name, then the ungrouped values
-static void printReporter(unsigned level, const mse::component::Reporter& reporter) {
+static void printReporter(unsigned level, const mse::component::ListReporter& reporter) {
     for (const auto& [group, name] : mse::component::Reporter::reportGroups) {
         if (reporter.getGroup(group).empty()) {
             continue;
@@ -185,20 +188,140 @@ static void printReporter(unsigned level, const mse::component::Reporter& report
     }
 }
 
-// Each component reports into its own reporter, and its subcomponents print one level below it
-static void printTree(unsigned level, mse::component::Component& component) {
-    mse::component::Reporter reporter(std::cout);
+// True when a component and everything below it report only zero values
+static bool isEmpty(mse::component::Component& component) {
+    mse::component::ZeroReporter reporter(std::cout);
     component.report(reporter);
+    bool empty = reporter.allZero();
+    component.forEachSubcomponent([&empty] (mse::component::Component& subcomponent) noexcept {
+        empty = empty && isEmpty(subcomponent);
+    });
 
-    if (component.instanceName.empty()) {
-        printLine(level, component.componentName());
+    return empty;
+}
+
+// Splits subcomponents into the groups that each print as one node
+// Compacting, the default, leaves out empty subcomponents and puts the ones with the same component name into one group
+// With -u every subcomponent is its own group
+static std::vector<std::vector<mse::component::Component*>> groupSubcomponents(
+        const std::vector<mse::component::Component*>& subcomponents) {
+    std::vector<std::vector<mse::component::Component*>> groups;
+    for (mse::component::Component* subcomponent : subcomponents) {
+        if (!mse::flags::settings.compactComponents) {
+            groups.push_back({subcomponent});
+            continue;
+        }
+        if (isEmpty(*subcomponent)) {
+            continue;
+        }
+
+        auto sameName = std::ranges::find_if(groups, [subcomponent] (const std::vector<mse::component::Component*>& group) noexcept {
+            return group.front()->componentName() == subcomponent->componentName();
+        });
+        if (sameName == groups.end()) {
+            groups.push_back({subcomponent});
+        } else {
+            sameName->push_back(subcomponent);
+        }
+    }
+
+    return groups;
+}
+
+// Reports every component of a group into one reporter, combined as CombiningReporter describes
+static void reportGroup(mse::component::Reporter& reporter, const std::vector<mse::component::Component*>& group) {
+    for (mse::component::Component* component : group) {
+        component->report(reporter);
+    }
+}
+
+// The subcomponents of every component in a group, grouped for printing one level below it
+static std::vector<std::vector<mse::component::Component*>> subgroups(const std::vector<mse::component::Component*>& group) {
+    std::vector<mse::component::Component*> subcomponents;
+    for (mse::component::Component* component : group) {
+        component->forEachSubcomponent([&subcomponents] (mse::component::Component& subcomponent) noexcept {
+            subcomponents.push_back(&subcomponent);
+        });
+    }
+
+    return groupSubcomponents(subcomponents);
+}
+
+// The instance names in a group, each once, in order
+static std::vector<std::string_view> instanceNames(const std::vector<mse::component::Component*>& group) {
+    std::vector<std::string_view> names;
+    for (const mse::component::Component* component : group) {
+        if (!component->instanceName.empty() && !std::ranges::contains(names, component->instanceName)) {
+            names.push_back(component->instanceName);
+        }
+    }
+
+    return names;
+}
+
+// Prints a group as one node with its values, and its subcomponents one level below it
+// The node is the component name, with xN when N components were compacted into it, and the instance names after it
+static void printTree(unsigned level, const std::vector<mse::component::Component*>& group) {
+    mse::component::CombiningReporter reporter(std::cout);
+    reportGroup(reporter, group);
+
+    std::string title(group.front()->componentName());
+    if (group.size() > 1) {
+        title += std::format(" x{}", group.size());
+    }
+    std::vector<std::string_view> names = instanceNames(group);
+    if (names.empty()) {
+        printLine(level, title);
     } else {
-        printLine(level, component.componentName(), component.instanceName);
+        printLine(level, title, names | std::views::join_with(std::string_view(", ")) | std::ranges::to<std::string>());
     }
     printReporter(level + 1, reporter);
-    component.forEachSubcomponent([&level] (mse::component::Component& subcomponent) noexcept {
-        printTree(level + 1, subcomponent);
-    });
+
+    for (const std::vector<mse::component::Component*>& subgroup : subgroups(group)) {
+        printTree(level + 1, subgroup);
+    }
+}
+
+// A group's name in a flat path, its instance name when it has one and its component name otherwise
+// A compacted group with several instance names is its component name with xN
+static std::string flatName(const std::vector<mse::component::Component*>& group) {
+    std::vector<std::string_view> names = instanceNames(group);
+    if (names.size() == 1) {
+        return std::string(names.front());
+    }
+    if (group.size() > 1) {
+        return std::format("{} x{}", group.front()->componentName(), group.size());
+    }
+
+    return std::string(group.front()->componentName());
+}
+
+// Prints every value of a group on its own line under its full path, then does the same for its subcomponents
+// Each step down the tree adds a . and the subcomponent's name, and siblings with the same name are numbered with #
+static void printFlat(const std::string& path, const std::vector<mse::component::Component*>& group) {
+    mse::component::CombiningReporter reporter(std::cout);
+    reportGroup(reporter, group);
+    for (const auto& [reported, groupName] : mse::component::Reporter::reportGroups) {
+        for (const mse::component::ReportValue& entry : reporter.getGroup(reported)) {
+            std::cout << path << "." << groupName << "." << entry.title << ": " << entry.value << "\n";
+        }
+    }
+    for (const mse::component::ReportValue& entry : reporter.getGroup()) {
+        std::cout << path << "." << entry.title << ": " << entry.value << "\n";
+    }
+
+    std::vector<std::vector<mse::component::Component*>> children = subgroups(group);
+    std::vector<std::string> names;
+    for (const std::vector<mse::component::Component*>& child : children) {
+        names.push_back(flatName(child));
+    }
+    for (size_t index = 0; index < children.size(); ++index) {
+        std::string name = names[index];
+        if (std::ranges::count(names, names[index]) > 1) {
+            name += std::format("#{}", std::ranges::count(names | std::views::take(index + 1), names[index]));
+        }
+        printFlat(path + "." + name, children[index]);
+    }
 }
 
 void Result::print() {
@@ -469,7 +592,11 @@ void Result::print() {
     // Values the search never asked for are calculated now, so they need the wires this bank was built with
     gLocalWire = *localWire;
     gGlobalWire = *globalWire;
-    printTree(0, *bank);
+    if (mse::flags::settings.flatComponents) {
+        printFlat(flatName({bank.get()}), {bank.get()});
+    } else {
+        printTree(0, {bank.get()});
+    }
 }
 
 

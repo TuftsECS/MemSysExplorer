@@ -90,6 +90,10 @@ struct Settings {
     std::string_view programName;
     // Empty when no config file is given, so the default is chosen where it is loaded
     std::optional<std::string_view> configFile;
+    // Same type sibling components print as one node and all zero components are left out, unless -u is given
+    bool compactComponents = true;
+    // Components print one value per line under its full path instead of as a tree, when -f is given
+    bool flatComponents = false;
 };
 
 inline Settings settings;

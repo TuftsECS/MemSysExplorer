@@ -17,7 +17,19 @@ static bool printHelp(std::optional<std::string_view>) noexcept;
 
 // Every flag the program accepts, listed in any order since help sorts them
 constexpr std::array programFlagArray{
-    Flag('h', "help", FlagArgument::None, "", "Print help message and exit", printHelp)
+    Flag('h', "help", FlagArgument::None, "", "Print help message and exit", printHelp),
+    Flag('u', "uncompressed", FlagArgument::None, "", "Print every component on its own, including the ones with only zero values",
+            [] (std::optional<std::string_view>) noexcept {
+        settings.compactComponents = false;
+
+        return true;
+    }),
+    Flag('f', "flat", FlagArgument::None, "", "Print each component value on one line under its full path, like Bank.Mat.Timing.Read Latency",
+            [] (std::optional<std::string_view>) noexcept {
+        settings.flatComponents = true;
+
+        return true;
+    })
 };
 
 // Every positional the program accepts, filled by the words on the command line in this order
