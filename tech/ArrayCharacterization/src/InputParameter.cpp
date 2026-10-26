@@ -298,15 +298,15 @@ void InputParameter::PrintInputParameter() {
 
 	std::cout << "Design Target: ";
 	switch (designTarget) {
-	case cache:
-		std::cout << "Cache\n";
-		break;
-	case RAM_chip:
-		std::cout << "Random Access Memory\n";
-		break;
-	case CAM_chip:
-		std::cout << "Content Addressable Memory\n";
-        break;
+		case cache:
+			std::cout << "Cache\n";
+			break;
+		case RAM_chip:
+			std::cout << "Random Access Memory\n";
+			break;
+		case CAM_chip:
+			std::cout << "Content Addressable Memory\n";
+	        break;
 	}
 
 	std::cout << "Capacity   : ";

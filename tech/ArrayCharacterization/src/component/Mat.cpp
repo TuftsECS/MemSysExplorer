@@ -101,12 +101,15 @@ bool mse::component::Mat::setup() noexcept {
     const Farad muxLoadCapacitance = std::max(Farad(), subarrayDimensions.height * wireCapacitance * (_subarrayRows - 2) / 2)
             + std::max(Farad(), subarrayDimensions.width * wireCapacitance * (_subarrayColumns - 2) / 2);
 
+    // Cells with boosted wordlines drive the decoders to vpp
+    const Volt swing = cell::memoryCell().properties().boostedWordline ? gTech.vpp : gTech.vdd;
+
     // A second predecoder block takes half of the address bits once one block would need more than 3
-    auto buildPredecoders = [this] (PredecodeBlock& first, PredecodeBlock& second, std::string_view name, int addressBits, Farad loadCapacitance) {
+    auto buildPredecoders = [this, swing] (PredecodeBlock& first, PredecodeBlock& second, std::string_view name, int addressBits, Farad loadCapacitance) {
         const int secondBlockAddressBits = addressBits > 3 ? addressBits / 2 : 0;
 
-        return build(std::string(name) + " 1", first, addressBits - secondBlockAddressBits, loadCapacitance, Ohm()) // TODO load resistance
-                && build(std::string(name) + " 2", second, secondBlockAddressBits, loadCapacitance, Ohm());
+        return build(std::string(name) + " 1", first, addressBits - secondBlockAddressBits, loadCapacitance, Ohm(), swing) // TODO load resistance
+                && build(std::string(name) + " 2", second, secondBlockAddressBits, loadCapacitance, Ohm(), swing);
     };
 
     if (!buildPredecoders(_rowPredecoder1, _rowPredecoder2, "Row", rowPredecoderAddressBits, rowLoadCapacitance)) {
@@ -137,20 +140,9 @@ bool mse::component::Mat::setup() noexcept {
 
 void mse::component::Mat::report(Reporter& reporter) const noexcept {
     RampedComponent::report(reporter);
+    reportOperations(reporter, timing(), power());
 
-    const MatTiming& timing = this->timing();
-    reporter.report(ReportGroup::Timing, "Predecoder Latency", timing.predecoderLatency);
-    reporter.report(ReportGroup::Timing, "Set Latency", timing.setLatency);
-    reporter.report(ReportGroup::Timing, "Reset Latency", timing.resetLatency);
-    reporter.report(ReportGroup::Timing, "Refresh Latency", timing.refreshLatency);
-
-    const MatPower& power = this->power();
-    reporter.report(ReportGroup::Power, "Set Dynamic Energy", power.setDynamicEnergy);
-    reporter.report(ReportGroup::Power, "Reset Dynamic Energy", power.resetDynamicEnergy);
-    reporter.report(ReportGroup::Power, "Refresh Dynamic Energy", power.refreshDynamicEnergy);
-    reporter.report(ReportGroup::Power, "Cell Read Energy", power.cellReadEnergy);
-    reporter.report(ReportGroup::Power, "Cell Set Energy", power.cellSetEnergy);
-    reporter.report(ReportGroup::Power, "Cell Reset Energy", power.cellResetEnergy);
+    reporter.report(ReportGroup::Timing, "Predecoder Latency", timing().predecoderLatency);
 }
 
 void mse::component::Mat::reset() noexcept {
@@ -212,57 +204,92 @@ mse::component::MatTiming mse::component::Mat::calculateTiming(physics::Horowitz
     subarray.setInputRamp(std::min(_rowPredecoder1.timing().outputRamp, _rowPredecoder2.timing().outputRamp));
     const SubArrayTiming& subarrayTiming = subarray.timing();
 
-    timing.readLatency = timing.predecoderLatency + subarrayTiming.readLatency;
-    timing.writeLatency = timing.predecoderLatency + subarrayTiming.writeLatency;
-    timing.resetLatency = timing.predecoderLatency + subarrayTiming.resetLatency;
-    timing.setLatency = timing.predecoderLatency + subarrayTiming.setLatency;
-    // DRAM and eDRAM only, covering every subarray
-    timing.refreshLatency = timing.predecoderLatency + subarrayTiming.refreshLatency;
-    timing.refreshLatency *= _subarrayColumns;
+    const cell::OperationSet supported = operations();
+    for (cell::Operation operation : cell::allOperations) {
+        if (!supported.contains(operation)) {
+            continue;
+        }
 
-    if (comparator) {
-        comparator->setInputRamp(inputRamp);
-        timing.readLatency += comparator->timing().readLatency;
+        timing.latency[operation] = timing.predecoderLatency + subarrayTiming.latency[operation];
+        switch (operation) {
+            case cell::Operation::Read:
+                // A tag mat compares the tag after the subarray read
+                if (comparator) {
+                    comparator->setInputRamp(inputRamp);
+                    timing.latency[operation] += comparator->timing().readLatency;
+                }
+                break;
+            case cell::Operation::Write:
+            case cell::Operation::Set:
+            case cell::Operation::Reset:
+                break;
+            case cell::Operation::Refresh:
+                // Covering every subarray
+                timing.latency[operation] *= _subarrayColumns;
+                break;
+        }
     }
 
     return timing;
 }
 
-mse::component::MatPower mse::component::Mat::calculatePower() const noexcept {
+mse::component::PathPower mse::component::Mat::calculatePower() const noexcept {
     using namespace mse::unit;
 
-    MatPower power;
-    power.dynamicReadEnergy = _rowPredecoder1.power().dynamicReadEnergy + _rowPredecoder2.power().dynamicReadEnergy
+    const Joule predecoderReadEnergy = _rowPredecoder1.power().dynamicReadEnergy + _rowPredecoder2.power().dynamicReadEnergy
             + _bitlineMuxPredecoder1.power().dynamicReadEnergy + _bitlineMuxPredecoder2.power().dynamicReadEnergy
             + _senseAmpMuxLevel1Predecoder1.power().dynamicReadEnergy + _senseAmpMuxLevel1Predecoder2.power().dynamicReadEnergy
             + _senseAmpMuxLevel2Predecoder1.power().dynamicReadEnergy + _senseAmpMuxLevel2Predecoder2.power().dynamicReadEnergy;
-    power.dynamicWriteEnergy = _rowPredecoder1.power().dynamicWriteEnergy + _rowPredecoder2.power().dynamicWriteEnergy
+    const Joule predecoderWriteEnergy = _rowPredecoder1.power().dynamicWriteEnergy + _rowPredecoder2.power().dynamicWriteEnergy
             + _bitlineMuxPredecoder1.power().dynamicWriteEnergy + _bitlineMuxPredecoder2.power().dynamicWriteEnergy
             + _senseAmpMuxLevel1Predecoder1.power().dynamicWriteEnergy + _senseAmpMuxLevel1Predecoder2.power().dynamicWriteEnergy
             + _senseAmpMuxLevel2Predecoder1.power().dynamicWriteEnergy + _senseAmpMuxLevel2Predecoder2.power().dynamicWriteEnergy;
-    // The predecoder bits are broadcast, so every refresh pays the row predecoder energy once
-    power.refreshDynamicEnergy = _rowPredecoder1.power().dynamicReadEnergy + _rowPredecoder2.power().dynamicReadEnergy;
-    power.refreshDynamicEnergy *= subarray.rows * _subarrayRows;
+
+    PathPower power;
     power.leakage = _rowPredecoder1.power().leakage + _rowPredecoder2.power().leakage
             + _bitlineMuxPredecoder1.power().leakage + _bitlineMuxPredecoder2.power().leakage
             + _senseAmpMuxLevel1Predecoder1.power().leakage + _senseAmpMuxLevel1Predecoder2.power().leakage
             + _senseAmpMuxLevel2Predecoder1.power().leakage + _senseAmpMuxLevel2Predecoder2.power().leakage;
 
-    const SubArrayPower& subarrayPower = subarray.power();
-    power.dynamicReadEnergy += subarrayPower.dynamicReadEnergy * _activeSubarraysPerRow * _activeSubarraysPerColumn;
-    power.refreshDynamicEnergy += subarrayPower.refreshDynamicEnergy * _subarrayRows * _subarrayColumns;
-    power.cellReadEnergy = subarrayPower.cellReadEnergy * _activeSubarraysPerRow * _activeSubarraysPerColumn;
-    power.cellSetEnergy = subarrayPower.cellSetEnergy * _activeSubarraysPerRow * _activeSubarraysPerColumn;
-    power.cellResetEnergy = subarrayPower.cellResetEnergy * _activeSubarraysPerRow * _activeSubarraysPerColumn;
-    // Asymmetric set and reset only
-    power.resetDynamicEnergy = power.dynamicWriteEnergy + subarrayPower.resetDynamicEnergy * _activeSubarraysPerRow * _activeSubarraysPerColumn;
-    power.setDynamicEnergy = power.dynamicWriteEnergy + subarrayPower.setDynamicEnergy * _activeSubarraysPerRow * _activeSubarraysPerColumn;
-    power.dynamicWriteEnergy += subarrayPower.dynamicWriteEnergy * _activeSubarraysPerRow * _activeSubarraysPerColumn;
-    power.leakage += subarrayPower.leakage * _subarrayRows * _subarrayColumns;
+    const PathPower& subarrayPower = subarray.power();
+    const cell::OperationSet supported = operations();
+    for (cell::Operation operation : cell::allOperations) {
+        if (!supported.contains(operation)) {
+            continue;
+        }
 
+        Joule& energy = power.dynamicEnergy[operation];
+        switch (operation) {
+            case cell::Operation::Read:
+                energy = predecoderReadEnergy;
+                energy += subarrayPower.dynamicEnergy[operation] * _activeSubarraysPerRow * _activeSubarraysPerColumn;
+                if (comparator) {
+                    energy += comparator->power().dynamicReadEnergy * _ways;
+                }
+                break;
+            case cell::Operation::Write:
+                energy = predecoderWriteEnergy;
+                energy += subarrayPower.dynamicEnergy[operation] * _activeSubarraysPerRow * _activeSubarraysPerColumn;
+                if (comparator) {
+                    energy += comparator->power().dynamicWriteEnergy * _ways;
+                }
+                break;
+            case cell::Operation::Set:
+            case cell::Operation::Reset:
+                energy = predecoderWriteEnergy + subarrayPower.dynamicEnergy[operation] * _activeSubarraysPerRow * _activeSubarraysPerColumn;
+                break;
+            case cell::Operation::Refresh:
+                // The predecoder bits are broadcast, so every refreshed row pays the row predecoder energy once
+                energy = _rowPredecoder1.power().dynamicReadEnergy + _rowPredecoder2.power().dynamicReadEnergy;
+                energy *= subarray.rows * _subarrayRows;
+                // Covering every subarray
+                energy += subarrayPower.dynamicEnergy[operation] * _subarrayRows * _subarrayColumns;
+                break;
+        }
+    }
+
+    power.leakage += subarrayPower.leakage * _subarrayRows * _subarrayColumns;
     if (comparator) {
-        power.dynamicReadEnergy += comparator->power().dynamicReadEnergy * _ways;
-        power.dynamicWriteEnergy += comparator->power().dynamicWriteEnergy * _ways;
         power.leakage += comparator->power().leakage * _ways;
     }
 

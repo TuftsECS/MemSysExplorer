@@ -5,17 +5,18 @@
 static constexpr mse::unit::Feature equalizerWidth = mse::constant::minNmosSize;
 static constexpr mse::unit::Feature prechargerWidth{6.0};
 
-mse::component::Precharger::Precharger(unit::Volt prechargeVoltage, long long columns, unit::Farad bitlineCapacitance, unit::Ohm bitlineResistance)
+mse::component::Precharger::Precharger(unit::Volt prechargeVoltage, long long columns, unit::Farad bitlineCapacitance, unit::Ohm bitlineResistance,
+                                       unit::Meter columnWidth)
         : _prechargeVoltage(prechargeVoltage),
           _columns(columns),
           _bitlineCapacitance(bitlineCapacitance),
-          _bitlineResistance(bitlineResistance) {}
+          _bitlineResistance(bitlineResistance),
+          _columnWidth(columnWidth) {}
 
 bool mse::component::Precharger::setup() noexcept {
     using namespace mse::unit;
 
-    const Meter cellWidth = Feature(gCell.widthInFeatureSize) * gTech.featureSize;
-    const Farad wireLoadPerColumn(cellWidth.value() * gLocalWire.capWirePerUnit);
+    const Farad wireLoadPerColumn(_columnWidth.value() * gLocalWire.capWirePerUnit);
     const Farad inverterInputCapacitance = CmosInverter(gTech, constant::minNmosSize, constant::minNmosSize * gTech.pnSizeRatio, 40_feat).gateCapacitance();
     const Farad loadPerColumn = inverterInputCapacitance + wireLoadPerColumn;
 

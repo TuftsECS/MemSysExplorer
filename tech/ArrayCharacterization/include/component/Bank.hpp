@@ -4,28 +4,14 @@
 #include "component/BasicComponent.hpp"
 #include "component/Mat.hpp"
 #include "component/BasicValues.hpp"
+#include "component/CellPath.hpp"
 #include "Dimensions.hpp"
 #include "typedef.hpp"
 #include "unit.hpp"
 
 namespace mse::component {
 
-struct BankTiming : BasicTiming {
-    unit::Second setLatency;
-    unit::Second resetLatency;
-    unit::Second refreshLatency;
-};
-
-struct BankPower : BasicPower {
-    unit::Joule setDynamicEnergy;
-    unit::Joule resetDynamicEnergy;
-    unit::Joule refreshDynamicEnergy;
-    unit::Joule cellReadEnergy;
-    unit::Joule cellSetEnergy;
-    unit::Joule cellResetEnergy;
-};
-
-class Bank : public BasicComponent<BankTiming, BankPower> {
+class Bank : public BasicComponent<PathTiming, PathPower>, public CellPath {
 public:
 
     int matRows = 0;
@@ -57,7 +43,10 @@ public:
 
     void reset() noexcept override;
 
-    // EDRAM has to refresh every row within the cell retention time
+    // The operations of the mats' cell
+    cell::OperationSet operations() const noexcept override { return mat.operations(); }
+
+    // Refreshing cells have to refresh every row within the cell retention time
     bool meetsRetention() const noexcept;
 
     // Data banks cannot be much longer in one direction than the other

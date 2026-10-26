@@ -7,18 +7,43 @@
 #include "global.hpp"
 #include "physics/Horowitz.hpp"
 
+#include <cmath>
+
 namespace mse::cell {
+
+// How long a storage node keeps its data through the leakage of a minimum length access transistor of the given width
+inline unit::Second storageRetentionTime(const Technology& tech, unit::Feature accessWidth, unit::Farad storageCapacitance, unit::Volt maxNodeDrop) {
+    const double width = accessWidth.value();
+
+    double effectiveWidth;
+    if (tech.featureSizeInNano >= 22) {
+        effectiveWidth = width * tech.featureSizeInNano * 1e-9;
+    } else if (tech.featureSizeInNano >= 3) {
+        effectiveWidth = static_cast<int>(std::ceil(width)) * tech.effectiveWidth.value();
+    } else {
+        effectiveWidth = static_cast<int>(std::ceil(width)) * tech.effectiveWidth.value() * tech.maximumSheetCount / tech.maximumFinsPerGAA;
+    }
+    const double leakageCurrent = tech.currentOffNmos[gInputParameter.temperature - 300].value() * effectiveWidth;
+
+    return unit::Second((storageCapacitance.value() * maxNodeDrop.value()) / leakageCurrent);
+}
 
 struct DramParameters final : MemoryCellParameters {
     std::reference_wrapper<const Technology> tech;
 
     ScalarParameter<unit::Feature> accessNmosGateWidth{"Access.Width", "", unit::Feature(0)};
     ScalarParameter<unit::Farad> internalCapacitance{"Storage.Capacitance", "", unit::Farad(0)};
+    ScalarParameter<unit::Volt> maxNodeDrop{"Storage.MaxNodeDrop", "", unit::Volt(0)};
+    ScalarParameter<unit::Second> givenRetentionTime{"Storage.RetentionTime", "", unit::Second(0)};
 
     unit::Feature transistorRegionHeight;
+    unit::Second retentionTime; // Found from the access transistor leakage when not given
 
     DramParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
-        fillParameter(accessNmosGateWidth, internalCapacitance);
+        fillParameter(accessNmosGateWidth, internalCapacitance, maxNodeDrop);
+        retentionTime = fillParameter(givenRetentionTime)
+            ? givenRetentionTime.value()
+            : storageRetentionTime(tech, accessNmosGateWidth, internalCapacitance, maxNodeDrop);
 
         unit::Number featureScale = (tech.get().featureSizeInNano <= 14 ? 2 : 1);
         accessNmosGateWidth.value() *= featureScale;
@@ -27,32 +52,19 @@ struct DramParameters final : MemoryCellParameters {
     }
 };
 
-class DramProperties final : public MemoryCellProperties {
-private:
-
-    unit::Volt _minSenseVoltage;
-
-public:
-
-    DramProperties(const DramParameters& parameters) : _minSenseVoltage(parameters.minSenseVoltage) {
+struct DramProperties final : MemoryCellProperties {
+    DramProperties(const DramParameters& parameters) : MemoryCellProperties(parameters) {
         using namespace mse::unit;
+        operations = {Operation::Read, Operation::Write, Operation::Refresh};
 
         sensingMethod = SenseMethod::Voltage;
-		//sensingVoltage = Volt(gTech.vdd) / 2.0 * (parameters.internalCapacitance / (parameters.internalCapacitance + parameters.capBitline));
-        sensingVoltage = 0_V; // TODO unused
         prechargeVoltage = gTech.vdd * 0.5;
 
         sharedContact = true;
         columnLeak = true;
-    }
-
-    bool isValid() {
-        if (sensingVoltage < _minSenseVoltage) {
-            // bitline too long
-            return false;
-        }
-
-        return true;
+        destructiveRead = true;
+        boostedWordline = true;
+        retentionTime = parameters.retentionTime;
     }
 };
 
@@ -100,36 +112,32 @@ public:
               internalCapacitance(parameters.internalCapacitance) {}
 };
 
-class DramCell final : public MemoryCell {
-public:
-    struct Latency {
-        mse::unit::Second bitline; // TODO remove later, just here for legacy compat
-        mse::unit::Second read;
-        mse::unit::Second write;
-        mse::unit::Second refresh;
-    };
-
-    struct Energy {
-        mse::unit::Joule readDynamic;
-        mse::unit::Joule writeDynamic;
-        mse::unit::Joule refreshDynamic;
-    };
-
-    using Parameters = DramParameters;
-
-    DramCell(const DramParameters& parameters) : _parameters(parameters), _topology(parameters), _properties(parameters) {}
+class DramCell : public MemoryCell {
+private:
 
     DramParameters _parameters;
     DramTopology _topology;
     DramProperties _properties;
 
-    const MemoryCellTopology& topology() const noexcept { return _topology; }
-    const MemoryCellProperties& properties() const noexcept { return _properties; }
-    const MemoryCellParameters& parameters() const noexcept { return _parameters; }
+public:
+    using Parameters = DramParameters;
+
+    DramCell(const DramParameters& parameters) : _parameters(parameters), _topology(parameters), _properties(parameters) {}
+
+    const MemoryCellTopology& topology() const noexcept override { return _topology; }
+    const MemoryCellProperties& properties() const noexcept override { return _properties; }
+    const MemoryCellParameters& parameters() const noexcept override { return _parameters; }
 
     static constexpr std::string_view name = "DRAM";
 
-    Latency latency(MemoryCellLatencyContext context) const {
+    // The stored charge is shared with the bitline when read
+    unit::Volt senseVoltage(unit::Farad bitlineCapacitance) const noexcept override {
+        const double storageCapacitance = _parameters.internalCapacitance.value().value();
+
+        return gTech.vdd / 2 * storageCapacitance / (storageCapacitance + bitlineCapacitance.value());
+    }
+
+    CellTiming timing(const MemoryCellLatencyContext& context) const noexcept override {
         using namespace mse::unit;
 
         Farad cellCap = _topology.bitlineCapacitance(0) + _topology.storageCapacitance();
@@ -138,31 +146,31 @@ public:
 
         Second tau = (context.bitlineResistance + _topology.bitlinePullDownResistance(0, 0)) * effectiveCapacitance * 2.3;
 
-        Latency latency;
+        CellTiming timing;
 
         Second bitlineDelay = physics::horowitz(tau, Number(0.0), context.rowDecoderRampOutput).delay;
-        latency.bitline = bitlineDelay;
-        latency.read = bitlineDelay;
+        timing.bitline = bitlineDelay;
+        timing.latency[Operation::Read] = bitlineDelay;
         Second decoderLatency = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency);
-        latency.write = decoderLatency + bitlineDelay + context.senseAmpReadLatency + context.senseAmpMuxLev1ReadLatency + context.senseAmpMuxLev2ReadLatency;
+        timing.latency[Operation::Write] = decoderLatency + bitlineDelay + context.senseAmpReadLatency + context.senseAmpMuxLev1ReadLatency + context.senseAmpMuxLev2ReadLatency;
 
         // refresh doesnt pass sense amplifier
-        latency.refresh = (decoderLatency + bitlineDelay + context.senseAmpReadLatency) * context.numRow;
+        timing.latency[Operation::Refresh] = (decoderLatency + bitlineDelay + context.senseAmpReadLatency) * context.numRow;
 
-        return latency;
+        return timing;
     }
 
-    Energy energy(MemoryCellEnergyContext context) const {
+    CellPower power(const MemoryCellEnergyContext& context) const noexcept override {
         using namespace mse::unit;
 
-        Energy energy;
+        CellPower power;
 
-        energy.readDynamic = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * context.senseVoltage * gTech.vdd * context.numColumn;
+        power.dynamicEnergy[Operation::Read] = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * context.senseVoltage * gTech.vdd * context.numColumn;
         Volt writeVoltage = gTech.vdd; // The bitline swings to vdd, vpp only boosts the wordline
-        energy.writeDynamic = (context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * writeVoltage * writeVoltage * context.numColumn;
-        energy.refreshDynamic = energy.readDynamic + energy.writeDynamic;
+        power.dynamicEnergy[Operation::Write] = (context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * writeVoltage * writeVoltage * context.numColumn;
+        power.dynamicEnergy[Operation::Refresh] = power.dynamicEnergy[Operation::Read] + power.dynamicEnergy[Operation::Write];
 
-        return energy;
+        return power;
     }
 };
 

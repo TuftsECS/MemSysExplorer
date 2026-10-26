@@ -12,6 +12,8 @@
 #include "unit.hpp"
 #include "cmosDevice.hpp"
 #include "input.hpp"
+#include "typedef.hpp"
+#include "cell/Operation.hpp"
 
 #include <array>
 #include <cmath>
@@ -32,12 +34,14 @@ public:
     ScalarParameter<double> area{"Area", "", 0.0}; // Unit: F^2
     ScalarParameter<double> aspectRatio{"AspectRatio", "", 0.0}; // Height over width
     ScalarParameter<unit::Volt> minSenseVoltage{"MinSenseVoltage", "", unit::Volt(0.08)};
+    ScalarParameter<CellAccessType> accessType{"Access.Type", "", CMOS_access};
+    ScalarParameter<int> stitching{"Stitching", "", 0}; // Adds stitching overhead to the wordline every this many cells when nonzero
 
     unit::Feature cellWidth;
     unit::Feature cellHeight;
 
     MemoryCellParameters(YamlInputFile& inputFile) : _inputFile(inputFile) {
-        fillParameter(area, aspectRatio, minSenseVoltage);
+        fillParameter(area, aspectRatio, minSenseVoltage, accessType, stitching);
         if (aspectRatio.value() != 0) {
             cellHeight = unit::Feature(std::sqrt(area.value() * aspectRatio.value()));
             cellWidth = unit::Feature(std::sqrt(area.value() / aspectRatio.value()));
@@ -57,25 +61,107 @@ private:
 };
 
 //==================================================
+// Cells that store more than one bit, sensed with a reference for each level
+
+struct MultiLevel {
+    double levels = 2;
+    int senseAmpFingers = 8;
+};
+
+// Parameters of cell types that can store more than one bit
+// Cells with more than 2 levels are multi-level, read from MultiLevel in the cell file
+
+struct MultiLevelParameters {
+    ScalarParameter<double> levels{"MultiLevel.Levels", "", 2.0};
+    ScalarParameter<int> senseAmpFingers{"MultiLevel.SenseAmpFingers", "", 8};
+
+    // The cell's levels, nullopt when it stores one bit
+    std::optional<MultiLevel> multiLevel() const noexcept {
+        if (!(levels.value() > 2)) {
+            return std::nullopt;
+        }
+
+        return MultiLevel{levels.value(), senseAmpFingers.value()};
+    }
+};
+
+// How the sense amps reading a cell are modeled
+
+struct SenseAmpModel {
+    // Multi-level CTT and RRAM sense amps use a model fitted for their fingers
+    bool fittedMultiLevel = false;
+    // Values measured for the cell's sense amps, which replace the general model
+    std::optional<unit::Second> readLatency;
+    std::optional<unit::Joule> readEnergy;
+};
+
+//==================================================
 // Each memory cell will have its own intrinsic properties
 // These properties are used to inform the system what is required from peripheral components
 // Each cell should have its own MemoryCellProperties dervied type and assign these values
+// The array reads these instead of checking which cell type it holds
 
-struct MemoryCellProperties { // TODO expand properties
+struct MemoryCellProperties {
     enum class SenseMethod {
         Voltage,
         Current
     };
 
+    // The bank's models of the global bitlines between the mats and external sense amps
+    enum class GlobalBitlineModel {
+        None, // Adds no global bitline latency or energy
+        Sram,
+        Resistive
+    };
+
+    // The cell values a global bitline model reads
+    struct GlobalBitline {
+        GlobalBitlineModel model = GlobalBitlineModel::None;
+        // The precharge voltage for SRAM, and the read voltage for resistive cells where 0 means current-in sensing
+        unit::Volt readVoltage;
+        // The larger of the set and reset voltages of resistive cells
+        unit::Volt writeVoltage;
+        unit::Ohm resistanceOn;
+        unit::Ohm resistanceOff;
+    };
+
+    // The operations the cell has values for, which are the only ones computed along its access path
+    OperationSet operations;
+
     SenseMethod sensingMethod = SenseMethod::Voltage;
-    unit::Volt sensingVoltage;
     unit::Volt prechargeVoltage;
 
     bool sharedContact = false;
-
-    bool isMLC = false;
     bool columnLeak = false;
     std::optional<unit::Volt> leakageVoltage; // Supply the cells leak from, the peripheral vdd if empty
+
+    // Only set for cells storing more than one bit
+    std::optional<MultiLevel> multiLevel;
+    SenseAmpModel senseAmp;
+
+    // Reading drains the stored charge, so the bitlines can't be muxed before the sense amps
+    bool destructiveRead = false;
+    // The sense amps don't fit the pitch of one column, so a bitline mux has to share them
+    bool senseAmpNeedsBitlineMux = false;
+    // Wordlines are driven to vpp instead of vdd
+    bool boostedWordline = false;
+    // The cell array is stacked over the peripherals, so the peripherals only add area where they are larger
+    bool stackedOverPeripherals = false;
+    // Reads use their own wordline, the first one, which has its own row decoder, and writes use the second
+    bool separateReadWordline = false;
+    // Cells sit directly between their wordline and bitline without an access transistor
+    bool crosspoint = false;
+    // The fewest rows a subarray of these cells can have
+    long long minimumRows = 0;
+
+    // How long cells that refresh keep their data
+    std::optional<unit::Second> retentionTime;
+    // Mux pass transistors stay below this resistance so reads can divide the voltage with the cell
+    std::optional<unit::Ohm> maxMuxResistance;
+    GlobalBitline globalBitline;
+
+    MemoryCellProperties(const MemoryCellParameters& parameters)
+            : crosspoint(parameters.accessType == diode_access || parameters.accessType == none_access) {}
 };
 
 //==================================================
@@ -184,25 +270,6 @@ private:
     unit::Farad _value;
 };
 
-//==================================================
-// Main interface for assembling cell types
-// Each cell should derive from this and implement the virtual functions to pass up subtypes
-
-struct MemoryCell {
-    virtual ~MemoryCell() = default;
-
-    // TODO this is here because of the adapter members in derived topologies
-    MemoryCell() = default;
-    MemoryCell(const MemoryCell&) = delete;
-    MemoryCell(MemoryCell&&) = delete;
-    MemoryCell& operator=(const MemoryCell&) = delete;
-    MemoryCell& operator=(MemoryCell&&) = delete;
-
-    virtual const MemoryCellTopology& topology() const noexcept = 0;
-    virtual const MemoryCellProperties& properties() const noexcept = 0;
-    virtual const MemoryCellParameters& parameters() const noexcept = 0;
-};
-
 // TODO comment
 // this is here until node system is added i guess
 
@@ -240,6 +307,81 @@ struct MemoryCellEnergyContext {
     int muxSenseAmp;
     int muxOutputLev1;
     int muxOutputLev2;
+};
+
+//==================================================
+// The cell's part of each operation, returned by MemoryCell::timing and MemoryCell::power
+// Only the entries for the cell's supported operations are filled, the rest stay zero
+
+struct CellTiming {
+    OperationValues<unit::Second> latency;
+
+    // Bitline delays kept for output and external sensing
+    // Cells with separate read and write bitlines fill bitlineRead and bitlineWrite, the rest fill bitline
+    unit::Second bitline;
+    unit::Second bitlineRead;
+    unit::Second bitlineWrite;
+    unit::Second bitlineOn;
+    unit::Second bitlineOff;
+};
+
+struct CellPower {
+    // Energy of the bitlines and lines the cell drives for each operation
+    OperationValues<unit::Joule> dynamicEnergy;
+    // Energy spent in the cells themselves, like the current through a resistive cell while it switches
+    OperationValues<unit::Joule> cellEnergy;
+    // Cells that drive wordlines past vdd replace the row decoder energy of each operation
+    std::optional<OperationValues<unit::Joule>> rowDecoderEnergy;
+};
+
+//==================================================
+// The largest currents an array's bitlines and wordlines carry for its cells
+
+struct ArrayCurrents {
+    unit::Ampere maxBitlineCurrent;
+    unit::Ampere maxWordlineCurrent;
+};
+
+//==================================================
+// Main interface for assembling cell types
+// Each cell should derive from this and implement the virtual functions to pass up subtypes
+
+struct MemoryCell {
+    virtual ~MemoryCell() = default;
+
+    // TODO this is here because of the adapter members in derived topologies
+    MemoryCell() = default;
+    MemoryCell(const MemoryCell&) = delete;
+    MemoryCell(MemoryCell&&) = delete;
+    MemoryCell& operator=(const MemoryCell&) = delete;
+    MemoryCell& operator=(MemoryCell&&) = delete;
+
+    virtual const MemoryCellTopology& topology() const noexcept = 0;
+    virtual const MemoryCellProperties& properties() const noexcept = 0;
+    virtual const MemoryCellParameters& parameters() const noexcept = 0;
+
+    // The cell's latency and energy for each of its supported operations
+    // These are split like component timing and power since the energy needs latencies the timing finds
+    virtual CellTiming timing(const MemoryCellLatencyContext& context) const noexcept = 0;
+    virtual CellPower power(const MemoryCellEnergyContext& context) const noexcept = 0;
+
+    // The voltage the sense amps see on a bitline with the given capacitance
+    // The array is too large when it is below the cell's minimum sense voltage
+    virtual unit::Volt senseVoltage([[maybe_unused]] unit::Farad bitlineCapacitance) const noexcept {
+        return parameters().minSenseVoltage;
+    }
+
+    // The currents the array's lines carry, nullopt when leakage or half selected cells make the array too large
+    // selectedColumns is the number of columns accessed at once
+    virtual std::optional<ArrayCurrents> arrayCurrents([[maybe_unused]] long long rows, [[maybe_unused]] long long columns,
+            [[maybe_unused]] int selectedColumns) const noexcept {
+        return ArrayCurrents();
+    }
+
+    // Bitline length the cell adds to an array besides the cells themselves, like select transistors
+    virtual unit::Meter bitlineOverhead([[maybe_unused]] long long rows) const noexcept {
+        return unit::Meter();
+    }
 };
 
 } // namespace mse::cell

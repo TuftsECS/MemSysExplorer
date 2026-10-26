@@ -14,17 +14,13 @@ mse::unit::Meter mse::component::Mux::calculatePassTransistorWidth() const noexc
     const Meter minWidth = 6 * constant::minNmosSize * gTech.featureSize;
     const Meter minDriverWidth(CalculateLayoutWidth((_minDriverCurrent / gTech.currentOnNmos[gInputParameter.temperature - 300]).value(), gTech));
 
-    const bool resistiveCell = gCell.memCellType == MRAM || gCell.memCellType == PCRAM || gCell.memCellType == memristor
-            || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM;
-
-    if (!resistiveCell) {
+    if (!_maxResistance) {
         return std::max(minWidth, minDriverWidth);
     }
 
     // Mux resistance should be small enough for voltage dividing, capped to avoid severe IR drop
-    const Ohm maxResistance(gCell.resistanceOn * constant::irDropTolerance);
     const Ohm unitResistance = NmosTransistor(gTech, Feature(finFactor), 40_feat * finFactor).channelResistance();
-    Meter width = unitResistance * (1_feat * gTech.featureSize) / maxResistance;
+    Meter width = unitResistance * (1_feat * gTech.featureSize) / *_maxResistance;
     width = std::min(width, Feature(gInputParameter.maxNmosSize) * gTech.featureSize);
 
     return std::max({width, minDriverWidth, minWidth});

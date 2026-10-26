@@ -166,13 +166,10 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
                 capDRAMCell = capacitance;
             }
         }
+        // The DRAM cells read their retention time themselves
         double retention = 0;
-        if (fill(std::type_identity<Second>{}, "Storage.RetentionTime", retention)) {
-            if (!dramCell) {
-                std::cout << "Warning: Retention time ignored (not DRAM)" << std::endl;
-            } else {
-                retentionTime = retention;
-            }
+        if (fill(std::type_identity<Second>{}, "Storage.RetentionTime", retention) && !dramCell) {
+            std::cout << "Warning: Retention time ignored (not DRAM)" << std::endl;
         }
 
         // SRAM specific
@@ -211,11 +208,11 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         fillFlash(number, "Flash.GateCouplingRatio", gateCouplingRatio);
 
         // MLC specific
-        const bool mlcCell = memCellType == MLCCTT || memCellType == MLCFeFET || memCellType == MLCRRAM;
+        const bool mlcCell = memCellType == CTT || memCellType == FeFET || memCellType == memristor;
         int fingers = nFingers;
         if (fill(std::type_identity<int>{}, "MultiLevel.SenseAmpFingers", fingers)) {
             if (!mlcCell) {
-                std::cout << "Warning: MultiLevel.SenseAmpFingers used only for MLC SA" << std::endl;
+                std::cout << "Warning: MultiLevel.SenseAmpFingers used only for CTT, FeFET and RRAM cells" << std::endl;
             } else {
                 nFingers = fingers;
             }
@@ -223,7 +220,7 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         double levels = nLvl;
         if (fill(number, "MultiLevel.Levels", levels)) {
             if (!mlcCell) {
-                std::cout << "Warning: MultiLevel.Levels used only for MLC" << std::endl;
+                std::cout << "Warning: MultiLevel.Levels used only for CTT, FeFET and RRAM cells" << std::endl;
             } else {
                 nLvl = levels;
             }
@@ -243,39 +240,6 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
 
 void MemCell::ApplyPVT() {
 	temperature = gInputParameter.temperature;
-    if (retentionTime == mse::constant::invalidValue) {
-		// Calculate retention time if not given
-		double leakageCurrent = 0;
-		double effWidthAccessCMOS = 0;
-		Technology* chosenTech = nullptr;
-		const Technology::TemperatureTable* currentOffNmosArr = nullptr;
-
-		if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
-			chosenTech = &gTechW;
-			currentOffNmosArr = &gTechW.currentOffNmos;
-		} else if (memCellType == eDRAM || memCellType == DRAM) {
-			chosenTech = &gTech;
-			currentOffNmosArr = &gTech.currentOffNmos;
-		}
-
-		if (chosenTech != nullptr) {
-			if (chosenTech->featureSizeInNano >= 22) {
-				effWidthAccessCMOS = gCell.widthAccessCMOS * chosenTech->featureSizeInNano * 1e-9;
-			} else if (chosenTech->featureSizeInNano >= 3) {
-				effWidthAccessCMOS = (int)ceil(gCell.widthAccessCMOS) * chosenTech->effectiveWidth.value();
-			} else {
-				effWidthAccessCMOS = (int)ceil(gCell.widthAccessCMOS)
-					* chosenTech->effectiveWidth.value()
-					* chosenTech->maximumSheetCount
-					/ chosenTech->maximumFinsPerGAA;
-			}
-			leakageCurrent = (*currentOffNmosArr)[gInputParameter.temperature - 300].value() * effWidthAccessCMOS;
-		} else {
-			leakageCurrent = 0;
-		}
-		retentionTime = (capDRAMCell * maxStorageNodeDrop)/(leakageCurrent);
-    }
-	return;
 }
 
 
@@ -326,7 +290,7 @@ void MemCell::CellScaling(int _targetProcessNode) {
 }
 
 double MemCell::GetMemristance(double _relativeReadVoltage) { /* Get the LRS resistance of memristor at log-linera region of I-V curve */
-	if (memCellType == memristor || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM) {
+	if (memCellType == memristor || memCellType == FeFET) {
 		double x1, x2, x3;  // x1: read voltage, x2: half voltage, x3: applied voltage
 		if (readVoltage == 0) {
 			x1 = readCurrent * resistanceOnAtReadVoltage;
@@ -350,7 +314,7 @@ void MemCell::CalculateWriteEnergy() {
 	if (resetEnergy == 0) {
                 std::cout << " Warning: over-writing reset energy" << std::endl;
 		if (resetMode) {
-			if (memCellType == memristor || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM)
+			if (memCellType == memristor || memCellType == FeFET)
 				if (accessType == none_access)
 					resetEnergy = fabs(resetVoltage) * (fabs(resetVoltage) - voltageDropAccessDevice) / resistanceOnAtResetVoltage * resetPulse;
 				else
@@ -385,7 +349,7 @@ void MemCell::CalculateWriteEnergy() {
 	if (setEnergy == 0) {
                 std::cout << " Warning: over-writing set energy" << std::endl;
 		if (setMode) {
-			if (memCellType == memristor || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM)
+			if (memCellType == memristor || memCellType == FeFET)
 				if (accessType == none_access)
 					setEnergy = fabs(setVoltage) * (fabs(setVoltage) - voltageDropAccessDevice) / resistanceOnAtSetVoltage * setPulse;
 				else
@@ -444,13 +408,13 @@ double MemCell::CalculateReadPower() { /* TODO consider charge pumped read volta
 void MemCell::PrintCell() {
     using namespace mse::unit;
 
-    std::cout << "Memory Cell: " << memCellType << "\n";
+    std::cout << "Memory Cell: " << typeName() << "\n";
 
 	std::cout << "Cell Area (F^2)    : " << area << " (" << heightInFeatureSize << "Fx" << widthInFeatureSize << "F)\n";
 	std::cout << "Cell Area (um^2)    : " << area / 1000000.0 * gTech.featureSizeInNano * gTech.featureSizeInNano << " (" << heightInFeatureSize * gTech.featureSizeInNano << "nm x" << widthInFeatureSize * gTech.featureSizeInNano << "nm y)\n";
 	std::cout << "Cell Aspect Ratio  : " << aspectRatio << "\n";
 
-	if (memCellType == PCRAM || memCellType == MRAM || memCellType == memristor || memCellType == FBRAM || memCellType == FeFET || memCellType == MLCFeFET || memCellType == MLCRRAM) {
+	if (memCellType == PCRAM || memCellType == MRAM || memCellType == memristor || memCellType == FBRAM || memCellType == FeFET) {
 		if (resistanceOn < 1e3) {
 			std::cout << "Cell Turned-On Resistance : " << resistanceOn << "ohm\n";
 		} else if (resistanceOn < 1e6) {
@@ -538,8 +502,24 @@ void MemCell::PrintCell() {
 		std::cout << "Erase Time         : " << Second(flashEraseTime) << "\n";
 		std::cout << "Gate Coupling Ratio: " << gateCouplingRatio << "\n";
 	} 
-	if (memCellType == MLCCTT || memCellType == MLCFeFET || memCellType == MLCRRAM) {
+	if (isMultiLevel()) {
 			std::cout << "Number of Input Fingers: " << nFingers << "\n";
 			std::cout << "Number of Levels per Cell: " << nLvl << "\n";
 	}
+}
+
+bool MemCell::isMultiLevel() const {
+	return (memCellType == CTT || memCellType == FeFET || memCellType == memristor) && nLvl > 2;
+}
+
+std::string MemCell::typeName() const {
+	if (isMultiLevel()) {
+		switch (memCellType) {
+			case CTT: return "Multi-Level Cell CTT";
+			case FeFET: return "Multi-Level Cell FeFET";
+			default: return "Multi-Level Cell RRAM (Memristor)";
+		}
+	}
+
+	return enumToString(memCellType);
 }

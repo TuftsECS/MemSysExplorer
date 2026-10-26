@@ -2,7 +2,7 @@
 # "Fully-CMOS Multi-Level Embedded Non-Volatile Memory Devices With Reliable Long-Term Retention
 # for Efficient Storage of Neural Network Weights", S. Ma et al., IEEE Electron Device Letters, 2019
 
-MemCellType: MLCCTT
+MemCellType: CTT
 
 Area: 8
 AspectRatio: 2

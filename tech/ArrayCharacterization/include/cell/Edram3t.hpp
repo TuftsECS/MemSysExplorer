@@ -2,6 +2,7 @@
 #define MSE_CELL_EDRAM3T_HPP
 
 #include "cell/MemoryCell.hpp"
+#include "cell/Dram.hpp"
 #include "input.hpp"
 #include "unit.hpp"
 #include "global.hpp"
@@ -17,14 +18,20 @@ struct Edram3tParameters final : MemoryCellParameters {
     ScalarParameter<unit::Feature> accessWidth{"Access.Width", "", unit::Feature(0)}; // Write access transistor
     ScalarParameter<unit::Feature> readAccessWidth{"Access.ReadWidth", "", unit::Feature(0)};
     ScalarParameter<unit::Farad> internalCapacitance{"Storage.Capacitance", "", unit::Farad(0)};
+    ScalarParameter<unit::Volt> maxNodeDrop{"Storage.MaxNodeDrop", "", unit::Volt(0)};
+    ScalarParameter<unit::Second> givenRetentionTime{"Storage.RetentionTime", "", unit::Second(0)};
     ScalarParameter<unit::Ampere> readCurrent{"Access.ReadCurrent", "", unit::Ampere(0)}; // Read device current at the sensing bias, zero uses its on current
 
     unit::Feature accessNmosGateWidthR;
     unit::Feature accessNmosGateWidthW;
     unit::Feature transistorRegionHeight;
+    unit::Second retentionTime; // Found from the write access transistor leakage when not given
 
     Edram3tParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech), techR(gTechR), techW(gTechW) {
-        fillParameter(accessWidth, readAccessWidth, internalCapacitance, readCurrent);
+        fillParameter(accessWidth, readAccessWidth, internalCapacitance, maxNodeDrop, readCurrent);
+        retentionTime = fillParameter(givenRetentionTime)
+            ? givenRetentionTime.value()
+            : storageRetentionTime(techW, accessWidth, internalCapacitance, maxNodeDrop);
         
         using namespace mse::unit;
 
@@ -36,19 +43,20 @@ struct Edram3tParameters final : MemoryCellParameters {
 };
 
 struct Edram3tProperties final : MemoryCellProperties {
-    Edram3tProperties(const Edram3tParameters& parameters) {
+    Edram3tProperties(const Edram3tParameters& parameters) : MemoryCellProperties(parameters) {
         using namespace mse::unit;
+        operations = {Operation::Read, Operation::Write, Operation::Refresh};
 
         sensingMethod = SenseMethod::Voltage;
-        // TODO ok lets move this one out of here it isnt really a user set thing right?
-        // super hacky for now tho It Just Works TM
-		//sensingVoltage = Volt(gTech.vdd) / 2.0 * (parameters.internalCapacitance / (parameters.internalCapacitance + parameters.capBitline));
         prechargeVoltage = gTech.vdd;
 
         sharedContact = false;
         columnLeak = true;
+        separateReadWordline = true;
         // Only the write device holds off the storage node
         leakageVoltage = parameters.techW.get().vdd;
+        destructiveRead = true;
+        retentionTime = parameters.retentionTime;
     }
 };
 
@@ -109,36 +117,28 @@ struct Edram3tTopology final : MemoryCellTopology {
     }
 };
 
-struct Edram3tCell : MemoryCell {
-    struct Latency {
-        unit::Second bitlineR; // TODO remove later, just here for legacy compat
-        unit::Second bitlineW; // TODO remove later, just here for legacy compat
-        unit::Second read;
-        unit::Second write;
-        unit::Second refresh;
-    };
+class Edram3tCell : public MemoryCell {
+private:
 
-    struct Energy {
-        unit::Joule readDynamic;
-        unit::Joule writeDynamic;
-        unit::Joule refreshDynamic;
-    };
+    Edram3tParameters _parameters;
+    Edram3tTopology _topology;
 
+protected:
+
+    Edram3tProperties _properties;
+
+public:
     using Parameters = Edram3tParameters;
 
     Edram3tCell(const Edram3tParameters& parameters) : _parameters(parameters), _topology(parameters), _properties(parameters) {}
 
-    Edram3tParameters _parameters;
-    Edram3tTopology _topology;
-    Edram3tProperties _properties;
-
-    const MemoryCellTopology& topology() const noexcept { return _topology; }
-    const MemoryCellProperties& properties() const noexcept { return _properties; }
-    const MemoryCellParameters& parameters() const noexcept { return _parameters; }
+    const MemoryCellTopology& topology() const noexcept override { return _topology; }
+    const MemoryCellProperties& properties() const noexcept override { return _properties; }
+    const MemoryCellParameters& parameters() const noexcept override { return _parameters; }
 
     static constexpr std::string_view name = "eDRAM3T";
 
-    Latency latency(MemoryCellLatencyContext context) const {
+    CellTiming timing(const MemoryCellLatencyContext& context) const noexcept override {
         using namespace mse::unit;
 
         Farad readCapacitance = _topology.bitlineCapacitance(0) + _topology.storageCapacitance() + context.bitlineCapacitance + context.bitlineMuxCapacitance;
@@ -152,30 +152,30 @@ struct Edram3tCell : MemoryCell {
         Second bitlineDelayR = tauRead / 2.3 * std::log((precharge / (precharge - context.senseVoltage)).value());
         Second bitlineDelayW = physics::horowitz(tauWrite, 0.0, context.rowDecoderRampOutput).delay;
 
-        Latency latency;
+        CellTiming timing;
 
-        latency.bitlineR = bitlineDelayR;
-        latency.bitlineW = bitlineDelayW;
-        latency.read = bitlineDelayR;
+        timing.bitlineRead = bitlineDelayR;
+        timing.bitlineWrite = bitlineDelayW;
+        timing.latency[Operation::Read] = bitlineDelayR;
         Second decoderLatency = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency);
-        latency.write = std::max(decoderLatency, context.writeDriverLatency) + bitlineDelayW;
-        latency.refresh = (context.readDecoderLatency + bitlineDelayR + context.senseAmpReadLatency + context.writeDriverLatency + bitlineDelayW)
+        timing.latency[Operation::Write] = std::max(decoderLatency, context.writeDriverLatency) + bitlineDelayW;
+        timing.latency[Operation::Refresh] = (context.readDecoderLatency + bitlineDelayR + context.senseAmpReadLatency + context.writeDriverLatency + bitlineDelayW)
                 * context.numRow;
 
-        return latency;
+        return timing;
     }
 
-    Energy energy(MemoryCellEnergyContext context) const {
+    CellPower power(const MemoryCellEnergyContext& context) const noexcept override {
         using namespace mse::unit;
 
-        Energy energy;
+        CellPower power;
 
-        energy.readDynamic = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * context.senseVoltage * _parameters.techR.get().vdd * context.numColumn;
+        power.dynamicEnergy[Operation::Read] = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * context.senseVoltage * _parameters.techR.get().vdd * context.numColumn;
         Volt writeVoltage = _parameters.tech.get().vdd; // The bitline swings to vdd, vpp only boosts the wordline
-        energy.writeDynamic = (context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * writeVoltage * writeVoltage * context.numColumn;
-        energy.refreshDynamic = energy.readDynamic + energy.writeDynamic;
+        power.dynamicEnergy[Operation::Write] = (context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * writeVoltage * writeVoltage * context.numColumn;
+        power.dynamicEnergy[Operation::Refresh] = power.dynamicEnergy[Operation::Read] + power.dynamicEnergy[Operation::Write];
 
-        return energy;
+        return power;
     }
 };
 

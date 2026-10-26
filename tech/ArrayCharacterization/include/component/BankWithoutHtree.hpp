@@ -54,8 +54,8 @@ public:
     bool setup() noexcept override;
 
     Dimensions calculateDimensions() const noexcept override;
-    BankTiming calculateTiming() const noexcept override;
-    BankPower calculatePower() const noexcept override;
+    PathTiming calculateTiming() const noexcept override;
+    PathPower calculatePower() const noexcept override;
 };
 
 } // namespace mse::component

@@ -1,10 +1,11 @@
 #include "component/PredecodeBlock.hpp"
 #include "global.hpp"
 
-mse::component::PredecodeBlock::PredecodeBlock(int addressBits, unit::Farad loadCapacitance, unit::Ohm loadResistance)
+mse::component::PredecodeBlock::PredecodeBlock(int addressBits, unit::Farad loadCapacitance, unit::Ohm loadResistance, unit::Volt swing)
         : _addressBits(addressBits),
           _loadCapacitance(loadCapacitance),
-          _loadResistance(loadResistance) {}
+          _loadResistance(loadResistance),
+          _swing(swing) {}
 
 bool mse::component::PredecodeBlock::setup() noexcept {
     using namespace mse::unit;
@@ -35,7 +36,7 @@ bool mse::component::PredecodeBlock::setup() noexcept {
 
     auto buildRowDecoder = [this] (std::string name, std::optional<RowDecoder>& decoder, int rows, Farad loadCapacitance, Ohm loadResistance,
             bool multipleRowsPerSet) {
-        return build(std::move(name), decoder, rows, loadCapacitance, loadResistance, multipleRowsPerSet, latency_first, Ampere());
+        return build(std::move(name), decoder, rows, loadCapacitance, loadResistance, multipleRowsPerSet, latency_first, Ampere(), _swing);
     };
 
     // Stage 2 is built first since the stage 1 loads are its NAND inputs, and stage 1 is built before the basic decoders it loads

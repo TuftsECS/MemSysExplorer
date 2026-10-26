@@ -131,10 +131,7 @@ struct EnumMap<MemCellType> {
         {"SLCNAND", SLCNAND},
         {"MLCNAND", MLCNAND},
         {"CTT", CTT},
-        {"MLCCTT", MLCCTT},
-        {"FeFET", FeFET},
-        {"MLCFeFET", MLCFeFET},
-        {"MLCRRAM", MLCRRAM}
+        {"FeFET", FeFET}
     };
 
     static inline const EnumToStringMap<MemCellType> toString = {
@@ -150,10 +147,7 @@ struct EnumMap<MemCellType> {
         {SLCNAND, "Single-Level Cell NAND Flash"},
         {MLCNAND, "Multi-Level Cell NAND Flash"},
         {CTT, "Single-Level Cell CTT"},
-        {MLCCTT, "Multi-Level Cell CTT"},
-        {FeFET, "Single-Level Cell FeFET"},
-        {MLCFeFET, "Multi-Level Cell FeFET"},
-        {MLCRRAM, "Multi-Level Cell RRAM (Memristor)"}
+        {FeFET, "Single-Level Cell FeFET"}
     };
 };
 

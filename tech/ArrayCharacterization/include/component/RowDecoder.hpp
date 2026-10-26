@@ -20,6 +20,8 @@ private:
     bool _multipleRowsPerSet = false;
     BufferDesignTarget _areaOptimizationLevel = latency_first;
     unit::Ampere _minDriverCurrent;
+    // The NAND outputs swing to vpp for cells with boosted wordlines, otherwise to vdd
+    unit::Volt _swing;
 
     OutputDriver _outputDriver;
 
@@ -28,7 +30,7 @@ public:
     RowDecoder() = default;
 
     RowDecoder(int rows, unit::Farad loadCapacitance, unit::Ohm loadResistance, bool multipleRowsPerSet,
-               BufferDesignTarget areaOptimizationLevel, unit::Ampere minDriverCurrent);
+               BufferDesignTarget areaOptimizationLevel, unit::Ampere minDriverCurrent, unit::Volt swing);
 
     constexpr std::string_view componentName() const noexcept override { return "Row Decoder"; }
 

@@ -27,6 +27,7 @@ mse::component::BankWithHtree::BankWithHtree(
                activeSubarraysPerRow, activeSubarraysPerColumn, areaOptimizationLevel, memoryType) {}
 
 bool mse::component::BankWithHtree::setup() noexcept {
+    // TODO no external sense amps with H-tree routing
     if (!internalSenseAmp) {
         warn("H-tree routing does not support external sense amps");
         return false;
@@ -300,30 +301,48 @@ mse::Dimensions mse::component::BankWithHtree::calculateDimensions() const noexc
     };
 }
 
-mse::component::BankTiming mse::component::BankWithHtree::calculateTiming() const noexcept {
+mse::component::PathTiming mse::component::BankWithHtree::calculateTiming() const noexcept {
     using namespace mse::unit;
 
     mat.setInputRamp(constant::infiniteRamp);
     const MatTiming& matTiming = mat.timing();
+    const cell::OperationSet supported = operations();
 
-    BankTiming timing;
-    timing.readLatency = matTiming.readLatency;
-    timing.writeLatency = matTiming.writeLatency;
-    timing.refreshLatency = matTiming.refreshLatency * matColumns; // Every mat
-    timing.resetLatency = matTiming.resetLatency;
-    timing.setLatency = matTiming.setLatency;
+    PathTiming timing;
+    for (cell::Operation operation : cell::allOperations) {
+        if (!supported.contains(operation)) {
+            continue;
+        }
+
+        timing.latency[operation] = matTiming.latency[operation];
+        if (operation == cell::Operation::Refresh) {
+            timing.latency[operation] *= matColumns; // Every mat
+        }
+    }
 
     const HtreeWires& wires = this->wires();
-    const auto addWire = [&timing] (Meter length) {
+    const auto addWire = [&timing, &supported] (Meter length) {
         double latency;
         double energy;
         double leakage;
         gGlobalWire.CalculateLatencyAndPower(length.value(), &latency, &energy, &leakage);
-        timing.readLatency += Second(latency * 2); // In and out
-        timing.writeLatency += Second(latency); // Only in
-        timing.resetLatency += Second(latency);
-        timing.setLatency += Second(latency);
-        timing.refreshLatency += Second(latency);
+        for (cell::Operation operation : cell::allOperations) {
+            if (!supported.contains(operation)) {
+                continue;
+            }
+
+            switch (operation) {
+                case cell::Operation::Read:
+                    timing.latency[operation] += Second(latency * 2); // In and out
+                    break;
+                case cell::Operation::Write:
+                case cell::Operation::Set:
+                case cell::Operation::Reset:
+                case cell::Operation::Refresh:
+                    timing.latency[operation] += Second(latency); // Only in
+                    break;
+            }
+        }
     };
     for (int i = 0; i < _horizontalLevels; i++) {
         addWire(wires.horizontalLengths[i]);
@@ -335,21 +354,25 @@ mse::component::BankTiming mse::component::BankWithHtree::calculateTiming() cons
     return timing;
 }
 
-mse::component::BankPower mse::component::BankWithHtree::calculatePower() const noexcept {
+mse::component::PathPower mse::component::BankWithHtree::calculatePower() const noexcept {
     using namespace mse::unit;
 
-    const MatPower& matPower = mat.power();
+    const PathPower& matPower = mat.power();
+    const cell::OperationSet supported = operations();
 
-    BankPower power;
-    power.dynamicReadEnergy = matPower.dynamicReadEnergy * activeMatsPerRow * activeMatsPerColumn;
-    power.dynamicWriteEnergy = matPower.dynamicWriteEnergy * activeMatsPerRow * activeMatsPerColumn;
-    power.refreshDynamicEnergy = matPower.refreshDynamicEnergy * matRows * matColumns;
+    PathPower power;
+    for (cell::Operation operation : cell::allOperations) {
+        if (!supported.contains(operation)) {
+            continue;
+        }
+
+        if (operation == cell::Operation::Refresh) {
+            power.dynamicEnergy[operation] = matPower.dynamicEnergy[operation] * matRows * matColumns; // Every mat
+        } else {
+            power.dynamicEnergy[operation] = matPower.dynamicEnergy[operation] * activeMatsPerRow * activeMatsPerColumn;
+        }
+    }
     power.leakage = matPower.leakage * matRows * matColumns;
-    power.cellReadEnergy = matPower.cellReadEnergy * activeMatsPerRow * activeMatsPerColumn;
-    power.cellSetEnergy = matPower.cellSetEnergy * activeMatsPerRow * activeMatsPerColumn;
-    power.cellResetEnergy = matPower.cellResetEnergy * activeMatsPerRow * activeMatsPerColumn;
-    power.resetDynamicEnergy = matPower.resetDynamicEnergy * activeMatsPerRow * activeMatsPerColumn;
-    power.setDynamicEnergy = matPower.setDynamicEnergy * activeMatsPerRow * activeMatsPerColumn;
 
     // A fast access cache only activates 1 / associativity of the wires on a write
     int writeFraction = 1;
@@ -359,16 +382,28 @@ mse::component::BankPower mse::component::BankWithHtree::calculatePower() const 
 
     const HtreeWires& wires = this->wires();
     // Each wire is activated on exactly one way, so read and write energy are the same
-    const auto addWire = [&power, writeFraction] (Meter length, const HtreeLevel& level) {
+    const auto addWire = [&power, &supported, writeFraction] (Meter length, const HtreeLevel& level) {
         double latency;
         double energy;
         double leakage;
         gGlobalWire.CalculateLatencyAndPower(length.value(), &latency, &energy, &leakage);
-        power.dynamicReadEnergy += Joule(energy * level.activeWires * level.bits());
-        power.dynamicWriteEnergy += Joule(energy * level.activeWires * level.bits() / writeFraction);
-        power.resetDynamicEnergy += Joule(energy * level.activeWires * level.bits() / writeFraction);
-        power.setDynamicEnergy += Joule(energy * level.activeWires * level.bits() / writeFraction);
-        power.refreshDynamicEnergy += Joule(energy * level.activeWires * level.bits() / writeFraction);
+        for (cell::Operation operation : cell::allOperations) {
+            if (!supported.contains(operation)) {
+                continue;
+            }
+
+            switch (operation) {
+                case cell::Operation::Read:
+                    power.dynamicEnergy[operation] += Joule(energy * level.activeWires * level.bits());
+                    break;
+                case cell::Operation::Write:
+                case cell::Operation::Set:
+                case cell::Operation::Reset:
+                case cell::Operation::Refresh:
+                    power.dynamicEnergy[operation] += Joule(energy * level.activeWires * level.bits() / writeFraction);
+                    break;
+            }
+        }
         power.leakage += Watt(leakage * level.totalWires * level.bits());
     };
     for (int i = 0; i < _horizontalLevels; i++) {

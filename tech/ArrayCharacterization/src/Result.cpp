@@ -49,9 +49,14 @@
 #include <format>
 
 // The DRAM read paths leave the bitline mux out of the subarray latency, so it is left out here too
+// The retention time of cells that refresh in seconds, 0 for the rest
+static double retentionTime() {
+    return mse::cell::memoryCell().properties().retentionTime.value_or(mse::unit::Second()).value();
+}
+
 static double muxReadLatency(const mse::component::SubArray& subarray) {
-	bool bitlineMuxInReadPath = gCell.memCellType != DRAM && gCell.memCellType != eDRAM
-			&& gCell.memCellType != eDRAM3T && gCell.memCellType != eDRAM3T333;
+	// Destructive reads have no bitline mux in front of the sense amps
+	bool bitlineMuxInReadPath = !mse::cell::memoryCell().properties().destructiveRead;
 	double bitlineMuxLatency = bitlineMuxInReadPath ? subarray.bitlineMux.timing().readLatency.value() : 0;
 	return bitlineMuxLatency + subarray.senseAmpMuxLevel1.timing().readLatency.value()
 			+ subarray.senseAmpMuxLevel2.timing().readLatency.value();
@@ -73,19 +78,19 @@ void Result::reset() {
 }
 
 double Result::readLatency() const {
-	return bank ? bank->timing().readLatency.value() : mse::constant::invalidValue;
+	return bank ? bank->timing().latency[mse::cell::Operation::Read].value() : mse::constant::invalidValue;
 }
 
 double Result::writeLatency() const {
-	return bank ? bank->timing().writeLatency.value() : mse::constant::invalidValue;
+	return bank ? bank->timing().latency[mse::cell::Operation::Write].value() : mse::constant::invalidValue;
 }
 
 double Result::readDynamicEnergy() const {
-	return bank ? bank->power().dynamicReadEnergy.value() : mse::constant::invalidValue;
+	return bank ? bank->power().dynamicEnergy[mse::cell::Operation::Read].value() : mse::constant::invalidValue;
 }
 
 double Result::writeDynamicEnergy() const {
-	return bank ? bank->power().dynamicWriteEnergy.value() : mse::constant::invalidValue;
+	return bank ? bank->power().dynamicEnergy[mse::cell::Operation::Write].value() : mse::constant::invalidValue;
 }
 
 double Result::leakage() const {
@@ -104,41 +109,41 @@ void Result::compareAndUpdate(Result& newResult) {
 			&& newResult.area() <= limitArea && newResult.leakage() <= limitLeakage) {
 		bool toUpdate = false;
 		switch (optimizationTarget) {
-		case read_latency_optimized:
-			if 	(newResult.readLatency() < readLatency())
-				toUpdate = true;
-			break;
-		case write_latency_optimized:
-			if 	(newResult.writeLatency() < writeLatency())
-				toUpdate = true;
-			break;
-		case read_energy_optimized:
-			if 	(newResult.readDynamicEnergy() < readDynamicEnergy())
-				toUpdate = true;
-			break;
-		case write_energy_optimized:
-			if 	(newResult.writeDynamicEnergy() < writeDynamicEnergy())
-				toUpdate = true;
-			break;
-		case read_edp_optimized:
-			if 	(newResult.readLatency() * newResult.readDynamicEnergy() < readLatency() * readDynamicEnergy())
-				toUpdate = true;
-			break;
-		case write_edp_optimized:
-			if 	(newResult.writeLatency() * newResult.writeDynamicEnergy() < writeLatency() * writeDynamicEnergy())
-				toUpdate = true;
-			break;
-		case area_optimized:
-			if 	(newResult.area() < area())
-				toUpdate = true;
-			break;
-		case leakage_optimized:
-			if 	(newResult.leakage() < leakage())
-				toUpdate = true;
-			break;
-		default:	/* Exploration */
-			/* should not happen */
-			;
+			case read_latency_optimized:
+				if 	(newResult.readLatency() < readLatency())
+					toUpdate = true;
+				break;
+			case write_latency_optimized:
+				if 	(newResult.writeLatency() < writeLatency())
+					toUpdate = true;
+				break;
+			case read_energy_optimized:
+				if 	(newResult.readDynamicEnergy() < readDynamicEnergy())
+					toUpdate = true;
+				break;
+			case write_energy_optimized:
+				if 	(newResult.writeDynamicEnergy() < writeDynamicEnergy())
+					toUpdate = true;
+				break;
+			case read_edp_optimized:
+				if 	(newResult.readLatency() * newResult.readDynamicEnergy() < readLatency() * readDynamicEnergy())
+					toUpdate = true;
+				break;
+			case write_edp_optimized:
+				if 	(newResult.writeLatency() * newResult.writeDynamicEnergy() < writeLatency() * writeDynamicEnergy())
+					toUpdate = true;
+				break;
+			case area_optimized:
+				if 	(newResult.area() < area())
+					toUpdate = true;
+				break;
+			case leakage_optimized:
+				if 	(newResult.leakage() < leakage())
+					toUpdate = true;
+				break;
+			default:	/* Exploration */
+				/* should not happen */
+				;
 		}
 		if (toUpdate) {
 			bank = newResult.bank;
@@ -250,9 +255,10 @@ void Result::print() {
 
     const mse::component::SubArray& subarray = bank->mat.subarray;
     const std::string routing = gInputParameter.routingMode == h_tree ? "H-Tree" : "Non-H-Tree";
-    const bool resetSetCell = gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || gCell.memCellType == FeFET
-            || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM
-            || (gCell.memCellType == memristor && (gCell.accessType == CMOS_access || gCell.accessType == BJT_access));
+    // Every cell writes, cells that switch states also report their set and reset, and refreshing cells their refresh
+    const mse::cell::OperationSet operations = bank->operations();
+    const bool setResetCell = operations.contains(mse::cell::Operation::Set) && operations.contains(mse::cell::Operation::Reset);
+    const bool refreshCell = operations.contains(mse::cell::Operation::Refresh) && retentionTime() > 0;
     const bool threeTransistorCell = gCell.memCellType == eDRAM3T333 || gCell.memCellType == eDRAM3T;
     const double cellArea = gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity;
 
@@ -291,11 +297,11 @@ void Result::print() {
                 * bank->activeMatsPerColumn * bank->activeMatsPerRow));
         printLine(level, "Mat Dynamic Energy", matEnergy, " per mat");
         level++;
-        printLine(level, "Predecoder Dynamic Energy", Joule(bank->mat.power().dynamicWriteEnergy.value()
-                - subarray.power().dynamicWriteEnergy.value() * bank->activeSubarraysPerRow * bank->activeSubarraysPerColumn));
-        printLine(level, "Subarray Dynamic Energy", subarray.power().dynamicWriteEnergy, " per active subarray");
+        printLine(level, "Predecoder Dynamic Energy", Joule(bank->mat.power().dynamicEnergy[mse::cell::Operation::Write].value()
+                - subarray.power().dynamicEnergy[mse::cell::Operation::Write].value() * bank->activeSubarraysPerRow * bank->activeSubarraysPerColumn));
+        printLine(level, "Subarray Dynamic Energy", subarray.power().dynamicEnergy[mse::cell::Operation::Write], " per active subarray");
         level++;
-        printLine(level, "Row Decoder Dynamic Energy", subarray.power().rowDecoderWriteDynamicEnergy);
+        printLine(level, "Row Decoder Dynamic Energy", subarray.power().rowDecoderEnergy[mse::cell::Operation::Write]);
         printLine(level, "Mux Decoder Dynamic Energy", Joule(subarray.bitlineMuxDecoder.power().dynamicWriteEnergy.value()
                 + subarray.senseAmpMuxLevel1Decoder.power().dynamicWriteEnergy.value()
                 + subarray.senseAmpMuxLevel2Decoder.power().dynamicWriteEnergy.value()));
@@ -326,13 +332,13 @@ void Result::print() {
     printLine(level, "Timing");
     level++;
 
-    printLine(level, "Read Latency", bank->timing().readLatency);
+    printLine(level, "Read Latency", bank->timing().latency[mse::cell::Operation::Read]);
     level++;
-    printLine(level, routing + " Latency", Second(bank->timing().readLatency.value() - bank->mat.timing().readLatency.value()));
-    printLine(level, "Mat Latency", bank->mat.timing().readLatency);
+    printLine(level, routing + " Latency", Second(bank->timing().latency[mse::cell::Operation::Read].value() - bank->mat.timing().latency[mse::cell::Operation::Read].value()));
+    printLine(level, "Mat Latency", bank->mat.timing().latency[mse::cell::Operation::Read]);
     level++;
     printLine(level, "Predecoder Latency", bank->mat.timing().predecoderLatency);
-    printLine(level, "Subarray Latency", subarray.timing().readLatency);
+    printLine(level, "Subarray Latency", subarray.timing().latency[mse::cell::Operation::Read]);
     level++;
     printLine(level, "Row Decoder Latency", subarray.readRowDecoder ? subarray.readRowDecoder->timing().readLatency
             : subarray.rowDecoder.timing().readLatency);
@@ -349,31 +355,30 @@ void Result::print() {
     level--;
     level--;
 
-    if (resetSetCell) {
-        writeLatency("RESET Latency", bank->timing().resetLatency, bank->mat.timing().resetLatency, subarray.timing().resetLatency,
+    writeLatency("Write Latency", bank->timing().latency[mse::cell::Operation::Write], bank->mat.timing().latency[mse::cell::Operation::Write], subarray.timing().latency[mse::cell::Operation::Write],
+            [&level, &subarray, &threeTransistorCell] {
+        if (gCell.memCellType == MRAM) {
+            printLine(level, "Write Pulse Duration", Second(gCell.resetPulse));    // MRAM reset/set is equal
+        }
+        printLine(level, "Row Decoder Latency", subarray.rowDecoder.timing().writeLatency);
+        printLine(level, "Charge Latency", subarray.timing().chargeLatency);
+        printLine(level, "Bitline Latency", threeTransistorCell ? subarray.timing().bitlineWriteLatency : subarray.timing().bitlineLatency);
+    });
+    if (setResetCell && gCell.memCellType == SLCNAND) {
+        flashLatency("Erase Latency", bank->timing().latency[mse::cell::Operation::Reset], bank->mat.timing().latency[mse::cell::Operation::Reset]);
+        flashLatency("Programming Latency", bank->timing().latency[mse::cell::Operation::Set], bank->mat.timing().latency[mse::cell::Operation::Set]);
+    } else if (setResetCell) {
+        writeLatency("RESET Latency", bank->timing().latency[mse::cell::Operation::Reset], bank->mat.timing().latency[mse::cell::Operation::Reset], subarray.timing().latency[mse::cell::Operation::Reset],
                 [&level, &subarray] {
             printLine(level, "RESET Pulse Duration", Second(gCell.resetPulse));
             printLine(level, "Row Decoder Latency", subarray.rowDecoder.timing().writeLatency);
             printLine(level, "Charge Latency", subarray.timing().chargeLatency);
         });
-        writeLatency("SET Latency", bank->timing().setLatency, bank->mat.timing().setLatency, subarray.timing().setLatency,
+        writeLatency("SET Latency", bank->timing().latency[mse::cell::Operation::Set], bank->mat.timing().latency[mse::cell::Operation::Set], subarray.timing().latency[mse::cell::Operation::Set],
                 [&level, &subarray] {
             printLine(level, "SET Pulse Duration", Second(gCell.setPulse));
             printLine(level, "Row Decoder Latency", subarray.rowDecoder.timing().writeLatency);
             printLine(level, "Charge Latency", subarray.timing().chargeLatency);
-        });
-    } else if (gCell.memCellType == SLCNAND) {
-        flashLatency("Erase Latency", bank->timing().resetLatency, bank->mat.timing().resetLatency);
-        flashLatency("Programming Latency", bank->timing().setLatency, bank->mat.timing().setLatency);
-    } else {
-        writeLatency("Write Latency", bank->timing().writeLatency, bank->mat.timing().writeLatency, subarray.timing().writeLatency,
-                [&level, &subarray, &threeTransistorCell] {
-            if (gCell.memCellType == MRAM) {
-                printLine(level, "Write Pulse Duration", Second(gCell.resetPulse));    // MRAM reset/set is equal
-            }
-            printLine(level, "Row Decoder Latency", subarray.rowDecoder.timing().writeLatency);
-            printLine(level, "Charge Latency", subarray.timing().chargeLatency);
-            printLine(level, "Bitline Latency", threeTransistorCell ? subarray.timing().bitlineWriteLatency : subarray.timing().bitlineLatency);
         });
     }
 
@@ -382,35 +387,35 @@ void Result::print() {
         printLine(level, "Subarray Buffer XOR Latency", subarray.buffer->timing().xorLatency);
     }
 
-    Unit<BytesAtom<>, SecondAtom<-1>> readBandwidth((double)bank->blockSize / (subarray.timing().readLatency.value()
+    Unit<BytesAtom<>, SecondAtom<-1>> readBandwidth((double)bank->blockSize / (subarray.timing().latency[mse::cell::Operation::Read].value()
             - subarray.rowDecoder.timing().readLatency.value() + subarray.precharger.timing().readLatency.value()) / 8);
-    if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
+    if (gCell.isMultiLevel()) {
         readBandwidth *= log2(gCell.nLvl);
     }
     printLine(level, "Read Bandwidth", readBandwidth);
-    printLine(level, "Write Bandwidth", Unit<BytesAtom<>, SecondAtom<-1>>((double)bank->blockSize / (subarray.timing().writeLatency.value()) / 8));
+    printLine(level, "Write Bandwidth", Unit<BytesAtom<>, SecondAtom<-1>>((double)bank->blockSize / (subarray.timing().latency[mse::cell::Operation::Write].value()) / 8));
     level--;
 
     printLine(level, "Power");
     level++;
 
-    printLine(level, "Read Dynamic Energy", bank->power().dynamicReadEnergy);
+    printLine(level, "Read Dynamic Energy", bank->power().dynamicEnergy[mse::cell::Operation::Read]);
     level++;
-    printLine(level, routing + " Read Dynamic Energy", Joule(bank->power().dynamicReadEnergy.value()
-            - bank->mat.power().dynamicReadEnergy.value() * bank->activeMatsPerColumn * bank->activeMatsPerRow));
-    printLine(level, "Mat Dynamic Energy", bank->mat.power().dynamicReadEnergy, " per mat");
+    printLine(level, routing + " Read Dynamic Energy", Joule(bank->power().dynamicEnergy[mse::cell::Operation::Read].value()
+            - bank->mat.power().dynamicEnergy[mse::cell::Operation::Read].value() * bank->activeMatsPerColumn * bank->activeMatsPerRow));
+    printLine(level, "Mat Dynamic Energy", bank->mat.power().dynamicEnergy[mse::cell::Operation::Read], " per mat");
     level++;
-    printLine(level, "Predecoder Dynamic Energy", Joule(bank->mat.power().dynamicReadEnergy.value()
-            - subarray.power().dynamicReadEnergy.value() * bank->activeSubarraysPerRow * bank->activeSubarraysPerColumn));
-    printLine(level, "Subarray Dynamic Energy", subarray.power().dynamicReadEnergy, " per active subarray");
+    printLine(level, "Predecoder Dynamic Energy", Joule(bank->mat.power().dynamicEnergy[mse::cell::Operation::Read].value()
+            - subarray.power().dynamicEnergy[mse::cell::Operation::Read].value() * bank->activeSubarraysPerRow * bank->activeSubarraysPerColumn));
+    printLine(level, "Subarray Dynamic Energy", subarray.power().dynamicEnergy[mse::cell::Operation::Read], " per active subarray");
     level++;
-    printLine(level, "Row Decoder Dynamic Energy", subarray.power().rowDecoderReadDynamicEnergy);
+    printLine(level, "Row Decoder Dynamic Energy", subarray.power().rowDecoderEnergy[mse::cell::Operation::Read]);
     printLine(level, "Mux Decoder Dynamic Energy", Joule(subarray.bitlineMuxDecoder.power().dynamicReadEnergy.value()
             + subarray.senseAmpMuxLevel1Decoder.power().dynamicReadEnergy.value()
             + subarray.senseAmpMuxLevel2Decoder.power().dynamicReadEnergy.value()));
     if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || gCell.memCellType == MRAM || gCell.memCellType == memristor
-            || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
-        printLine(level, "Bitline & Cell Read Energy", subarray.power().cellReadEnergy);
+            || gCell.memCellType == FeFET) {
+        printLine(level, "Bitline & Cell Read Energy", subarray.power().cellEnergy[mse::cell::Operation::Read]);
     }
     if (subarray.senseAmp) {
         printLine(level, "Senseamp Dynamic Energy", subarray.senseAmp->power().dynamicReadEnergy);
@@ -423,21 +428,20 @@ void Result::print() {
     level--;
     level--;
 
-    if (resetSetCell) {
-        writeEnergy("RESET Dynamic Energy", "", bank->power().resetDynamicEnergy, bank->mat.power().resetDynamicEnergy,
-                [&level, &subarray] { printLine(level, "Cell RESET Dynamic Energy", subarray.power().cellResetEnergy); });
-        writeEnergy("SET Dynamic Energy", "", bank->power().setDynamicEnergy, bank->mat.power().setDynamicEnergy,
-                [&level, &subarray] { printLine(level, "Cell SET Dynamic Energy", subarray.power().cellSetEnergy); });
-    } else if (gCell.memCellType == SLCNAND) {
-        writeEnergy("Erase Dynamic Energy", " per block", bank->power().resetDynamicEnergy, bank->mat.power().resetDynamicEnergy, [] {});
-        writeEnergy("Programming Dynamic Energy", " per page", bank->power().setDynamicEnergy, bank->mat.power().setDynamicEnergy, [] {});
-    } else {
-        writeEnergy("Write Dynamic Energy", "", bank->power().dynamicWriteEnergy, bank->mat.power().dynamicWriteEnergy,
-                [&level, &subarray] {
-            if (gCell.memCellType == MRAM) {
-                printLine(level, "Bitline & Cell Write Energy", subarray.power().cellResetEnergy);
-            }
-        });
+    writeEnergy("Write Dynamic Energy", "", bank->power().dynamicEnergy[mse::cell::Operation::Write], bank->mat.power().dynamicEnergy[mse::cell::Operation::Write],
+            [&level, &subarray] {
+        if (gCell.memCellType == MRAM) {
+            printLine(level, "Bitline & Cell Write Energy", subarray.power().cellEnergy[mse::cell::Operation::Reset]);
+        }
+    });
+    if (setResetCell && gCell.memCellType == SLCNAND) {
+        writeEnergy("Erase Dynamic Energy", " per block", bank->power().dynamicEnergy[mse::cell::Operation::Reset], bank->mat.power().dynamicEnergy[mse::cell::Operation::Reset], [] {});
+        writeEnergy("Programming Dynamic Energy", " per page", bank->power().dynamicEnergy[mse::cell::Operation::Set], bank->mat.power().dynamicEnergy[mse::cell::Operation::Set], [] {});
+    } else if (setResetCell) {
+        writeEnergy("RESET Dynamic Energy", "", bank->power().dynamicEnergy[mse::cell::Operation::Reset], bank->mat.power().dynamicEnergy[mse::cell::Operation::Reset],
+                [&level, &subarray] { printLine(level, "Cell RESET Dynamic Energy", subarray.power().cellEnergy[mse::cell::Operation::Reset]); });
+        writeEnergy("SET Dynamic Energy", "", bank->power().dynamicEnergy[mse::cell::Operation::Set], bank->mat.power().dynamicEnergy[mse::cell::Operation::Set],
+                [&level, &subarray] { printLine(level, "Cell SET Dynamic Energy", subarray.power().cellEnergy[mse::cell::Operation::Set]); });
     }
 
     if (subarray.buffer) {
@@ -451,10 +455,10 @@ void Result::print() {
             - bank->mat.power().leakage.value() * bank->matColumns * bank->matRows));
     printLine(level, "Mat Leakage Power", bank->mat.power().leakage, " per mat");
     level--;
-    if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
+    if (refreshCell) {
         // David Note: refresh period could be shorter than retention time
-        printLine(level, "Refresh Power", Watt(bank->power().refreshDynamicEnergy.value() / (gCell.retentionTime)));
-        printLine(level, "Retention Time", Second(gCell.retentionTime));
+        printLine(level, "Refresh Power", Watt(bank->power().dynamicEnergy[mse::cell::Operation::Refresh].value() / (retentionTime())));
+        printLine(level, "Retention Time", Second(retentionTime()));
     }
     level--;
 
@@ -482,35 +486,35 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
 		double cacheArea;
 		if (cacheAccessMode == normal_access_mode) {
 			/* Calculate latencies */
-			cacheMissLatency = tagResult.bank->timing().readLatency.value();		// Only the tag access latency
-			cacheHitLatency = std::max(tagResult.bank->timing().readLatency.value(), bank->mat.timing().readLatency.value());	// Access tag and activate data row in parallel
+			cacheMissLatency = tagResult.bank->timing().latency[mse::cell::Operation::Read].value();		// Only the tag access latency
+			cacheHitLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Read].value(), bank->mat.timing().latency[mse::cell::Operation::Read].value());	// Access tag and activate data row in parallel
 			cacheHitLatency += bank->mat.subarray.timing().columnDecoderLatency.value();		// Add column decoder latency after hit signal arrives
-			cacheHitLatency += bank->timing().readLatency.value() - bank->mat.timing().readLatency.value();	// H-tree in and out latency
-			cacheWriteLatency = std::max(tagResult.bank->timing().writeLatency.value(), bank->timing().writeLatency.value());	// Data and tag are written in parallel
+			cacheHitLatency += bank->timing().latency[mse::cell::Operation::Read].value() - bank->mat.timing().latency[mse::cell::Operation::Read].value();	// H-tree in and out latency
+			cacheWriteLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Write].value(), bank->timing().latency[mse::cell::Operation::Write].value());	// Data and tag are written in parallel
 			/* Calculate power */
-			cacheMissDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value();	// No matter what tag is always accessed
-			cacheMissDynamicEnergy += bank->power().dynamicReadEnergy.value();	// Data is also partially accessed, TODO: not accurate here
-			cacheHitDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-			cacheWriteDynamicEnergy = tagResult.bank->power().dynamicWriteEnergy.value() + bank->power().dynamicWriteEnergy.value();
+			cacheMissDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value();	// No matter what tag is always accessed
+			cacheMissDynamicEnergy += bank->power().dynamicEnergy[mse::cell::Operation::Read].value();	// Data is also partially accessed, TODO: not accurate here
+			cacheHitDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+			cacheWriteDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Write].value() + bank->power().dynamicEnergy[mse::cell::Operation::Write].value();
 		} else if (cacheAccessMode == fast_access_mode) {
 			/* Calculate latencies */
-			cacheMissLatency = tagResult.bank->timing().readLatency.value();
-			cacheHitLatency = std::max(tagResult.bank->timing().readLatency.value(), bank->timing().readLatency.value());
-			cacheWriteLatency = std::max(tagResult.bank->timing().writeLatency.value(), bank->timing().writeLatency.value());
+			cacheMissLatency = tagResult.bank->timing().latency[mse::cell::Operation::Read].value();
+			cacheHitLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Read].value(), bank->timing().latency[mse::cell::Operation::Read].value());
+			cacheWriteLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Write].value(), bank->timing().latency[mse::cell::Operation::Write].value());
 			/* Calculate power */
-			cacheMissDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value();	// No matter what tag is always accessed
-			cacheMissDynamicEnergy += bank->power().dynamicReadEnergy.value();	// Data is also partially accessed, TODO: not accurate here
-			cacheHitDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-			cacheWriteDynamicEnergy = tagResult.bank->power().dynamicWriteEnergy.value() + bank->power().dynamicWriteEnergy.value();
+			cacheMissDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value();	// No matter what tag is always accessed
+			cacheMissDynamicEnergy += bank->power().dynamicEnergy[mse::cell::Operation::Read].value();	// Data is also partially accessed, TODO: not accurate here
+			cacheHitDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+			cacheWriteDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Write].value() + bank->power().dynamicEnergy[mse::cell::Operation::Write].value();
 		} else {		/* sequential access */
 			/* Calculate latencies */
-			cacheMissLatency = tagResult.bank->timing().readLatency.value();
-			cacheHitLatency = tagResult.bank->timing().readLatency.value() + bank->timing().readLatency.value();
-			cacheWriteLatency = std::max(tagResult.bank->timing().writeLatency.value(), bank->timing().writeLatency.value());
+			cacheMissLatency = tagResult.bank->timing().latency[mse::cell::Operation::Read].value();
+			cacheHitLatency = tagResult.bank->timing().latency[mse::cell::Operation::Read].value() + bank->timing().latency[mse::cell::Operation::Read].value();
+			cacheWriteLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Write].value(), bank->timing().latency[mse::cell::Operation::Write].value());
 			/* Calculate power */
-			cacheMissDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value();	// No matter what tag is always accessed
-			cacheHitDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-			cacheWriteDynamicEnergy = tagResult.bank->power().dynamicWriteEnergy.value() + bank->power().dynamicWriteEnergy.value();
+			cacheMissDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value();	// No matter what tag is always accessed
+			cacheHitDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+			cacheWriteDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Write].value() + bank->power().dynamicEnergy[mse::cell::Operation::Write].value();
 		}
 		/* Calculate leakage */
 		cacheLeakage = tagResult.bank->power().leakage.value() + bank->power().leakage.value();
@@ -540,10 +544,11 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
         printLine(level, "Cache Hit Latency", Second(cacheHitLatency));
         printLine(level, "Cache Miss Latency", Second(cacheMissLatency));
         printLine(level, "Cache Write Latency", Second(cacheWriteLatency));
-        if (gCell.memCellType == eDRAM) {
-            const double refreshLatency = std::max(tagResult.bank->timing().refreshLatency.value(), bank->timing().refreshLatency.value());
+        const bool refreshCell = bank->operations().contains(mse::cell::Operation::Refresh) && retentionTime() > 0;
+        if (refreshCell) {
+            const double refreshLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Refresh].value(), bank->timing().latency[mse::cell::Operation::Refresh].value());
             printLine(level, "Cache Refresh Latency", Second(refreshLatency), " per bank");
-            printLine(level, "Cache Availability", ((gCell.retentionTime - refreshLatency) / gCell.retentionTime) * 100.0, "%");
+            printLine(level, "Cache Availability", ((retentionTime() - refreshLatency) / retentionTime()) * 100.0, "%");
         }
         level--;
 
@@ -552,18 +557,18 @@ void Result::printAsCache(Result& tagResult, CacheAccessMode cacheAccessMode) {
         printLine(level, "Cache Hit Dynamic Energy", Joule(cacheHitDynamicEnergy), " per access");
         printLine(level, "Cache Miss Dynamic Energy", Joule(cacheMissDynamicEnergy), " per access");
         printLine(level, "Cache Write Dynamic Energy", Joule(cacheWriteDynamicEnergy), " per access");
-        if (gCell.memCellType == eDRAM) {
-            printLine(level, "Cache Refresh Dynamic Energy", Joule(tagResult.bank->power().refreshDynamicEnergy.value()
-                    + bank->power().refreshDynamicEnergy.value()), " per bank");
+        if (refreshCell) {
+            printLine(level, "Cache Refresh Dynamic Energy", Joule(tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Refresh].value()
+                    + bank->power().dynamicEnergy[mse::cell::Operation::Refresh].value()), " per bank");
         }
         printLine(level, "Cache Total Leakage Power", Watt(cacheLeakage));
         level++;
         printLine(level, "Cache Data Array Leakage Power", bank->power().leakage);
         printLine(level, "Cache Tag Array Leakage Power", tagResult.bank->power().leakage);
         level--;
-        if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
-            printLine(level, "Cache Refresh Power", Watt(bank->power().refreshDynamicEnergy.value() / (gCell.retentionTime)), " per bank");
-            printLine(level, "Cache Retention Time", Second(gCell.retentionTime));
+        if (refreshCell) {
+            printLine(level, "Cache Refresh Power", Watt(bank->power().dynamicEnergy[mse::cell::Operation::Refresh].value() / (retentionTime())), " per bank");
+            printLine(level, "Cache Retention Time", Second(retentionTime()));
         }
         level--;
 
@@ -597,15 +602,12 @@ YAML::Node Result::toYamlNode() {
 			case eDRAM3T333: result["MemoryCell"]["MemoryCellType"] = "333eDRAM"; break;
 			case MRAM: result["MemoryCell"]["MemoryCellType"] = "MRAM (Magnetoresistive)"; break;
 			case PCRAM: result["MemoryCell"]["MemoryCellType"] = "PCRAM (Phase-Change)"; break;
-			case memristor: result["MemoryCell"]["MemoryCellType"] = "RRAM (Memristor)"; break;
+			case memristor: result["MemoryCell"]["MemoryCellType"] = gCell.isMultiLevel() ? "Multi-Level Cell RRAM (Memristor)" : "RRAM (Memristor)"; break;
 			case FBRAM: result["MemoryCell"]["MemoryCellType"] = "FBRAM (Floating Body)"; break;
 			case SLCNAND: result["MemoryCell"]["MemoryCellType"] = "Single-Level Cell NAND Flash"; break;
 			case MLCNAND: result["MemoryCell"]["MemoryCellType"] = "Multi-Level Cell NAND Flash"; break;
-			case CTT: result["MemoryCell"]["MemoryCellType"] = "Single-Level Cell CTT"; break;
-			case MLCCTT: result["MemoryCell"]["MemoryCellType"] = "Multi-Level Cell CTT"; break;
-			case FeFET: result["MemoryCell"]["MemoryCellType"] = "Single-Level Cell FeFET"; break;
-			case MLCFeFET: result["MemoryCell"]["MemoryCellType"] = "Multi-Level Cell FeFET"; break;
-			case MLCRRAM: result["MemoryCell"]["MemoryCellType"] = "Multi-Level Cell RRAM (Memristor)"; break;
+			case CTT: result["MemoryCell"]["MemoryCellType"] = gCell.isMultiLevel() ? "Multi-Level Cell CTT" : "Single-Level Cell CTT"; break;
+			case FeFET: result["MemoryCell"]["MemoryCellType"] = gCell.isMultiLevel() ? "Multi-Level Cell FeFET" : "Single-Level Cell FeFET"; break;
 			default: result["MemoryCell"]["MemoryCellType"] = "Unknown"; break;
 		}
 
@@ -617,8 +619,7 @@ YAML::Node Result::toYamlNode() {
 
 		// Resistive / Non-volatile memory
 		if (gCell.memCellType == PCRAM || gCell.memCellType == MRAM || gCell.memCellType == memristor ||
-			gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET ||
-			gCell.memCellType == MLCRRAM) {
+			gCell.memCellType == FBRAM || gCell.memCellType == FeFET) {
 
 			if (gCell.resistanceOn < 1e3)
 				result["MemoryCell"]["R_on_Ohm"] = gCell.resistanceOn;
@@ -704,7 +705,7 @@ YAML::Node Result::toYamlNode() {
 		}
 
 		// Multi-level cells
-		if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
+		if (gCell.isMultiLevel()) {
 			result["MemoryCell"]["NumberOfInputFingers"]   = gCell.nFingers;
 			result["MemoryCell"]["NumberOfLevelsPerCell"] = gCell.nLvl;
 		}
@@ -841,12 +842,12 @@ YAML::Node Result::toYamlNode() {
         (gCell.area * gTech.featureSize.value() * gTech.featureSize.value() * bank->capacity / bank->dimensions().area().value() * 100);
 
     // Timing
-    result["Results"]["Timing"]["Read"]["Latency_ns"] = bank->timing().readLatency.value() * 1e9;
+    result["Results"]["Timing"]["Read"]["Latency_ns"] = bank->timing().latency[mse::cell::Operation::Read].value() * 1e9;
     result["Results"]["Timing"]["Read"]["TreeLatency_ns"] = 
-        (bank->timing().readLatency.value() - bank->mat.timing().readLatency.value()) * 1e9;
-    result["Results"]["Timing"]["Read"]["MatLatency_ns"] = bank->mat.timing().readLatency.value() * 1e9;
+        (bank->timing().latency[mse::cell::Operation::Read].value() - bank->mat.timing().latency[mse::cell::Operation::Read].value()) * 1e9;
+    result["Results"]["Timing"]["Read"]["MatLatency_ns"] = bank->mat.timing().latency[mse::cell::Operation::Read].value() * 1e9;
     result["Results"]["Timing"]["Read"]["PredecoderLatency_ns"] = bank->mat.timing().predecoderLatency.value() * 1e9;
-    result["Results"]["Timing"]["Read"]["SubarrayLatency_ns"] = bank->mat.subarray.timing().readLatency.value() * 1e9;
+    result["Results"]["Timing"]["Read"]["SubarrayLatency_ns"] = bank->mat.subarray.timing().latency[mse::cell::Operation::Read].value() * 1e9;
     result["Results"]["Timing"]["Read"]["RowDecoderLatency_ns"] = 
         bank->mat.subarray.rowDecoder.timing().readLatency.value() * 1e9;
 	if (gCell.memCellType == eDRAM3T333 || gCell.memCellType == eDRAM3T) {
@@ -862,37 +863,18 @@ YAML::Node Result::toYamlNode() {
     result["Results"]["Timing"]["Read"]["PrechargeLatency_ns"] = 
         bank->mat.subarray.precharger.timing().readLatency.value() * 1e9;
 
-    if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || 
-        gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || 
-        gCell.memCellType == MLCRRAM ||
-        (gCell.memCellType == memristor && (gCell.accessType == CMOS_access || 
-         gCell.accessType == BJT_access))) {
+    // Every cell writes, cells that switch states also report their set and reset, and refreshing cells their refresh
+    const mse::cell::OperationSet operations = bank->operations();
+    const bool setResetCell = operations.contains(mse::cell::Operation::Set) && operations.contains(mse::cell::Operation::Reset);
+    const bool refreshCell = operations.contains(mse::cell::Operation::Refresh) && retentionTime() > 0;
 
-        // RESET latency with proper TreeLatency calculation
-        result["Results"]["Timing"]["Reset"]["Latency_ns"] = bank->timing().resetLatency.value() * 1e9;
-        result["Results"]["Timing"]["Reset"]["TreeLatency_ns"] = 
-            (bank->timing().resetLatency.value() - bank->mat.timing().resetLatency.value()) * 1e9;
-        result["Results"]["Timing"]["Reset"]["MatLatency_ns"] = bank->mat.timing().resetLatency.value() * 1e9;
-        result["Results"]["Timing"]["Reset"]["PulseDuration_ns"] = gCell.resetPulse * 1e9;
-
-        // SET latency with proper TreeLatency calculation
-        result["Results"]["Timing"]["Set"]["Latency_ns"] = bank->timing().setLatency.value() * 1e9;
-        result["Results"]["Timing"]["Set"]["TreeLatency_ns"] = 
-            (bank->timing().setLatency.value() - bank->mat.timing().setLatency.value()) * 1e9;
-        result["Results"]["Timing"]["Set"]["MatLatency_ns"] = bank->mat.timing().setLatency.value() * 1e9;
-        result["Results"]["Timing"]["Set"]["PulseDuration_ns"] = gCell.setPulse * 1e9;
-
-    } else if (gCell.memCellType == SLCNAND) {
-        result["Results"]["Timing"]["Erase"]["Latency_ns"] = bank->timing().resetLatency.value() * 1e9;
-        result["Results"]["Timing"]["Programming"]["Latency_ns"] = bank->timing().setLatency.value() * 1e9;
-
-    } else {
-        result["Results"]["Timing"]["Write"]["Latency_ns"] = bank->timing().writeLatency.value() * 1e9;
-        result["Results"]["Timing"]["Write"]["TreeLatency_ns"] = 
-            (bank->timing().writeLatency.value() - bank->mat.timing().writeLatency.value()) * 1e9;
-        result["Results"]["Timing"]["Write"]["MatLatency_ns"] = bank->mat.timing().writeLatency.value() * 1e9;
+    result["Results"]["Timing"]["Write"]["Latency_ns"] = bank->timing().latency[mse::cell::Operation::Write].value() * 1e9;
+    result["Results"]["Timing"]["Write"]["TreeLatency_ns"] = 
+        (bank->timing().latency[mse::cell::Operation::Write].value() - bank->mat.timing().latency[mse::cell::Operation::Write].value()) * 1e9;
+    result["Results"]["Timing"]["Write"]["MatLatency_ns"] = bank->mat.timing().latency[mse::cell::Operation::Write].value() * 1e9;
 		result["Results"]["Timing"]["Write"]["PredecoderLatency_ns"] = bank->mat.timing().predecoderLatency.value() * 1e9;
-		result["Results"]["Timing"]["Write"]["SubarrayLatency_ns"] = bank->mat.subarray.timing().readLatency.value() * 1e9;
+		// TODO the write breakdown has no write values yet, so the subarray and row decoder latencies are the read ones
+		result["Results"]["Timing"]["Write"]["SubarrayLatency_ns"] = bank->mat.subarray.timing().latency[mse::cell::Operation::Read].value() * 1e9;
 		result["Results"]["Timing"]["Write"]["RowDecoderLatency_ns"] = 
 			bank->mat.subarray.rowDecoder.timing().readLatency.value() * 1e9;
 		if (gCell.memCellType == eDRAM3T333 || gCell.memCellType == eDRAM3T) {
@@ -900,59 +882,68 @@ YAML::Node Result::toYamlNode() {
 		} else {
 			result["Results"]["Timing"]["Write"]["BitlineLatency_ns"] = bank->mat.subarray.timing().bitlineLatency.value() * 1e9;
 		}
+
+    if (setResetCell && gCell.memCellType == SLCNAND) {
+        result["Results"]["Timing"]["Erase"]["Latency_ns"] = bank->timing().latency[mse::cell::Operation::Reset].value() * 1e9;
+        result["Results"]["Timing"]["Programming"]["Latency_ns"] = bank->timing().latency[mse::cell::Operation::Set].value() * 1e9;
+    } else if (setResetCell) {
+        // RESET latency with proper TreeLatency calculation
+        result["Results"]["Timing"]["Reset"]["Latency_ns"] = bank->timing().latency[mse::cell::Operation::Reset].value() * 1e9;
+        result["Results"]["Timing"]["Reset"]["TreeLatency_ns"] = 
+            (bank->timing().latency[mse::cell::Operation::Reset].value() - bank->mat.timing().latency[mse::cell::Operation::Reset].value()) * 1e9;
+        result["Results"]["Timing"]["Reset"]["MatLatency_ns"] = bank->mat.timing().latency[mse::cell::Operation::Reset].value() * 1e9;
+        result["Results"]["Timing"]["Reset"]["PulseDuration_ns"] = gCell.resetPulse * 1e9;
+
+        // SET latency with proper TreeLatency calculation
+        result["Results"]["Timing"]["Set"]["Latency_ns"] = bank->timing().latency[mse::cell::Operation::Set].value() * 1e9;
+        result["Results"]["Timing"]["Set"]["TreeLatency_ns"] = 
+            (bank->timing().latency[mse::cell::Operation::Set].value() - bank->mat.timing().latency[mse::cell::Operation::Set].value()) * 1e9;
+        result["Results"]["Timing"]["Set"]["MatLatency_ns"] = bank->mat.timing().latency[mse::cell::Operation::Set].value() * 1e9;
+        result["Results"]["Timing"]["Set"]["PulseDuration_ns"] = gCell.setPulse * 1e9;
     }
 
     double readBandwidth = (double)bank->blockSize /
-        (bank->mat.subarray.timing().readLatency.value() - bank->mat.subarray.rowDecoder.timing().readLatency.value()
+        (bank->mat.subarray.timing().latency[mse::cell::Operation::Read].value() - bank->mat.subarray.rowDecoder.timing().readLatency.value()
          + bank->mat.subarray.precharger.timing().readLatency.value()) / 8;
-    if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || 
-        gCell.memCellType == MLCRRAM) {
+    if (gCell.isMultiLevel()) {
         readBandwidth *= log2(gCell.nLvl);
     }
     result["Results"]["Timing"]["ReadBandwidth_Bps"] = readBandwidth;
 
-    double writeBandwidth = (double)bank->blockSize / (bank->mat.subarray.timing().writeLatency.value()) / 8;
+    double writeBandwidth = (double)bank->blockSize / (bank->mat.subarray.timing().latency[mse::cell::Operation::Write].value()) / 8;
     result["Results"]["Timing"]["WriteBandwidth_Bps"] = writeBandwidth;
 
     // Power
-    result["Results"]["Power"]["Read"]["DynamicEnergy_pJ"] = bank->power().dynamicReadEnergy.value() * 1e12;
+    result["Results"]["Power"]["Read"]["DynamicEnergy_pJ"] = bank->power().dynamicEnergy[mse::cell::Operation::Read].value() * 1e12;
     result["Results"]["Power"]["Read"]["TreeDynamicEnergy_pJ"] =
-        (bank->power().dynamicReadEnergy.value() - bank->mat.power().dynamicReadEnergy.value() * 
+        (bank->power().dynamicEnergy[mse::cell::Operation::Read].value() - bank->mat.power().dynamicEnergy[mse::cell::Operation::Read].value() * 
          bank->activeMatsPerColumn * bank->activeMatsPerRow) * 1e12;
     result["Results"]["Power"]["Read"]["MatDynamicEnergy_pJ"] = 
-        bank->mat.power().dynamicReadEnergy.value() * 1e12;
+        bank->mat.power().dynamicEnergy[mse::cell::Operation::Read].value() * 1e12;
     result["Results"]["Power"]["Read"]["SubarrayDynamicEnergy_pJ"] = 
-        bank->mat.subarray.power().dynamicReadEnergy.value() * 1e12;
+        bank->mat.subarray.power().dynamicEnergy[mse::cell::Operation::Read].value() * 1e12;
 
-    if (gCell.memCellType == PCRAM || gCell.memCellType == FBRAM || 
-        gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET || 
-        gCell.memCellType == MLCRRAM ||
-        (gCell.memCellType == memristor && (gCell.accessType == CMOS_access || 
-         gCell.accessType == BJT_access))) {
+    result["Results"]["Power"]["Write"]["DynamicEnergy_pJ"] = bank->power().dynamicEnergy[mse::cell::Operation::Write].value() * 1e12;
 
-        result["Results"]["Power"]["Reset"]["DynamicEnergy_pJ"] = bank->power().resetDynamicEnergy.value() * 1e12;
+    if (setResetCell && gCell.memCellType == SLCNAND) {
+        result["Results"]["Power"]["Erase"]["DynamicEnergy_pJ"] = bank->power().dynamicEnergy[mse::cell::Operation::Reset].value() * 1e12;
+        result["Results"]["Power"]["Programming"]["DynamicEnergy_pJ"] = bank->power().dynamicEnergy[mse::cell::Operation::Set].value() * 1e12;
+    } else if (setResetCell) {
+        result["Results"]["Power"]["Reset"]["DynamicEnergy_pJ"] = bank->power().dynamicEnergy[mse::cell::Operation::Reset].value() * 1e12;
         result["Results"]["Power"]["Reset"]["CellResetEnergy_pJ"] = 
-            bank->mat.subarray.power().cellResetEnergy.value() * 1e12;
+            bank->mat.subarray.power().cellEnergy[mse::cell::Operation::Reset].value() * 1e12;
 
-        result["Results"]["Power"]["Set"]["DynamicEnergy_pJ"] = bank->power().setDynamicEnergy.value() * 1e12;
+        result["Results"]["Power"]["Set"]["DynamicEnergy_pJ"] = bank->power().dynamicEnergy[mse::cell::Operation::Set].value() * 1e12;
         result["Results"]["Power"]["Set"]["CellSetEnergy_pJ"] = 
-            bank->mat.subarray.power().cellSetEnergy.value() * 1e12;
-
-    } else if (gCell.memCellType == SLCNAND) {
-        result["Results"]["Power"]["Erase"]["DynamicEnergy_pJ"] = bank->power().resetDynamicEnergy.value() * 1e12;
-        result["Results"]["Power"]["Programming"]["DynamicEnergy_pJ"] = bank->power().setDynamicEnergy.value() * 1e12;
-
-    } else {
-        result["Results"]["Power"]["Write"]["DynamicEnergy_pJ"] = bank->power().dynamicWriteEnergy.value() * 1e12;
+            bank->mat.subarray.power().cellEnergy[mse::cell::Operation::Set].value() * 1e12;
     }
 
     result["Results"]["Power"]["Leakage_mW"] = bank->power().leakage.value() * 1e3;
 
-    if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || 
-        gCell.memCellType == eDRAM3T333) {
+    if (refreshCell) {
         result["Results"]["Power"]["RefreshPower_W"] = 
-            (bank->power().refreshDynamicEnergy.value() / gCell.retentionTime);
-        result["Results"]["Power"]["RetentionTime_us"] = gCell.retentionTime * 1e6;
+            (bank->power().dynamicEnergy[mse::cell::Operation::Refresh].value() / retentionTime());
+        result["Results"]["Power"]["RetentionTime_us"] = retentionTime() * 1e6;
     }
 
     return result;
@@ -985,15 +976,12 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 		case eDRAM3T333: result["MemoryCell"]["MemoryCellType"] = "333 eDRAM"; break;
 		case MRAM: result["MemoryCell"]["MemoryCellType"] = "MRAM (Magnetoresistive)"; break;
 		case PCRAM: result["MemoryCell"]["MemoryCellType"] = "PCRAM (Phase-Change)"; break;
-		case memristor: result["MemoryCell"]["MemoryCellType"] = "RRAM (Memristor)"; break;
+		case memristor: result["MemoryCell"]["MemoryCellType"] = gCell.isMultiLevel() ? "Multi-Level Cell RRAM (Memristor)" : "RRAM (Memristor)"; break;
 		case FBRAM: result["MemoryCell"]["MemoryCellType"] = "FBRAM (Floating Body)"; break;
 		case SLCNAND: result["MemoryCell"]["MemoryCellType"] = "Single-Level Cell NAND Flash"; break;
 		case MLCNAND: result["MemoryCell"]["MemoryCellType"] = "Multi-Level Cell NAND Flash"; break;
-		case CTT: result["MemoryCell"]["MemoryCellType"] = "Single-Level Cell CTT"; break;
-		case MLCCTT: result["MemoryCell"]["MemoryCellType"] = "Multi-Level Cell CTT"; break;
-		case FeFET: result["MemoryCell"]["MemoryCellType"] = "Single-Level Cell FeFET"; break;
-		case MLCFeFET: result["MemoryCell"]["MemoryCellType"] = "Multi-Level Cell FeFET"; break;
-		case MLCRRAM: result["MemoryCell"]["MemoryCellType"] = "Multi-Level Cell RRAM (Memristor)"; break;
+		case CTT: result["MemoryCell"]["MemoryCellType"] = gCell.isMultiLevel() ? "Multi-Level Cell CTT" : "Single-Level Cell CTT"; break;
+		case FeFET: result["MemoryCell"]["MemoryCellType"] = gCell.isMultiLevel() ? "Multi-Level Cell FeFET" : "Single-Level Cell FeFET"; break;
 		default: result["MemoryCell"]["MemoryCellType"] = "Unknown"; break;
 	}
 
@@ -1004,8 +992,7 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 
 	// Resistive / Non-volatile memory
 	if (gCell.memCellType == PCRAM || gCell.memCellType == MRAM || gCell.memCellType == memristor ||
-		gCell.memCellType == FBRAM || gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET ||
-		gCell.memCellType == MLCRRAM) {
+		gCell.memCellType == FBRAM || gCell.memCellType == FeFET) {
 
 		if (gCell.resistanceOn < 1e3)
 			result["MemoryCell"]["R_on_Ohm"] = gCell.resistanceOn;
@@ -1090,7 +1077,7 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 	}
 
 	// Multi-level cells
-	if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
+	if (gCell.isMultiLevel()) {
 		result["MemoryCell"]["NumberOfInputFingers"]   = gCell.nFingers;
 		result["MemoryCell"]["NumberOfLevelsPerCell"] = gCell.nLvl;
 	}
@@ -1102,31 +1089,31 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
     double cacheArea;
 
     if (cacheAccessMode == normal_access_mode) {
-        cacheMissLatency = tagResult.bank->timing().readLatency.value();
-        cacheHitLatency = std::max(tagResult.bank->timing().readLatency.value(), bank->mat.timing().readLatency.value());
+        cacheMissLatency = tagResult.bank->timing().latency[mse::cell::Operation::Read].value();
+        cacheHitLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Read].value(), bank->mat.timing().latency[mse::cell::Operation::Read].value());
         cacheHitLatency += bank->mat.subarray.timing().columnDecoderLatency.value();
-        cacheHitLatency += bank->timing().readLatency.value() - bank->mat.timing().readLatency.value();
-        cacheWriteLatency = std::max(tagResult.bank->timing().writeLatency.value(), bank->timing().writeLatency.value());
+        cacheHitLatency += bank->timing().latency[mse::cell::Operation::Read].value() - bank->mat.timing().latency[mse::cell::Operation::Read].value();
+        cacheWriteLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Write].value(), bank->timing().latency[mse::cell::Operation::Write].value());
 
-        cacheMissDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-        cacheHitDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-        cacheWriteDynamicEnergy = tagResult.bank->power().dynamicWriteEnergy.value() + bank->power().dynamicWriteEnergy.value();
+        cacheMissDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+        cacheHitDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+        cacheWriteDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Write].value() + bank->power().dynamicEnergy[mse::cell::Operation::Write].value();
     } else if (cacheAccessMode == fast_access_mode) {
-        cacheMissLatency = tagResult.bank->timing().readLatency.value();
-        cacheHitLatency = std::max(tagResult.bank->timing().readLatency.value(), bank->timing().readLatency.value());
-        cacheWriteLatency = std::max(tagResult.bank->timing().writeLatency.value(), bank->timing().writeLatency.value());
+        cacheMissLatency = tagResult.bank->timing().latency[mse::cell::Operation::Read].value();
+        cacheHitLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Read].value(), bank->timing().latency[mse::cell::Operation::Read].value());
+        cacheWriteLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Write].value(), bank->timing().latency[mse::cell::Operation::Write].value());
 
-        cacheMissDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-        cacheHitDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-        cacheWriteDynamicEnergy = tagResult.bank->power().dynamicWriteEnergy.value() + bank->power().dynamicWriteEnergy.value();
+        cacheMissDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+        cacheHitDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+        cacheWriteDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Write].value() + bank->power().dynamicEnergy[mse::cell::Operation::Write].value();
     } else {  // sequential_access_mode
-        cacheMissLatency = tagResult.bank->timing().readLatency.value();
-        cacheHitLatency = tagResult.bank->timing().readLatency.value() + bank->timing().readLatency.value();
-        cacheWriteLatency = std::max(tagResult.bank->timing().writeLatency.value(), bank->timing().writeLatency.value());
+        cacheMissLatency = tagResult.bank->timing().latency[mse::cell::Operation::Read].value();
+        cacheHitLatency = tagResult.bank->timing().latency[mse::cell::Operation::Read].value() + bank->timing().latency[mse::cell::Operation::Read].value();
+        cacheWriteLatency = std::max(tagResult.bank->timing().latency[mse::cell::Operation::Write].value(), bank->timing().latency[mse::cell::Operation::Write].value());
 
-        cacheMissDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-        cacheHitDynamicEnergy = tagResult.bank->power().dynamicReadEnergy.value() + bank->power().dynamicReadEnergy.value();
-        cacheWriteDynamicEnergy = tagResult.bank->power().dynamicWriteEnergy.value() + bank->power().dynamicWriteEnergy.value();
+        cacheMissDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+        cacheHitDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Read].value() + bank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+        cacheWriteDynamicEnergy = tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Write].value() + bank->power().dynamicEnergy[mse::cell::Operation::Write].value();
     }
 
     cacheLeakage = tagResult.bank->power().leakage.value() + bank->power().leakage.value();
@@ -1181,32 +1168,32 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
     result["CacheDesign"]["Timing"]["CacheMissLatency_ns"] = cacheMissLatency * 1e9;
     result["CacheDesign"]["Timing"]["CacheWriteLatency_ns"] = cacheWriteLatency * 1e9;
 
-    if (gCell.memCellType == eDRAM) {
+    const bool refreshCell = bank->operations().contains(mse::cell::Operation::Refresh) && retentionTime() > 0;
+    if (refreshCell) {
         result["CacheDesign"]["Timing"]["CacheRefreshLatency_us"] =
-            std::max(tagResult.bank->timing().refreshLatency.value(), bank->timing().refreshLatency.value()) * 1e6;
+            std::max(tagResult.bank->timing().latency[mse::cell::Operation::Refresh].value(), bank->timing().latency[mse::cell::Operation::Refresh].value()) * 1e6;
         result["CacheDesign"]["Timing"]["CacheAvailability_percent"] =
-            ((gCell.retentionTime - std::max(tagResult.bank->timing().refreshLatency.value(), bank->timing().refreshLatency.value())) /
-             gCell.retentionTime) * 100.0;
+            ((retentionTime() - std::max(tagResult.bank->timing().latency[mse::cell::Operation::Refresh].value(), bank->timing().latency[mse::cell::Operation::Refresh].value())) /
+             retentionTime()) * 100.0;
     }
 
     result["CacheDesign"]["Power"]["CacheHitDynamicEnergy_nJ"] = cacheHitDynamicEnergy * 1e9;
     result["CacheDesign"]["Power"]["CacheMissDynamicEnergy_nJ"] = cacheMissDynamicEnergy * 1e9;
     result["CacheDesign"]["Power"]["CacheWriteDynamicEnergy_nJ"] = cacheWriteDynamicEnergy * 1e9;
 
-    if (gCell.memCellType == eDRAM) {
+    if (refreshCell) {
         result["CacheDesign"]["Power"]["CacheRefreshDynamicEnergy_nJ"] =
-            (tagResult.bank->power().refreshDynamicEnergy.value() + bank->power().refreshDynamicEnergy.value()) * 1e9;
+            (tagResult.bank->power().dynamicEnergy[mse::cell::Operation::Refresh].value() + bank->power().dynamicEnergy[mse::cell::Operation::Refresh].value()) * 1e9;
     }
 
     result["CacheDesign"]["Power"]["CacheTotalLeakagePower_mW"] = cacheLeakage * 1e3;
     result["CacheDesign"]["Power"]["CacheDataArrayLeakagePower_mW"] = bank->power().leakage.value() * 1e3;
     result["CacheDesign"]["Power"]["CacheTagArrayLeakagePower_mW"] = tagResult.bank->power().leakage.value() * 1e3;
 
-    if (gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || 
-        gCell.memCellType == eDRAM3T333) {
+    if (refreshCell) {
         result["CacheDesign"]["Power"]["CacheRefreshPower_W"] =
-            (bank->power().refreshDynamicEnergy.value() / gCell.retentionTime);
-        result["CacheDesign"]["Power"]["CacheRetentionTime_ns"] = gCell.retentionTime * 1e9;
+            (bank->power().dynamicEnergy[mse::cell::Operation::Refresh].value() / retentionTime());
+        result["CacheDesign"]["Power"]["CacheRetentionTime_ns"] = retentionTime() * 1e9;
     }
 
     // Add reset and set pulse durations (using global gCell pointer safely)

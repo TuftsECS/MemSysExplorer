@@ -3,13 +3,14 @@
 #include "global.hpp"
 
 mse::component::RowDecoder::RowDecoder(int rows, unit::Farad loadCapacitance, unit::Ohm loadResistance, bool multipleRowsPerSet,
-                                       BufferDesignTarget areaOptimizationLevel, unit::Ampere minDriverCurrent)
+                                       BufferDesignTarget areaOptimizationLevel, unit::Ampere minDriverCurrent, unit::Volt swing)
         : _rows(rows),
           _loadCapacitance(loadCapacitance),
           _loadResistance(loadResistance),
           _multipleRowsPerSet(multipleRowsPerSet),
           _areaOptimizationLevel(areaOptimizationLevel),
-          _minDriverCurrent(minDriverCurrent) {}
+          _minDriverCurrent(minDriverCurrent),
+          _swing(swing) {}
 
 bool mse::component::RowDecoder::setup() noexcept {
     using namespace mse::unit;
@@ -96,9 +97,8 @@ mse::component::BasicPower mse::component::RowDecoder::calculatePower() const no
     power.dynamicReadEnergy = driver.dynamicReadEnergy;
     if (nandInputs() > 0) {
         const Watt nandLeakage = CmosNand<>(gTech, nandInputs(), constant::minNmosSize, gTech.pnSizeRatio * constant::minNmosSize, constant::maxTransistorHeight).leakageCurrent() * gTech.vdd;
-        // DRAM wordlines are overdriven to Vpp, only one row switches each time
-        const Volt swing(gCell.memCellType == DRAM || gCell.memCellType == eDRAM ? gTech.vpp : gTech.vdd);
-        const Joule nandEnergy = (nandOutputCapacitance() + _outputDriver.stages().front().inputCapacitance) * swing * swing;
+        // Only one row switches each time
+        const Joule nandEnergy = (nandOutputCapacitance() + _outputDriver.stages().front().inputCapacitance) * _swing * _swing;
         power.leakage = nandLeakage + driver.leakage;
         power.dynamicReadEnergy = nandEnergy + driver.dynamicReadEnergy;
     }

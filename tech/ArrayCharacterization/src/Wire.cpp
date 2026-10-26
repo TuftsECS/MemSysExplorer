@@ -40,6 +40,7 @@
 #include "formula.hpp"
 #include "physics/Horowitz.hpp"
 #include "constant.hpp"
+#include "cell/types.hpp"
 
 #include <math.h>
 
@@ -57,6 +58,7 @@ void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterTy
 	temperature = _temperature;
 	isLowSwing = _isLowSwing;
 
+	// TODO no model for low swing repeated wires
 	if (wireRepeaterType != repeated_none && isLowSwing) {
 		std::cout << "[Wire] Error: Low Swing is not supported for repeated wires!" << std::endl;
 		exit(-1);
@@ -68,391 +70,391 @@ void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterTy
 	if (_featureSizeInNano <= 22) {
 		featureSize = 22e-9;
 		switch (wireType) {
-		case local_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.55;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 1.9;
-			ildThickness = aspectRatio * featureSize;
-			copper_resistivity =  6.0e-8;
-			break;
-		case local_conservative:
-			barrierThickness = 0.0021e-6;
-			horizontalDielectric = 3;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 1.9;
-			ildThickness = aspectRatio * featureSize;
-			copper_resistivity =  6.0e-8;
-			break;
-		case semi_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.55;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 1.9;
-			ildThickness = 2 * aspectRatio * featureSize;
-			copper_resistivity =  6.0e-8;
-			break;
-		case semi_conservative:
-			barrierThickness = 0.0021e-6;
-			horizontalDielectric = 3;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 1.9;
-			ildThickness = 2 * aspectRatio * featureSize;
-			copper_resistivity =  6.0e-8;
-			break;
-		case global_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.55;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.34;
-			ildThickness = 0.42e-6 * 22 / 32;
-			copper_resistivity =  3.0e-8; /* TODO confusing data in ITRS */
-			break;
-		case global_conservative:
-			barrierThickness = 0.0063e-6; /* TODO No data in ITRS */
-			horizontalDielectric = 3;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.34;
-			ildThickness = 0.385e-6 * 22 / 32;
-			copper_resistivity =  3.0e-8; /* TODO confusing data in ITRS */
-			break;
-		default:	/* dram_wordline */
-			/* TODO CACTI does not have a detailed model for it */
-			barrierThickness = 0e-6;
-			horizontalDielectric = 0;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 0;
-			ildThickness = 0e-6;
+			case local_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.55;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 1.9;
+				ildThickness = aspectRatio * featureSize;
+				copper_resistivity =  6.0e-8;
+				break;
+			case local_conservative:
+				barrierThickness = 0.0021e-6;
+				horizontalDielectric = 3;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 1.9;
+				ildThickness = aspectRatio * featureSize;
+				copper_resistivity =  6.0e-8;
+				break;
+			case semi_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.55;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 1.9;
+				ildThickness = 2 * aspectRatio * featureSize;
+				copper_resistivity =  6.0e-8;
+				break;
+			case semi_conservative:
+				barrierThickness = 0.0021e-6;
+				horizontalDielectric = 3;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 1.9;
+				ildThickness = 2 * aspectRatio * featureSize;
+				copper_resistivity =  6.0e-8;
+				break;
+			case global_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.55;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.34;
+				ildThickness = 0.42e-6 * 22 / 32;
+				copper_resistivity =  3.0e-8; /* TODO confusing data in ITRS */
+				break;
+			case global_conservative:
+				barrierThickness = 0.0063e-6; /* TODO No data in ITRS */
+				horizontalDielectric = 3;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.34;
+				ildThickness = 0.385e-6 * 22 / 32;
+				copper_resistivity =  3.0e-8; /* TODO confusing data in ITRS */
+				break;
+			default:	/* dram_wordline */
+				/* TODO CACTI does not have a detailed model for it */
+				barrierThickness = 0e-6;
+				horizontalDielectric = 0;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 0;
+				ildThickness = 0e-6;
 		}
 	} else if (_featureSizeInNano <= 32) {
 		featureSize = 32e-9;
 		switch (wireType) {
-		case local_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.82;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 1.8;
-			ildThickness = aspectRatio * featureSize;
-			copper_resistivity =  5.0e-8;
-			break;
-		case local_conservative:
-			barrierThickness = 0.0026e-6;
-			horizontalDielectric = 3.16;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 1.8;
-			ildThickness = aspectRatio * featureSize;
-			copper_resistivity =  5.0e-8;
-			break;
-		case semi_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.82;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 1.9;
-			ildThickness = 2 * aspectRatio * featureSize;
-			copper_resistivity =  5.0e-8;
-			break;
-		case semi_conservative:
-			barrierThickness = 0.0026e-6;
-			horizontalDielectric = 3.16;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 1.9;
-			ildThickness = 2 * aspectRatio * featureSize;
-			copper_resistivity =  5.0e-8;
-			break;
-		case global_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.82;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.34;
-			ildThickness = 0.42e-6;
-			copper_resistivity =  2.5e-8; /* TODO confusing data in ITRS */
-			break;
-		case global_conservative:
-			barrierThickness = 0.0078e-6; /* TODO No data in ITRS */
-			horizontalDielectric = 3.16;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.34;
-			ildThickness = 0.385e-6;
-			copper_resistivity =  2.5e-8; /* TODO confusing data in ITRS */
-			break;
-		default:	/* dram_wordline */
-			/* TODO CACTI does not have a detailed model for it */
-			barrierThickness = 0e-6;
-			horizontalDielectric = 0;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 0;
-			ildThickness = 0e-6;
+			case local_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.82;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 1.8;
+				ildThickness = aspectRatio * featureSize;
+				copper_resistivity =  5.0e-8;
+				break;
+			case local_conservative:
+				barrierThickness = 0.0026e-6;
+				horizontalDielectric = 3.16;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 1.8;
+				ildThickness = aspectRatio * featureSize;
+				copper_resistivity =  5.0e-8;
+				break;
+			case semi_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.82;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 1.9;
+				ildThickness = 2 * aspectRatio * featureSize;
+				copper_resistivity =  5.0e-8;
+				break;
+			case semi_conservative:
+				barrierThickness = 0.0026e-6;
+				horizontalDielectric = 3.16;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 1.9;
+				ildThickness = 2 * aspectRatio * featureSize;
+				copper_resistivity =  5.0e-8;
+				break;
+			case global_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.82;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.34;
+				ildThickness = 0.42e-6;
+				copper_resistivity =  2.5e-8; /* TODO confusing data in ITRS */
+				break;
+			case global_conservative:
+				barrierThickness = 0.0078e-6; /* TODO No data in ITRS */
+				horizontalDielectric = 3.16;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.34;
+				ildThickness = 0.385e-6;
+				copper_resistivity =  2.5e-8; /* TODO confusing data in ITRS */
+				break;
+			default:	/* dram_wordline */
+				/* TODO CACTI does not have a detailed model for it */
+				barrierThickness = 0e-6;
+				horizontalDielectric = 0;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 0;
+				ildThickness = 0e-6;
 		}
 	} else if (_featureSizeInNano <= 45) {
 		featureSize = 45e-9;
 		switch (wireType) {
-		case local_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.6;
-			wirePitch = 0.102e-6;
-			aspectRatio = 1.8;
-			ildThickness = 0.0918e-6;
-			copper_resistivity =  4.08e-8;
-			break;
-		case local_conservative:
-			barrierThickness = 0.0033e-6;
-			horizontalDielectric = 2.9;
-			wirePitch = 0.102e-6;
-			aspectRatio = 1.8;
-			ildThickness = 0.0918e-6;
-			copper_resistivity =  4.08e-8;
-			break;
-		case semi_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.6;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 1.8;
-			ildThickness = 2 * aspectRatio * featureSize;
-			copper_resistivity =  4.08e-8;
-			break;
-		case semi_conservative:
-			barrierThickness = 0.0033e-6;
-			horizontalDielectric = 2.9;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 1.8;
-			ildThickness = 2 * aspectRatio * featureSize;
-			copper_resistivity =  4.08e-8;
-			break;
-		case global_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.6;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.34;
-			ildThickness = 0.63e-6;
-			copper_resistivity =  2.06e-8;
-			break;
-		case global_conservative:
-			barrierThickness = 0.01e-6;
-			horizontalDielectric = 2.9;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.34;
-			ildThickness = 0.55e-6;
-			copper_resistivity =  2.06e-8;
-			break;
-		default:	/* dram_wordline */
-			/* TODO CACTI does not have a detailed model for it */
-			barrierThickness = 0e-6;
-			horizontalDielectric = 0;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 0;
-			ildThickness = 0e-6;
+			case local_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.6;
+				wirePitch = 0.102e-6;
+				aspectRatio = 1.8;
+				ildThickness = 0.0918e-6;
+				copper_resistivity =  4.08e-8;
+				break;
+			case local_conservative:
+				barrierThickness = 0.0033e-6;
+				horizontalDielectric = 2.9;
+				wirePitch = 0.102e-6;
+				aspectRatio = 1.8;
+				ildThickness = 0.0918e-6;
+				copper_resistivity =  4.08e-8;
+				break;
+			case semi_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.6;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 1.8;
+				ildThickness = 2 * aspectRatio * featureSize;
+				copper_resistivity =  4.08e-8;
+				break;
+			case semi_conservative:
+				barrierThickness = 0.0033e-6;
+				horizontalDielectric = 2.9;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 1.8;
+				ildThickness = 2 * aspectRatio * featureSize;
+				copper_resistivity =  4.08e-8;
+				break;
+			case global_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.6;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.34;
+				ildThickness = 0.63e-6;
+				copper_resistivity =  2.06e-8;
+				break;
+			case global_conservative:
+				barrierThickness = 0.01e-6;
+				horizontalDielectric = 2.9;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.34;
+				ildThickness = 0.55e-6;
+				copper_resistivity =  2.06e-8;
+				break;
+			default:	/* dram_wordline */
+				/* TODO CACTI does not have a detailed model for it */
+				barrierThickness = 0e-6;
+				horizontalDielectric = 0;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 0;
+				ildThickness = 0e-6;
 		}
 	} else if (_featureSizeInNano <= 65) {
 		featureSize = 65e-9;
 		switch (wireType) {
-		case local_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.303;
-			wirePitch = 2.5* featureSize;
-			aspectRatio = 2.7;
-			ildThickness = 0.405e-6;
-			break;
-		case local_conservative:
-			barrierThickness = 0.006e-6;
-			horizontalDielectric = 2.734;
-			wirePitch = 2.5* featureSize;
-			aspectRatio = 2.0;
-			ildThickness = 0.405e-6;
-			break;
-		case semi_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.303;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 2.7;
-			ildThickness = 0.405e-6;
-			break;
-		case semi_conservative:
-			barrierThickness = 0.006e-6;
-			horizontalDielectric = 2.734;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 2.0;
-			ildThickness = 0.405e-6;
-			break;
-		case global_aggressive:
-			barrierThickness = 0.00e-6;
-			horizontalDielectric = 2.303;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.8;
-			ildThickness = 0.81e-6;
-			break;
-		case global_conservative:
-			barrierThickness = 0.006e-6;
-			horizontalDielectric = 2.734;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.2;
-			ildThickness = 0.77e-6;
-			break;
-		default:	/* dram_wordline */
-			/* TODO CACTI does not have a detailed model for it */
-			barrierThickness = 0e-6;
-			horizontalDielectric = 0;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 0;
-			ildThickness = 0e-6;
+			case local_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.303;
+				wirePitch = 2.5* featureSize;
+				aspectRatio = 2.7;
+				ildThickness = 0.405e-6;
+				break;
+			case local_conservative:
+				barrierThickness = 0.006e-6;
+				horizontalDielectric = 2.734;
+				wirePitch = 2.5* featureSize;
+				aspectRatio = 2.0;
+				ildThickness = 0.405e-6;
+				break;
+			case semi_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.303;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 2.7;
+				ildThickness = 0.405e-6;
+				break;
+			case semi_conservative:
+				barrierThickness = 0.006e-6;
+				horizontalDielectric = 2.734;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 2.0;
+				ildThickness = 0.405e-6;
+				break;
+			case global_aggressive:
+				barrierThickness = 0.00e-6;
+				horizontalDielectric = 2.303;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.8;
+				ildThickness = 0.81e-6;
+				break;
+			case global_conservative:
+				barrierThickness = 0.006e-6;
+				horizontalDielectric = 2.734;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.2;
+				ildThickness = 0.77e-6;
+				break;
+			default:	/* dram_wordline */
+				/* TODO CACTI does not have a detailed model for it */
+				barrierThickness = 0e-6;
+				horizontalDielectric = 0;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 0;
+				ildThickness = 0e-6;
 		}
 	} else if (_featureSizeInNano <= 90) {
 		featureSize = 90e-9;
 		switch (wireType) {
-		case local_aggressive:
-			barrierThickness = 0.01e-6;
-			horizontalDielectric = 2.709;
-			wirePitch = 2.5* featureSize;
-			aspectRatio = 2.4;
-			ildThickness = 0.48e-6;
-			break;
-		case local_conservative:
-			barrierThickness = 0.008e-6;
-			horizontalDielectric = 3.038;
-			wirePitch = 2.5* featureSize;
-			aspectRatio = 2.0;
-			ildThickness = 0.48e-6;
-			break;
-		case semi_aggressive:
-			barrierThickness = 0.01e-6;
-			horizontalDielectric = 2.709;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 2.4;
-			ildThickness = 0.48e-6;
-			break;
-		case semi_conservative:
-			barrierThickness = 0.008e-6;
-			horizontalDielectric = 3.038;
-			wirePitch = 4 * featureSize;
-			aspectRatio = 2.0;
-			ildThickness = 0.48e-6;
-			break;
-		case global_aggressive:
-			barrierThickness = 0.01e-6;
-			horizontalDielectric = 2.709;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.7;
-			ildThickness = 0.96e-6;
-			break;
-		case global_conservative:
-			barrierThickness = 0.008e-6;
-			horizontalDielectric = 3.038;
-			wirePitch = 8 * featureSize;
-			aspectRatio = 2.2;
-			ildThickness = 1.1e-6;
-			break;
-  		default:	/* dram_wordline */
-			/* TODO CACTI does not have a detailed model for it */
-			barrierThickness = 0e-6;
-			horizontalDielectric = 0;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 0;
-			ildThickness = 0e-6;
+			case local_aggressive:
+				barrierThickness = 0.01e-6;
+				horizontalDielectric = 2.709;
+				wirePitch = 2.5* featureSize;
+				aspectRatio = 2.4;
+				ildThickness = 0.48e-6;
+				break;
+			case local_conservative:
+				barrierThickness = 0.008e-6;
+				horizontalDielectric = 3.038;
+				wirePitch = 2.5* featureSize;
+				aspectRatio = 2.0;
+				ildThickness = 0.48e-6;
+				break;
+			case semi_aggressive:
+				barrierThickness = 0.01e-6;
+				horizontalDielectric = 2.709;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 2.4;
+				ildThickness = 0.48e-6;
+				break;
+			case semi_conservative:
+				barrierThickness = 0.008e-6;
+				horizontalDielectric = 3.038;
+				wirePitch = 4 * featureSize;
+				aspectRatio = 2.0;
+				ildThickness = 0.48e-6;
+				break;
+			case global_aggressive:
+				barrierThickness = 0.01e-6;
+				horizontalDielectric = 2.709;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.7;
+				ildThickness = 0.96e-6;
+				break;
+			case global_conservative:
+				barrierThickness = 0.008e-6;
+				horizontalDielectric = 3.038;
+				wirePitch = 8 * featureSize;
+				aspectRatio = 2.2;
+				ildThickness = 1.1e-6;
+				break;
+	  		default:	/* dram_wordline */
+				/* TODO CACTI does not have a detailed model for it */
+				barrierThickness = 0e-6;
+				horizontalDielectric = 0;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 0;
+				ildThickness = 0e-6;
 		}
 	} else if (_featureSizeInNano <= 120) {
 		featureSize = 120e-9;
 		switch (wireType) {
-		case local_aggressive:
-			barrierThickness = 0.012e-6;
-			horizontalDielectric = 3.3;
-			wirePitch = 240e-9;
-			aspectRatio = 1.6;
-			ildThickness = 0.48e-6;
-			break;
-		case local_conservative:
-			barrierThickness = 0.01e-6;
-			horizontalDielectric = 3.6;
-			wirePitch = 240e-9;
-			aspectRatio = 1.4;
-			ildThickness = 0.48e-6;
-			break;
-		case semi_aggressive:
-			barrierThickness = 0.012e-6;
-			horizontalDielectric = 3.3;
-			wirePitch = 320e-9;
-			aspectRatio = 1.7;
-			ildThickness = 0.48e-6;
-			break;
-		case semi_conservative:
-			barrierThickness = 0.01e-6;
-			horizontalDielectric = 3.6;
-			wirePitch = 320e-9;
-			aspectRatio = 1.5;
-			ildThickness = 0.48e-6;
-			break;
-		case global_aggressive:
-			barrierThickness = 0.012e-6;
-			horizontalDielectric = 3.3;
-			wirePitch = 475e-9;
-			aspectRatio = 2.1;
-			ildThickness = 0.96e-6;
-			break;
-		case global_conservative:
-			barrierThickness = 0.01e-6;
-			horizontalDielectric = 3.6;
-			wirePitch = 475e-9;
-			aspectRatio = 1.9;
-			ildThickness = 1.1e-6;
-			break;
-  		default:	/* dram_wordline */
-			/* TODO CACTI does not have a detailed model for it */
-			barrierThickness = 0e-6;
-			horizontalDielectric = 0;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 0;
-			ildThickness = 0e-6;
+			case local_aggressive:
+				barrierThickness = 0.012e-6;
+				horizontalDielectric = 3.3;
+				wirePitch = 240e-9;
+				aspectRatio = 1.6;
+				ildThickness = 0.48e-6;
+				break;
+			case local_conservative:
+				barrierThickness = 0.01e-6;
+				horizontalDielectric = 3.6;
+				wirePitch = 240e-9;
+				aspectRatio = 1.4;
+				ildThickness = 0.48e-6;
+				break;
+			case semi_aggressive:
+				barrierThickness = 0.012e-6;
+				horizontalDielectric = 3.3;
+				wirePitch = 320e-9;
+				aspectRatio = 1.7;
+				ildThickness = 0.48e-6;
+				break;
+			case semi_conservative:
+				barrierThickness = 0.01e-6;
+				horizontalDielectric = 3.6;
+				wirePitch = 320e-9;
+				aspectRatio = 1.5;
+				ildThickness = 0.48e-6;
+				break;
+			case global_aggressive:
+				barrierThickness = 0.012e-6;
+				horizontalDielectric = 3.3;
+				wirePitch = 475e-9;
+				aspectRatio = 2.1;
+				ildThickness = 0.96e-6;
+				break;
+			case global_conservative:
+				barrierThickness = 0.01e-6;
+				horizontalDielectric = 3.6;
+				wirePitch = 475e-9;
+				aspectRatio = 1.9;
+				ildThickness = 1.1e-6;
+				break;
+	  		default:	/* dram_wordline */
+				/* TODO CACTI does not have a detailed model for it */
+				barrierThickness = 0e-6;
+				horizontalDielectric = 0;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 0;
+				ildThickness = 0e-6;
 		}
 	} else if (_featureSizeInNano <= 200) {
 		featureSize = 200e-9;
 		switch (wireType) {
-		case local_aggressive:
-			barrierThickness = 0.016e-6;
-			horizontalDielectric = 3.75;
-			wirePitch = 0.45e-6;
-			aspectRatio = 2.4;
-			ildThickness = 1e-6; /* TODO: for test */
-			break;
-		case local_conservative:
-			barrierThickness = 0.016e-6 * 0.8;
-			horizontalDielectric = 3.75 * 3.038 / 2.709;
-			wirePitch = 0.45e-6;
-			aspectRatio = 1.2;
-			ildThickness = 1e-6; /* TODO: for test */
-			break;
-		case semi_aggressive:
-			barrierThickness = 0.016e-6;
-			horizontalDielectric = 3.75;
-			wirePitch = 0.575e-6;
-			aspectRatio = 2.1;
-			ildThickness = 1e-6; /* TODO: for test */
-			break;
-		case semi_conservative:
-			barrierThickness = 0.016e-6 * 0.8;
-			horizontalDielectric = 3.75 * 3.038 / 2.709;
-			wirePitch = 0.575e-6;
-			aspectRatio = 2.1 * 2.0 / 2.4;
-			ildThickness = 1e-6; /* TODO: for test */
-			break;
-		case global_aggressive:
-			barrierThickness = 0.016e-6;
-			horizontalDielectric = 3.75;
-			wirePitch = 0.945e-6;
-			aspectRatio = 2.1;
-			ildThickness = 2e-6; /* TODO: for test */
-			break;
-		case global_conservative:
-			barrierThickness = 0.016e-6 * 0.8;
-			horizontalDielectric = 3.75 * 3.038 / 2.709;
-			wirePitch = 0.945e-6;
-			aspectRatio = 2.1 * 2.2 / 2.7;
-			ildThickness = 2.2e-6; /* TODO: for test */
-			break;
-  		default:	/* dram_wordline */
-			/* TODO CACTI does not have a detailed model for it */
-			barrierThickness = 0e-6;
-			horizontalDielectric = 0;
-			wirePitch = 2 * featureSize;
-			aspectRatio = 0;
-			ildThickness = 0e-6;
+			case local_aggressive:
+				barrierThickness = 0.016e-6;
+				horizontalDielectric = 3.75;
+				wirePitch = 0.45e-6;
+				aspectRatio = 2.4;
+				ildThickness = 1e-6; /* TODO: for test */
+				break;
+			case local_conservative:
+				barrierThickness = 0.016e-6 * 0.8;
+				horizontalDielectric = 3.75 * 3.038 / 2.709;
+				wirePitch = 0.45e-6;
+				aspectRatio = 1.2;
+				ildThickness = 1e-6; /* TODO: for test */
+				break;
+			case semi_aggressive:
+				barrierThickness = 0.016e-6;
+				horizontalDielectric = 3.75;
+				wirePitch = 0.575e-6;
+				aspectRatio = 2.1;
+				ildThickness = 1e-6; /* TODO: for test */
+				break;
+			case semi_conservative:
+				barrierThickness = 0.016e-6 * 0.8;
+				horizontalDielectric = 3.75 * 3.038 / 2.709;
+				wirePitch = 0.575e-6;
+				aspectRatio = 2.1 * 2.0 / 2.4;
+				ildThickness = 1e-6; /* TODO: for test */
+				break;
+			case global_aggressive:
+				barrierThickness = 0.016e-6;
+				horizontalDielectric = 3.75;
+				wirePitch = 0.945e-6;
+				aspectRatio = 2.1;
+				ildThickness = 2e-6; /* TODO: for test */
+				break;
+			case global_conservative:
+				barrierThickness = 0.016e-6 * 0.8;
+				horizontalDielectric = 3.75 * 3.038 / 2.709;
+				wirePitch = 0.945e-6;
+				aspectRatio = 2.1 * 2.2 / 2.7;
+				ildThickness = 2.2e-6; /* TODO: for test */
+				break;
+	  		default:	/* dram_wordline */
+				/* TODO CACTI does not have a detailed model for it */
+				barrierThickness = 0e-6;
+				horizontalDielectric = 0;
+				wirePitch = 2 * featureSize;
+				aspectRatio = 0;
+				ildThickness = 0e-6;
 		}
 	}
 
@@ -476,23 +478,23 @@ void Wire::Initialize(int _featureSizeInNano, WireType _wireType, WireRepeaterTy
 			/* The repeated wire is not fully latency optimized */
 			double penalty;
 			switch (wireRepeaterType) {
-			case repeated_5:
-				penalty = 0.05;
-				break;
-			case repeated_10:
-				penalty = 0.10;
-				break;
-			case repeated_20:
-				penalty = 0.20;
-				break;
-			case repeated_30:
-				penalty = 0.30;
-				break;
-			case repeated_40:
-				penalty = 0.40;
-				break;
-			default:	/* repeated_50 ? */
-				penalty = 0.50;
+				case repeated_5:
+					penalty = 0.05;
+					break;
+				case repeated_10:
+					penalty = 0.10;
+					break;
+				case repeated_20:
+					penalty = 0.20;
+					break;
+				case repeated_30:
+					penalty = 0.30;
+					break;
+				case repeated_40:
+					penalty = 0.40;
+					break;
+				default:	/* repeated_50 ? */
+					penalty = 0.50;
 			}
 			findPenalizedRepeater(penalty);
 		}
@@ -613,11 +615,9 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 				*(leakagePower) += 2 * gTech.vdd.value() * CalculateGateLeakage(GateType::NAND, 2, 2 * widthNmos, widthPmos, gInputParameter.temperature, gTech);
 				*(leakagePower) *= 2;
 
-				bool mlc = false;
-                if (gCell.memCellType == MLCCTT || gCell.memCellType == MLCFeFET || gCell.memCellType == MLCRRAM) {
-                    mlc = true;
-                }
-				mse::component::SenseAmp senseAmp(1, false, mse::unit::Volt(gCell.minSenseVoltage), mse::unit::Meter(1), mlc, gCell.nLvl, gCell.nFingers); // Sense amp pitch of 1 m is for test
+				const mse::cell::MemoryCell& memoryCell = mse::cell::memoryCell();
+				mse::component::SenseAmp senseAmp(1, false, memoryCell.parameters().minSenseVoltage.value(), mse::unit::Meter(1),
+						memoryCell.properties().multiLevel, memoryCell.properties().senseAmp); // TODO real sense amp pitch, 1 m is for test
 				double capSenseAmp = senseAmp.loadCapacitance().value();
 
 				/* nmos *(delay) + wire *(delay) */
@@ -643,6 +643,7 @@ void Wire::CalculateLatencyAndPower(double _wireLength, double* delay, double* d
 					*(leakagePower) += 4 * gTech.vdd.value() * CalculateGateLeakage(GateType::INV, 1, widthNmosDriver, 0, gInputParameter.temperature, gTech);
 
 			} else {
+				// TODO no model for low swing repeated wires
 				std::cout<<"Error: Low Swing Wires with Repeaters is not supported in this version!" << std::endl;
 				exit(-1);
 			}

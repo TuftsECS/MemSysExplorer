@@ -2,7 +2,7 @@
 # at University of Notre Dame; see README for details
 
 # Basic Cell Properties
-MemCellType: MLCFeFET
+MemCellType: FeFET
 Area: 103
 AspectRatio: 1
 MultiLevel:

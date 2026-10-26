@@ -19,6 +19,8 @@ private:
     int _addressBits = 0;
     unit::Farad _loadCapacitance;
     unit::Ohm _loadResistance;
+    // The swing of the row decoders' NAND outputs
+    unit::Volt _swing;
 
     int _nandInputsStage1A = 0;
     int _nandInputsStage1B = 0;
@@ -39,7 +41,7 @@ public:
 
     PredecodeBlock() = default;
 
-    PredecodeBlock(int addressBits, unit::Farad loadCapacitance, unit::Ohm loadResistance);
+    PredecodeBlock(int addressBits, unit::Farad loadCapacitance, unit::Ohm loadResistance, unit::Volt swing);
 
     constexpr std::string_view componentName() const noexcept override { return "Predecode Block"; }
 

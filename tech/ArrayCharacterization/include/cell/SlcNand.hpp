@@ -42,18 +42,20 @@ struct SlcNandParameters final : MemoryCellParameters {
 };
 
 struct SlcNandProperties final : MemoryCellProperties {
-    SlcNandProperties(const SlcNandParameters& parameters) {
+    SlcNandProperties(const SlcNandParameters& parameters) : MemoryCellProperties(parameters) {
         using namespace mse::unit;
+        operations = {Operation::Read, Operation::Write, Operation::Set, Operation::Reset};
 
         // Suppose the reference voltage is 0.5 vdd and the bitline is precharged to 0.6 vdd
         // If the bitline drops to 0.4 vdd, the sense amp can tell which data is stored
         sensingMethod = SenseMethod::Voltage;
-        sensingVoltage = std::max(parameters.minSenseVoltage.value(), 0.2 * gTech.vdd);
         prechargeVoltage = gTech.vdd * 0.6;
 
         sharedContact = true;
-        isMLC = false;
         columnLeak = false;
+        senseAmpNeedsBitlineMux = true;
+        // A subarray holds at least one block
+        minimumRows = parameters.pageCount;
     }
 };
 
@@ -108,27 +110,8 @@ private:
 
 class SlcNandCell final : public MemoryCell {
 public:
-    struct Latency {
-        unit::Second bitline; // TODO remove later, just here for legacy compat
-        unit::Second read;
-        unit::Second write;
-        unit::Second set;
-        unit::Second reset;
-    };
-
     // Wordlines in a NAND block are driven to pass, program, and erase voltages instead of vdd
     // So the row decoder energies are recalculated here and replace the ones found by the row decoder
-    struct Energy {
-        unit::Joule readDynamic;
-        unit::Joule writeDynamic;
-        unit::Joule setDynamic;
-        unit::Joule resetDynamic;
-        unit::Joule rowDecoderReadDynamic;
-        unit::Joule rowDecoderWriteDynamic;
-        unit::Joule rowDecoderSetDynamic;
-        unit::Joule rowDecoderResetDynamic;
-    };
-
     using Parameters = SlcNandParameters;
 
 private:
@@ -147,7 +130,19 @@ public:
 
     static constexpr std::string_view name = "SLCNAND";
 
-    Latency latency(MemoryCellLatencyContext context) const {
+    // With a 0.5 vdd reference and a 0.6 vdd initial bitline, the sense amp can tell the data apart once the bitline drops to 0.4 vdd
+    unit::Volt senseVoltage(unit::Farad) const noexcept override {
+        return std::max(_parameters.minSenseVoltage.value(), 0.2 * gTech.vdd);
+    }
+
+    // Two select transistors including contacts are 5F long in total for each string
+    unit::Meter bitlineOverhead(long long rows) const noexcept override {
+        using namespace mse::unit;
+
+        return (rows / _parameters.pageCount) * 5_feat * gTech.featureSize;
+    }
+
+    CellTiming timing(const MemoryCellLatencyContext& context) const noexcept override {
         using namespace mse::unit;
 
         Volt prechargeVoltage = _properties.prechargeVoltage;
@@ -159,21 +154,21 @@ public:
         tau *= std::log(prechargeVoltage / (prechargeVoltage - context.senseVoltage));
         // in one case the bitline is unchanged, and in the other case the bitline drops from 0.6 vdd to 0.4 vdd
 
-        Latency latency;
+        CellTiming timing;
 
         Second bitlineDelay = physics::horowitz(tau, _topology.beta(), context.rowDecoderRampOutput).delay;
         bitlineDelay = std::max(bitlineDelay, tau * 20.0); // TODO revisit, corrects unnecessary horowitz calculation
-        latency.bitline = bitlineDelay;
-        latency.read = bitlineDelay + context.bitlineMuxReadLatency;
+        timing.bitline = bitlineDelay;
+        timing.latency[Operation::Read] = bitlineDelay + context.bitlineMuxReadLatency;
         // Erase is reset and programming is set, programming is used as the write latency
-        latency.reset = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency) + _parameters.eraseTime.value();
-        latency.set = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency) + _parameters.programTime.value();
-        latency.write = latency.set;
+        timing.latency[Operation::Reset] = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency) + _parameters.eraseTime.value();
+        timing.latency[Operation::Set] = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency) + _parameters.programTime.value();
+        timing.latency[Operation::Write] = timing.latency[Operation::Set];
 
-        return latency;
+        return timing;
     }
 
-    Energy energy(MemoryCellEnergyContext context) const {
+    CellPower power(const MemoryCellEnergyContext& context) const noexcept override {
         const Technology& tech = _parameters.tech;
         double vdd = tech.vdd.value();
         double featureSize = tech.featureSize.value();
@@ -186,29 +181,30 @@ public:
         double capLine = _topology.cellTransistor.drainCapacitance().value() + context.bitlineCapacitance.value() + context.bitlineMuxPreviousPowerCapacitance.value();
         double rowDecoderEnergy = context.rowDecoderReadDynamic.value();
 
-        Energy energy;
+        CellPower power;
+        OperationValues<unit::Joule> wordlineEnergy;
 
         // Read, only the selected bitline is charged to the precharge voltage
         double voltagePrecharge = _properties.prechargeVoltage.value();
-        energy.readDynamic = unit::Joule(capLine * voltagePrecharge * voltagePrecharge * context.numColumn);
+        power.dynamicEnergy[Operation::Read] = unit::Joule(capLine * voltagePrecharge * voltagePrecharge * context.numColumn);
         // Unselected wordlines in the block, and both select lines, are charged to the pass voltage
         // The selected wordline itself is not charged
         double wordlineReadEnergy = rowDecoderEnergy / vdd / vdd * passVoltage * passVoltage;
         wordlineReadEnergy = wordlineReadEnergy * (context.numRow / pageCount * stringLength - 1);
-        energy.rowDecoderReadDynamic = unit::Joule(wordlineReadEnergy);
+        wordlineEnergy[Operation::Read] = unit::Joule(wordlineReadEnergy);
 
         // Programming (set), the source line is charged to the program voltage as part of the bitline
         double setEnergy = capLine * programVoltage * programVoltage * context.numColumn;
         // Tunneling current, all unselected bitlines are precharged too so every column is counted
         setEnergy += constant::floatingGateThresholdDelta.value() * constant::tunnelCurrentFlow.value() * _parameters.area.value() * featureSize * featureSize * _parameters.programTime.value().value() * context.numColumn;
-        energy.setDynamic = unit::Joule(setEnergy);
+        power.dynamicEnergy[Operation::Set] = unit::Joule(setEnergy);
         // The string select line is precharged to vdd, which the row decoder already found
         double wordlineSetEnergy = rowDecoderEnergy;
         // Unselected wordlines in the block are charged to the pass voltage
         wordlineSetEnergy += rowDecoderEnergy / vdd / vdd * passVoltage * passVoltage * (context.numRow / pageCount * stringLength - 1);
         // And the selected wordline is charged to the program voltage
         wordlineSetEnergy += rowDecoderEnergy / vdd / vdd * programVoltage * programVoltage;
-        energy.rowDecoderSetDynamic = unit::Joule(wordlineSetEnergy);
+        wordlineEnergy[Operation::Set] = unit::Joule(wordlineSetEnergy);
 
         // Erase (reset), all bitlines and the source line are charged to the erase voltage minus the built-in potential
         double bitlineEraseVoltage = eraseVoltage - tech.buildInPotential.value();
@@ -218,18 +214,21 @@ public:
         double wellJunctionCapacitance = tech.capJunction.value() * _parameters.area.value() * featureSize * featureSize;
         wellJunctionCapacitance *= gInputParameter.flashBlockSize; // One block shares the same well
         resetEnergy += wellJunctionCapacitance * eraseVoltage * eraseVoltage;
-        energy.resetDynamic = unit::Joule(resetEnergy);
+        power.dynamicEnergy[Operation::Reset] = unit::Joule(resetEnergy);
         // All wordlines and select lines in unselected blocks, and select lines in the selected block, are charged to beta * erase voltage
         double beta = 0.8;
         double wordlineResetEnergy = rowDecoderEnergy / vdd / vdd * (eraseVoltage * beta) * (eraseVoltage * beta);
         wordlineResetEnergy *= (context.numRow / pageCount * stringLength - pageCount);
-        energy.rowDecoderResetDynamic = unit::Joule(wordlineResetEnergy);
+        wordlineEnergy[Operation::Reset] = unit::Joule(wordlineResetEnergy);
 
         // Write energy is the average energy per page
-        energy.rowDecoderWriteDynamic = (energy.rowDecoderSetDynamic + energy.rowDecoderResetDynamic / static_cast<double>(pageCount)) / 2.0;
-        energy.writeDynamic = (energy.setDynamic + energy.resetDynamic / static_cast<double>(pageCount)) / 2.0;
+        wordlineEnergy[Operation::Write] = (wordlineEnergy[Operation::Set] + wordlineEnergy[Operation::Reset] / static_cast<double>(pageCount)) / 2.0;
+        power.dynamicEnergy[Operation::Write] = (power.dynamicEnergy[Operation::Set] + power.dynamicEnergy[Operation::Reset] / static_cast<double>(pageCount)) / 2.0;
 
-        return energy;
+        power.rowDecoderEnergy = wordlineEnergy;
+
+
+        return power;
     }
 };
 

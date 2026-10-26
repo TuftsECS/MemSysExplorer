@@ -3,8 +3,11 @@
 
 #include "component/BasicComponent.hpp"
 #include "component/BasicValues.hpp"
+#include "cell/MemoryCell.hpp"
 #include "Dimensions.hpp"
 #include "unit.hpp"
+
+#include <optional>
 
 namespace mse::component {
 
@@ -14,9 +17,9 @@ private:
     long long _columns = 0;
     bool _currentSense = false;
     unit::Meter _senseAmpPitch;
-    bool _mlc = false;
-    double _levels = 0;
-    int _fingers = 0;
+    // The levels of multi-level cells, which need a reference for each level
+    std::optional<cell::MultiLevel> _multiLevel;
+    cell::SenseAmpModel _model;
 
 public:
 
@@ -25,13 +28,12 @@ public:
     SenseAmp() = default;
 
     SenseAmp(long long columns, bool currentSense, unit::Volt senseVoltage, unit::Meter senseAmpPitch,
-             bool mlc, double levels, int fingers)
+             std::optional<cell::MultiLevel> multiLevel, const cell::SenseAmpModel& model)
             : _columns(columns),
               _currentSense(currentSense),
               _senseAmpPitch(senseAmpPitch),
-              _mlc(mlc),
-              _levels(levels),
-              _fingers(fingers),
+              _multiLevel(multiLevel),
+              _model(model),
               senseVoltage(senseVoltage) {}
 
     constexpr std::string_view componentName() const noexcept override { return "Sense Amp"; }

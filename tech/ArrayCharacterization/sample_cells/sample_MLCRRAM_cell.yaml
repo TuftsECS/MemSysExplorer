@@ -2,7 +2,9 @@
 # "Improved multi-level control of RRAM using pulse-train programming", Zhao et. al., VLSI 2014
 
 # Basic Cell Properties
-MemCellType: MLCRRAM
+MemCellType: memristor
+MultiLevel:
+  Levels: 4
 Area: 4
 AspectRatio: 1
 

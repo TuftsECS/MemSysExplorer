@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
 	gCell.ReadCellFromFile(gInputParameter.fileMemCell);
 
 	bool is_FeFET = false;
-	if (gCell.memCellType == FeFET || gCell.memCellType == MLCFeFET){
+	if (gCell.memCellType == FeFET){
 		is_FeFET = true; // flag for FeFET cell type, used to scale gate capacitance as appropriate
 	}
 	gTech.Initialize(gInputParameter.processNode, gInputParameter.deviceRoadmap, is_FeFET);
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 		techHighR.Initialize(2, gInputParameter.deviceRoadmapR, is_FeFET);
 		alphaR = (gInputParameter.processNodeR - 1.0) / 1;
 	} else {
-		// Below 1 nm is not yet modeled:
+		// TODO no technology model below 1 nm
 		std::cout << "Technology node below 1 nm is not supported!" << std::endl;
 		exit(1);
 	}
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
 		techHighW.Initialize(2, gInputParameter.deviceRoadmapW, is_FeFET);
 		alphaW = (gInputParameter.processNodeW - 1.0) / 1;
 	} else {
-		// Below 1 nm is not yet modeled:
+		// TODO no technology model below 1 nm
 		std::cout << "Technology node below 1 nm is not supported!" << std::endl;
 		exit(1);
 	}
@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
 		techHigh.Initialize(2, gInputParameter.deviceRoadmap, is_FeFET);
 		alpha = (gInputParameter.processNode - 1.0) / 1;
 	} else {
-		// Below 1 nm is not yet modeled:
+		// TODO no technology model below 1 nm
 		std::cout << "Technology node below 1 nm is not supported!" << std::endl;
 		exit(1);
 	}
@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
 	applyConstraint();
 
 	mse::YamlInputFile cellYamlFile(gInputParameter.fileMemCell);
-	mse::cell::MemoryCellFactory<>::create(cellYamlFile, "MemCellType", mse::component::SubArray::cell);
+	mse::cell::MemoryCellFactory<>::create(cellYamlFile, "MemCellType", mse::cell::runCell);
 
 	int numRowMat, numColumnMat, numActiveMatPerRow, numActiveMatPerColumn;
 	int numRowSubarray, numColumnSubarray, numActiveSubarrayPerRow, numActiveSubarrayPerColumn;
@@ -455,20 +455,20 @@ int main(int argc, char* argv[])
 
 	if (gInputParameter.designTarget == cache) {
 		switch (gInputParameter.cacheAccessMode) {
-		case sequential_access_mode:
-			/* already knows which way to access */
-			associativity = 1;
-			break;
-		case fast_access_mode:
-			/* load the entire set as a single word */
-			blockSize *= associativity;
-			associativity = 1;
-			break;
-		default:	/* Normal */
-			/* Normal access does not allow one set be distributed into multiple rows
-			 * otherwise, the row activation has to be delayed until the hit signals arrive.
-			 */
-			gInputParameter.minNumRowPerSet = gInputParameter.maxNumRowPerSet = 1;
+			case sequential_access_mode:
+				/* already knows which way to access */
+				associativity = 1;
+				break;
+			case fast_access_mode:
+				/* load the entire set as a single word */
+				blockSize *= associativity;
+				associativity = 1;
+				break;
+			default:	/* Normal */
+				/* Normal access does not allow one set be distributed into multiple rows
+				 * otherwise, the row activation has to be delayed until the hit signals arrive.
+				 */
+				gInputParameter.minNumRowPerSet = gInputParameter.maxNumRowPerSet = 1;
 		}
 	}
 
@@ -586,33 +586,33 @@ int main(int argc, char* argv[])
 					*(pruningResults[i][j][k]->localWire) = *(bestDataResults[i].localWire);
 					*(pruningResults[i][j][k]->globalWire) = *(bestDataResults[i].globalWire);
 					switch ((OptimizationTarget)j) {
-					case read_latency_optimized:
-						pruningResults[i][j][k]->limitReadLatency = bestDataResults[j].readLatency() * (1 + (k + 1.0) / 10);
-						break;
-					case write_latency_optimized:
-						pruningResults[i][j][k]->limitWriteLatency = bestDataResults[j].writeLatency() * (1 + (k + 1.0) / 10);
-						break;
-					case read_energy_optimized:
-						pruningResults[i][j][k]->limitReadDynamicEnergy = bestDataResults[j].readDynamicEnergy() * (1 + (k + 1.0) / 10);
-						break;
-					case write_energy_optimized:
-						pruningResults[i][j][k]->limitWriteDynamicEnergy = bestDataResults[j].writeDynamicEnergy() * (1 + (k + 1.0) / 10);
-						break;
-					case read_edp_optimized:
-						pruningResults[i][j][k]->limitReadEdp = bestDataResults[j].readLatency() * bestDataResults[j].readDynamicEnergy() * (1 + (k + 1.0) / 10);
-						break;
-					case write_edp_optimized:
-						pruningResults[i][j][k]->limitWriteEdp = bestDataResults[j].writeLatency() * bestDataResults[j].writeDynamicEnergy() * (1 + (k + 1.0) / 10);
-						break;
-					case area_optimized:
-						pruningResults[i][j][k]->limitArea = bestDataResults[j].area() * (1 + (k + 1.0) / 10);
-						break;
-					case leakage_optimized:
-						pruningResults[i][j][k]->limitLeakage = bestDataResults[j].leakage() * (1 + (k + 1.0) / 10);
-						break;
-					default:
-						/* nothing should happen here */
-						std::cout << "Warning: should not happen" << std::endl;
+						case read_latency_optimized:
+							pruningResults[i][j][k]->limitReadLatency = bestDataResults[j].readLatency() * (1 + (k + 1.0) / 10);
+							break;
+						case write_latency_optimized:
+							pruningResults[i][j][k]->limitWriteLatency = bestDataResults[j].writeLatency() * (1 + (k + 1.0) / 10);
+							break;
+						case read_energy_optimized:
+							pruningResults[i][j][k]->limitReadDynamicEnergy = bestDataResults[j].readDynamicEnergy() * (1 + (k + 1.0) / 10);
+							break;
+						case write_energy_optimized:
+							pruningResults[i][j][k]->limitWriteDynamicEnergy = bestDataResults[j].writeDynamicEnergy() * (1 + (k + 1.0) / 10);
+							break;
+						case read_edp_optimized:
+							pruningResults[i][j][k]->limitReadEdp = bestDataResults[j].readLatency() * bestDataResults[j].readDynamicEnergy() * (1 + (k + 1.0) / 10);
+							break;
+						case write_edp_optimized:
+							pruningResults[i][j][k]->limitWriteEdp = bestDataResults[j].writeLatency() * bestDataResults[j].writeDynamicEnergy() * (1 + (k + 1.0) / 10);
+							break;
+						case area_optimized:
+							pruningResults[i][j][k]->limitArea = bestDataResults[j].area() * (1 + (k + 1.0) / 10);
+							break;
+						case leakage_optimized:
+							pruningResults[i][j][k]->limitLeakage = bestDataResults[j].leakage() * (1 + (k + 1.0) / 10);
+							break;
+						default:
+							/* nothing should happen here */
+							std::cout << "Warning: should not happen" << std::endl;
 					}
 				}
 
@@ -659,10 +659,10 @@ int main(int argc, char* argv[])
 			if (!CALCULATE(dataBank, dataT)) {
 				continue;
 			}
-			const double readLatency = dataBank->timing().readLatency.value();
-			const double writeLatency = dataBank->timing().writeLatency.value();
-			const double readDynamicEnergy = dataBank->power().dynamicReadEnergy.value();
-			const double writeDynamicEnergy = dataBank->power().dynamicWriteEnergy.value();
+			const double readLatency = dataBank->timing().latency[mse::cell::Operation::Read].value();
+			const double writeLatency = dataBank->timing().latency[mse::cell::Operation::Write].value();
+			const double readDynamicEnergy = dataBank->power().dynamicEnergy[mse::cell::Operation::Read].value();
+			const double writeDynamicEnergy = dataBank->power().dynamicEnergy[mse::cell::Operation::Write].value();
 			if (readLatency <= allowedDataReadLatency && writeLatency <= allowedDataWriteLatency
 					&& readDynamicEnergy <= allowedDataReadDynamicEnergy && writeDynamicEnergy <= allowedDataWriteDynamicEnergy
 					&& dataBank->power().leakage.value() <= allowedDataLeakage && dataBank->dimensions().area().value() <= allowedDataArea
@@ -730,18 +730,22 @@ int main(int argc, char* argv[])
 
 void applyConstraint() {
 	/* Check functions that are not yet implemented */
+	// TODO no CAM model
 	if (gInputParameter.designTarget == CAM_chip) {
 		std::cout << "[ERROR] CAM model is still under development" << std::endl;
 		exit(-1);
 	}
+	// TODO the DRAM model is unfinished and rejected here
 	if (gCell.memCellType == DRAM) {
 		std::cout << "[ERROR] DRAM model is still under development" << std::endl;
 		exit(-1);
 	}
+	// TODO the eDRAM model is unfinished but still runs
 	if (gCell.memCellType == eDRAM) {
 		std::cout << "[Warning] Embedded DRAM model is still under development" << std::endl;
 		//exit(-1);
 	}
+	// TODO no MLC NAND model
 	if (gCell.memCellType == MLCNAND) {
 		std::cout << "[ERROR] MLC NAND flash model is still under development" << std::endl;
 		exit(-1);
@@ -757,6 +761,7 @@ void applyConstraint() {
 		exit(-1);
 	}
 
+	// TODO no external sensing with H-tree routing
 	if (gInputParameter.routingMode == h_tree && gInputParameter.internalSensing == false) {
 		std::cout << "[ERROR] H-tree does not support external sensing scheme in this version" << std::endl;
 		exit(-1);

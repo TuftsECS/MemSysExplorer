@@ -17,6 +17,7 @@ private:
     long long _columns = 0;
     unit::Farad _bitlineCapacitance;
     unit::Ohm _bitlineResistance;
+    unit::Meter _columnWidth;
 
     OutputDriver _outputDriver;
 
@@ -24,7 +25,7 @@ public:
 
     Precharger() = default;
 
-    Precharger(unit::Volt prechargeVoltage, long long columns, unit::Farad bitlineCapacitance, unit::Ohm bitlineResistance);
+    Precharger(unit::Volt prechargeVoltage, long long columns, unit::Farad bitlineCapacitance, unit::Ohm bitlineResistance, unit::Meter columnWidth);
 
     constexpr std::string_view componentName() const noexcept override { return "Precharger"; }
 

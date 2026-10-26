@@ -217,26 +217,26 @@ double CalculateGateArea(
 	}
 
 	switch (type) {
-	case GateType::INV:
-		widthRegionP = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthRegionP;
-		widthRegionN = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthRegionN;
-		break;
-	case GateType::NOR:
-		widthRegionP = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
-						+ unitWidthRegionP * numInput + (numInput - 1) * tech.featureSize.value() * mse::constant::minimumGapBetweenPoly.value();
-		widthRegionN = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
-						+ unitWidthRegionN * numInput
-						+ (numInput - 1) * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2);
-		break;
-	case GateType::NAND:
-		widthRegionN = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
-						+ unitWidthRegionN * numInput + (numInput - 1) * tech.featureSize.value() * mse::constant::minimumGapBetweenPoly.value();
-		widthRegionP = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
-						+ unitWidthRegionP * numInput
-						+ (numInput - 1) * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2);
-		break;
-	default:
-		widthRegionN = widthRegionP = 0;
+		case GateType::INV:
+			widthRegionP = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthRegionP;
+			widthRegionN = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthRegionN;
+			break;
+		case GateType::NOR:
+			widthRegionP = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+							+ unitWidthRegionP * numInput + (numInput - 1) * tech.featureSize.value() * mse::constant::minimumGapBetweenPoly.value();
+			widthRegionN = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+							+ unitWidthRegionN * numInput
+							+ (numInput - 1) * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2);
+			break;
+		case GateType::NAND:
+			widthRegionN = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+							+ unitWidthRegionN * numInput + (numInput - 1) * tech.featureSize.value() * mse::constant::minimumGapBetweenPoly.value();
+			widthRegionP = 2 * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+							+ unitWidthRegionP * numInput
+							+ (numInput - 1) * tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2);
+			break;
+		default:
+			widthRegionN = widthRegionP = 0;
 	}
 
 	*width = std::max(widthRegionN, widthRegionP);
@@ -330,34 +330,34 @@ void CalculateGateCapacitance(
 	}
 
 	switch (type) {
-	case GateType::INV:
-		if (widthPMOS > 0)
-			widthDrainP = tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthDrainP;
-		if (widthNMOS > 0)
-			widthDrainN = tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthDrainN;
-		break;
-	case GateType::NOR:
-		/* PMOS is in series, worst case capacitance is below */
-		if (widthPMOS > 0)
-			widthDrainP = tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
-						+ unitWidthDrainP * numInput + (numInput - 1) * tech.featureSize.value() * mse::constant::minimumGapBetweenPoly.value();
-		/* NMOS is parallel, capacitance is multiplied as below */
-		if (widthNMOS > 0)
-			widthDrainN = (tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
-						+ unitWidthDrainN) * numInput;
-		break;
-	case GateType::NAND:
-		/* NMOS is in series, worst case capacitance is below */
-		if (widthNMOS > 0)
-			widthDrainN = tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
-						+ unitWidthDrainN * numInput + (numInput - 1) * tech.featureSize.value() * mse::constant::minimumGapBetweenPoly.value();
-		/* PMOS is parallel, capacitance is multiplied as below */
-		if (widthPMOS > 0)
-			widthDrainP = (tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
-						+ unitWidthDrainP) * numInput;
-		break;
-	default:
-		widthDrainN = widthDrainP = 0;
+		case GateType::INV:
+			if (widthPMOS > 0)
+				widthDrainP = tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthDrainP;
+			if (widthNMOS > 0)
+				widthDrainN = tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2) + unitWidthDrainN;
+			break;
+		case GateType::NOR:
+			/* PMOS is in series, worst case capacitance is below */
+			if (widthPMOS > 0)
+				widthDrainP = tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+							+ unitWidthDrainP * numInput + (numInput - 1) * tech.featureSize.value() * mse::constant::minimumGapBetweenPoly.value();
+			/* NMOS is parallel, capacitance is multiplied as below */
+			if (widthNMOS > 0)
+				widthDrainN = (tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+							+ unitWidthDrainN) * numInput;
+			break;
+		case GateType::NAND:
+			/* NMOS is in series, worst case capacitance is below */
+			if (widthNMOS > 0)
+				widthDrainN = tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+							+ unitWidthDrainN * numInput + (numInput - 1) * tech.featureSize.value() * mse::constant::minimumGapBetweenPoly.value();
+			/* PMOS is parallel, capacitance is multiplied as below */
+			if (widthPMOS > 0)
+				widthDrainP = (tech.featureSize.value() * (mse::constant::contactSize.value() + mse::constant::minimumGapBetweenContactAndPoly.value() * 2)
+							+ unitWidthDrainP) * numInput;
+			break;
+		default:
+			widthDrainN = widthDrainP = 0;
 	}
 
 	/* Junction capacitance */
@@ -412,28 +412,28 @@ double CalculateGateLeakage(
 	widthNMOS = CalculateEffectiveWidth(widthNMOS, tech);
 	widthPMOS = CalculateEffectiveWidth(widthPMOS, tech);
 	switch (type) {
-	case GateType::INV:
-		leakageN = widthNMOS * leakN[tempIndex].value();
-		leakageP = widthPMOS * leakP[tempIndex].value();
-		return std::max(leakageN, leakageP);
-	case GateType::NOR:
-		leakageN = widthNMOS * leakN[tempIndex].value() * numInput;
-		if (numInput == 2) {
-			return mse::constant::averageLeakRatioNor2 * leakageN;
-		}
-		else {
-			return mse::constant::averageLeakRatioNor3 * leakageN;
-		}
-	case GateType::NAND:
-		leakageP = widthPMOS * leakP[tempIndex].value() * numInput;
-		if (numInput == 2) {
-			return mse::constant::averageLeakRatioNand2 * leakageP;
-		}
-		else {
-			return mse::constant::averageLeakRatioNand3 * leakageP;
-		}
-	default:
-		return 0.0;
+		case GateType::INV:
+			leakageN = widthNMOS * leakN[tempIndex].value();
+			leakageP = widthPMOS * leakP[tempIndex].value();
+			return std::max(leakageN, leakageP);
+		case GateType::NOR:
+			leakageN = widthNMOS * leakN[tempIndex].value() * numInput;
+			if (numInput == 2) {
+				return mse::constant::averageLeakRatioNor2 * leakageN;
+			}
+			else {
+				return mse::constant::averageLeakRatioNor3 * leakageN;
+			}
+		case GateType::NAND:
+			leakageP = widthPMOS * leakP[tempIndex].value() * numInput;
+			if (numInput == 2) {
+				return mse::constant::averageLeakRatioNand2 * leakageP;
+			}
+			else {
+				return mse::constant::averageLeakRatioNand3 * leakageP;
+			}
+		default:
+			return 0.0;
 	}
 }
 

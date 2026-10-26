@@ -11,7 +11,7 @@
 
 namespace mse::cell {
 
-struct CttParameters final : MemoryCellParameters {
+struct CttParameters final : MemoryCellParameters, MultiLevelParameters {
     std::reference_wrapper<const Technology> tech;
 
     ScalarParameter<std::string> readModeName{"Read.Mode", "", std::string("voltage")};
@@ -23,7 +23,7 @@ struct CttParameters final : MemoryCellParameters {
     CttParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
         using namespace mse::unit;
 
-        fillParameter(readModeName);
+        fillParameter(readModeName, levels, senseAmpFingers);
         readMode = readModeName.value() == "voltage";
 
         cellNmosGateWidth = (gTech.featureSizeInNano <= 14) ? 2_feat : 1_feat; // Minimum size transistor
@@ -32,16 +32,18 @@ struct CttParameters final : MemoryCellParameters {
 };
 
 struct CttProperties final : MemoryCellProperties {
-    CttProperties(const CttParameters& parameters) {
+    CttProperties(const CttParameters& parameters) : MemoryCellProperties(parameters) {
         using namespace mse::unit;
+        operations = {Operation::Read, Operation::Write, Operation::Set, Operation::Reset};
 
         sensingMethod = parameters.readMode ? SenseMethod::Voltage : SenseMethod::Current;
-        sensingVoltage = parameters.minSenseVoltage;
         prechargeVoltage = gTech.vdd * 0.5;
 
         sharedContact = false;
-        isMLC = false;
         columnLeak = false;
+
+        multiLevel = parameters.multiLevel();
+        senseAmp.fittedMultiLevel = multiLevel.has_value();
     }
 };
 
@@ -77,7 +79,7 @@ public:
     }
 
     unit::Ampere leakageCurrent() const noexcept override {
-        return unit::Ampere(0);
+        return unit::Ampere(0); // TODO no leakage model for CTT cells
     }
 
     CttTopology(const CttParameters& parameters)
@@ -86,19 +88,6 @@ public:
 
 class CttCell final : public MemoryCell {
 public:
-    struct Latency {
-        unit::Second bitline; // TODO remove later, just here for legacy compat
-        unit::Second read;
-        unit::Second write;
-        unit::Second set;
-        unit::Second reset;
-    };
-
-    struct Energy {
-        unit::Joule readDynamic; // TODO no bitline energy model yet
-        unit::Joule writeDynamic; // TODO no bitline energy model yet
-    };
-
     using Parameters = CttParameters;
 
 private:
@@ -117,7 +106,14 @@ public:
 
     static constexpr std::string_view name = "CTT";
 
-    Latency latency(MemoryCellLatencyContext context) const {
+    // The access transistor
+    unit::Meter bitlineOverhead(long long) const noexcept override {
+        using namespace mse::unit;
+
+        return 5_feat * gTech.featureSize;
+    }
+
+    CellTiming timing(const MemoryCellLatencyContext& context) const noexcept override {
         using namespace mse::unit;
 
         Volt prechargeVoltage = _properties.prechargeVoltage;
@@ -129,23 +125,26 @@ public:
         tau *= std::log(prechargeVoltage / (prechargeVoltage - context.senseVoltage));
         // in one case the bitline is unchanged, and in the other case the bitline drops
 
-        Latency latency;
+        CellTiming timing;
 
         Second bitlineDelay = physics::horowitz(tau, _topology.beta(), context.rowDecoderRampOutput).delay;
         bitlineDelay = std::max(bitlineDelay, tau * 20.0); // TODO revisit, corrects unnecessary horowitz calculation
-        latency.bitline = bitlineDelay;
-        latency.read = bitlineDelay + context.bitlineMuxReadLatency;
+        timing.bitline = bitlineDelay;
+        timing.latency[Operation::Read] = bitlineDelay + context.bitlineMuxReadLatency;
         // Erase is reset and programming is set, programming is used as the write latency
-        latency.reset = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency);
-        latency.set = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency);
-        latency.write = latency.set;
+        // TODO no erase or programming time, so reset and set only wait for the decoders and the charge
+        timing.latency[Operation::Reset] = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency);
+        timing.latency[Operation::Set] = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency + context.chargeLatency);
+        timing.latency[Operation::Write] = timing.latency[Operation::Set];
 
-        return latency;
+        return timing;
     }
 
-    Energy energy(MemoryCellEnergyContext) const {
-        Energy energy;
-        return energy;
+    // TODO no energy model for CTT cells, kept from the original model where they fell through to an empty MLC NAND case
+    // Their read and write energy is only the peripheral energy the subarray adds
+    CellPower power(const MemoryCellEnergyContext&) const noexcept override {
+        CellPower power;
+        return power;
     }
 };
 

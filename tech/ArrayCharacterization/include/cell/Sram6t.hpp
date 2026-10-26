@@ -17,11 +17,12 @@ struct Sram6tParameters final : MemoryCellParameters {
     ScalarParameter<unit::Feature> inverterNmosGateWidth{"Inverter.NmosWidth", "", unit::Feature(2.08)}; // Default value from CACTI
     ScalarParameter<unit::Feature> inverterPmosGateWidth{"Inverter.PmosWidth", "", unit::Feature(1.23)}; // Default value from CACTI
     ScalarParameter<unit::Feature> accessNmosGateWidth{"Access.Width", "", unit::Feature(0)};
+    ScalarParameter<unit::Volt> readVoltage{"Read.Voltage", "", unit::Volt(0)}; // Precharge voltage of the global bitlines with external sense amps
 
     unit::Feature transistorRegionHeight;
 
     Sram6tParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
-        fillParameter(inverterNmosGateWidth, inverterPmosGateWidth, accessNmosGateWidth);
+        fillParameter(inverterNmosGateWidth, inverterPmosGateWidth, accessNmosGateWidth, readVoltage);
 
         unit::Number featureScale = (tech.get().featureSizeInNano <= 14 ? 2 : 1);
         inverterNmosGateWidth.value() *= featureScale;
@@ -33,16 +34,18 @@ struct Sram6tParameters final : MemoryCellParameters {
 };
 
 struct Sram6tProperties final : public MemoryCellProperties {
-    Sram6tProperties(const Sram6tParameters& parameters) {
+    Sram6tProperties(const Sram6tParameters& parameters) : MemoryCellProperties(parameters) {
         using namespace mse::unit;
+        operations = {Operation::Read, Operation::Write};
 
         sensingMethod = SenseMethod::Voltage;
-        sensingVoltage = parameters.minSenseVoltage;
         prechargeVoltage = gTech.vdd * 0.5;
 
         sharedContact = true;
-        isMLC = false;
         columnLeak = true;
+
+        globalBitline.model = GlobalBitlineModel::Sram;
+        globalBitline.readVoltage = parameters.readVoltage;
     }
 };
 
@@ -106,17 +109,6 @@ public:
 
 class Sram6tCell final : public MemoryCell {
 public:
-    struct Latency {
-        mse::unit::Second bitline; // TODO remove later, just here for legacy compat
-        mse::unit::Second read;
-        mse::unit::Second write;
-    };
-
-    struct Energy {
-        mse::unit::Joule readDynamic;
-        mse::unit::Joule writeDynamic;
-    };
-
     using Parameters = Sram6tParameters;
 
 private:
@@ -135,14 +127,14 @@ public:
 
     static constexpr std::string_view name = "SRAM";
 
-    Latency latency(MemoryCellLatencyContext context) const {
+    CellTiming timing(const MemoryCellLatencyContext& context) const noexcept override {
         using namespace mse::unit;
 
         Ohm cellToBitlineResistance = _topology.bitlinePullDownResistance(0);
         Farad cellToBitlineCapacitance = _topology.bitlineCapacitance(0);
         Number beta = _topology.beta(0);
         Volt prechargeVoltage = _properties.prechargeVoltage;
-        Volt sensingVoltage = _properties.sensingVoltage;
+        Volt sensingVoltage = _parameters.minSenseVoltage.value();
 
         Second tau
             = cellToBitlineResistance * cellToBitlineCapacitance
@@ -153,27 +145,27 @@ public:
         tau *= std::log(prechargeVoltage / (prechargeVoltage - sensingVoltage / 2.0));
         // one signal raises and the other drops, so sensing voltage / 2 is enough
 
-        Latency latency;
+        CellTiming timing;
 
         SecondExp<-1> inputRamp = context.rowDecoderRampOutput;
         Second bitlineDelay = physics::horowitz(tau, beta, inputRamp).delay;
-        latency.bitline = bitlineDelay;
-        latency.read = bitlineDelay + context.bitlineMuxReadLatency;
+        timing.bitline = bitlineDelay;
+        timing.latency[Operation::Read] = bitlineDelay + context.bitlineMuxReadLatency;
 		Second decoderLatency = std::max(context.rowDecoderReadLatency, context.columnDecoderLatency);
-        latency.write = decoderLatency + bitlineDelay + context.bitlineMuxReadLatency + context.senseAmpReadLatency + context.senseAmpMuxLev1ReadLatency + context.senseAmpMuxLev2ReadLatency;
+        timing.latency[Operation::Write] = decoderLatency + bitlineDelay + context.bitlineMuxReadLatency + context.senseAmpReadLatency + context.senseAmpMuxLev1ReadLatency + context.senseAmpMuxLev2ReadLatency;
 
-        return latency;
+        return timing;
     }
 
-    Energy energy(MemoryCellEnergyContext context) const {
+    CellPower power(const MemoryCellEnergyContext& context) const noexcept override {
         using namespace mse::unit;
 
-        Sram6tCell::Energy energy;
+        CellPower power;
 
-        energy.readDynamic = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * _properties.prechargeVoltage * _properties.prechargeVoltage * context.numColumn;
-        energy.writeDynamic = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * _properties.prechargeVoltage * _properties.prechargeVoltage * context.numColumn / context.muxSenseAmp / context.muxOutputLev1 / context.muxOutputLev2;
+        power.dynamicEnergy[Operation::Read] = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * _properties.prechargeVoltage * _properties.prechargeVoltage * context.numColumn;
+        power.dynamicEnergy[Operation::Write] = (_topology.bitlineCapacitance(0) + context.bitlineCapacitance + context.bitlineMuxPreviousPowerCapacitance) * _properties.prechargeVoltage * _properties.prechargeVoltage * context.numColumn / context.muxSenseAmp / context.muxOutputLev1 / context.muxOutputLev2;
 
-        return energy;
+        return power;
     }
 };
 

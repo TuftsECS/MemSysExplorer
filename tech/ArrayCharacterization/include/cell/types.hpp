@@ -9,6 +9,7 @@
 #include "log.hpp"
 
 #include <format>
+#include <type_traits>
 #include <variant>
 #include <string>
 
@@ -24,25 +25,18 @@
 #include "cell/Fbram.hpp"
 #include "cell/SlcNand.hpp"
 #include "cell/Ctt.hpp"
-#include "cell/MlcCtt.hpp"
 #include "cell/Fefet.hpp"
-#include "cell/MlcFefet.hpp"
-#include "cell/MlcRram.hpp"
 
 namespace mse::cell {
 
 // Concept for making sure that types being used as cells have required subtypes
 // In order for a type to be a considered a valid cell type it must
-//   Have a Latency type
-//   Have a Energy type
 //   Have a Parameters type
 //   Have a static name member which can be converted to std::string
 //   Be derived from MemoryCell
 template <typename T>
 concept IsCellType = requires {
     // Types required to be within each derived cell:
-    typename T::Latency;
-    typename T::Energy;
     typename T::Parameters;
 
     {T::name} -> std::convertible_to<std::string_view>; // Cells need to have a name string
@@ -68,10 +62,7 @@ using MemoryCellList = CellList<
     FbramCell,
     SlcNandCell,
     CttCell,
-    MlcCttCell,
-    FefetCell,
-    MlcFefetCell,
-    MlcRramCell
+    FefetCell
 >;
 
 // MemoryCellInfo creates new types by using each cell type in a CellList
@@ -82,16 +73,12 @@ struct MemoryCellInfo;
 template <IsCellType... Ts>
 struct MemoryCellInfo<CellList<Ts...>> {
     using Variant = std::variant<std::monostate, Ts...>; // Holds any one cell
-    using Latency = std::variant<typename Ts::Latency...>; // Holds any one Latency subtype for latency results
-    using Energy = std::variant<typename Ts::Energy...>; // Holds any one Energy subtype for energy results
 };
 
 //==================================================
 // Using each cell type in the MemoryCellList with the MemoryCellInfo type to actually extract these new types
 
 using MemoryCellVariant = MemoryCellInfo<MemoryCellList>::Variant;
-using MemoryCellLatency = MemoryCellInfo<MemoryCellList>::Latency;
-using MemoryCellEnergy = MemoryCellInfo<MemoryCellList>::Energy;
 
 //==================================================
 // A helper factory type to emplace cells into an allocated MemoryCellVariant
@@ -121,6 +108,35 @@ struct MemoryCellFactory<CellList<Ts...>> {
     }
 
 };
+
+//==================================================
+// The memory cell every array in a run is built from, created by MemoryCellFactory before the search
+// TODO move into the run once it has its own type
+
+inline MemoryCellVariant runCell;
+
+// The cell in the variant as its MemoryCell base, nullptr when the variant holds no cell
+template <typename T>
+constexpr T* variantBasePtr(auto& variant) {
+    return std::visit(
+        [](auto& value) -> T* {
+            if constexpr (std::is_same_v<std::decay_t<decltype(value)>, std::monostate>) {
+                return nullptr;
+            } else {
+                return &value;
+            }
+        }, variant);
+}
+
+// The run's memory cell, which has to be created before any array is built
+inline const MemoryCell& memoryCell() noexcept {
+    const MemoryCell* cell = variantBasePtr<const MemoryCell>(runCell);
+    if (!cell) {
+        log::fatal("No memory cell has been created");
+    }
+
+    return *cell;
+}
 
 } // namespace mse::cell
 

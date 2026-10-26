@@ -8,6 +8,7 @@
 #include "component/Buffer.hpp"
 #include "component/Mux.hpp"
 #include "component/BasicValues.hpp"
+#include "component/CellPath.hpp"
 #include "physics/Horowitz.hpp"
 #include "cell/types.hpp"
 #include "Dimensions.hpp"
@@ -18,10 +19,7 @@
 
 namespace mse::component {
 
-struct SubArrayTiming : RampedTiming {
-    unit::Second setLatency;
-    unit::Second resetLatency;
-    unit::Second refreshLatency;
+struct SubArrayTiming : PathTiming {
     unit::Second bitlineLatency;
     unit::Second bitlineReadLatency;
     unit::Second bitlineWriteLatency;
@@ -31,15 +29,11 @@ struct SubArrayTiming : RampedTiming {
     unit::Second columnDecoderLatency;
 };
 
-struct SubArrayPower : BasicPower {
-    unit::Joule setDynamicEnergy;
-    unit::Joule resetDynamicEnergy;
-    unit::Joule refreshDynamicEnergy;
-    unit::Joule cellReadEnergy;
-    unit::Joule cellSetEnergy;
-    unit::Joule cellResetEnergy;
-    unit::Joule rowDecoderReadDynamicEnergy;
-    unit::Joule rowDecoderWriteDynamicEnergy;
+struct SubArrayPower : PathPower {
+    // Energy spent in the cells themselves, which is part of each operation's dynamic energy
+    cell::OperationValues<unit::Joule> cellEnergy;
+    // The row decoder energy of each operation, replaced by the cell's own when it drives wordlines past vdd
+    cell::OperationValues<unit::Joule> rowDecoderEnergy;
 };
 
 struct SubArrayRC {
@@ -57,7 +51,7 @@ struct SubArrayRC {
     unit::Volt prechargeVoltage;
 };
 
-class SubArray final : public RampedComponent<SubArrayTiming, SubArrayPower> {
+class SubArray final : public RampedComponent<SubArrayTiming, SubArrayPower>, public CellPath {
 private:
 
     bool _multipleRowsPerSet = false;
@@ -92,8 +86,6 @@ public:
     Mux senseAmpMuxLevel2;
     std::optional<Buffer> buffer; // Differential write buffer, an NVM write-reduction circuit
 
-    static inline cell::MemoryCellVariant cell;
-
     SubArray() = default;
 
     SubArray(long long rows,
@@ -114,6 +106,9 @@ public:
     void report(Reporter& reporter) const noexcept override;
 
     void reset() noexcept override;
+
+    // The operations the cell supports
+    cell::OperationSet operations() const noexcept override;
 
     const SubArrayRC& rc() const noexcept { return _rc; }
 

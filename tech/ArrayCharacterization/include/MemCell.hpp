@@ -56,6 +56,8 @@ public:
 	void CalculateWriteEnergy();
 	double CalculateReadPower();
 	void PrintCell();
+	bool isMultiLevel() const;	/* CTT, FeFET and RRAM cells storing more than one bit */
+	std::string typeName() const;	/* The cell type as printed, naming multi-level cells */
 
 	/* Properties */
 	MemCellType memCellType = PCRAM;	/* Memory cell type (like MRAM, PCRAM, etc.) */
@@ -87,7 +89,6 @@ public:
 	CellAccessType accessType = CMOS_access;	/* Cell access type: CMOS, BJT, or diode */
 
 	/* Optional properties */
-	int stitching = 0;			/* If non-zero, add stitching overhead for every x cells */
 	double gateOxThicknessFactor = 2; /* The oxide thickness of FBRAM could be larger than the traditional SOI MOS */
 	double widthSOIDevice = 0; /* The gate width of SOI device as FBRAM element, Unit: F*/
 	double widthAccessCMOS = 0;	/* The gate width of CMOS access transistor, Unit: F */
@@ -112,7 +113,7 @@ public:
 
         /*For multi-level cells SA*/
         int nFingers = 8;
-        double nLvl = 4;
+        double nLvl = 2;
 	/* For NAND flash */
 	double flashEraseVoltage;		/* The erase voltage, Unit: V, highest W/E voltage in ITRS sheet */
 	double flashPassVoltage;		/* The voltage applied on the unselected wordline within the same block during programming, Unit: V */
@@ -122,7 +123,6 @@ public:
 	double gateCouplingRatio;		/* The ratio of control gate to total floating gate capacitance */
 
     /* For eDRAM. */
-    double retentionTime = mse::constant::invalidValue;           /* Cell time to data loss (us) */
     double temperature;             /* Temperature for which the cell input values are valid. */
 	double maxStorageNodeDrop;
 };

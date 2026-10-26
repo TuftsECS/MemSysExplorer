@@ -51,10 +51,7 @@ enum MemCellType {
 	SLCNAND,
 	MLCNAND,
 	CTT,
-	MLCCTT,
-	FeFET,
-	MLCFeFET,
-	MLCRRAM
+	FeFET
 };
 
 enum CellAccessType {

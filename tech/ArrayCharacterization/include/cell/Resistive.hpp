@@ -26,15 +26,16 @@ namespace mse::cell {
 struct ResistiveCellParameters : MemoryCellParameters {
     std::reference_wrapper<const Technology> tech;
 
-    ScalarParameter<CellAccessType> accessType{"Access.Type", "", CMOS_access};
     ScalarParameter<unit::Feature> accessNmosGateWidth{"Access.Width", "", unit::Feature(0)};
     ScalarParameter<unit::Volt> voltageDropAccessDevice{"Access.VoltageDrop", "", unit::Volt(0)};
+    ScalarParameter<unit::Ampere> leakageCurrentAccessDevice{"Access.LeakageCurrent", "", unit::Ampere(0)}; // Reverse current of the access device
     unit::Feature transistorRegionHeight;
 
     ScalarParameter<unit::Ohm> resistanceOn{"Resistance.On", "", unit::Ohm(0)}; // At the read voltage
     ScalarParameter<unit::Ohm> resistanceOff{"Resistance.Off", "", unit::Ohm(0)}; // At the read voltage
     ScalarParameter<unit::Ohm> resistanceOnAtResetVoltage{"Resistance.OnAtResetVoltage", "", unit::Ohm(0)};
     ScalarParameter<unit::Ohm> resistanceOnAtSetVoltage{"Resistance.OnAtSetVoltage", "", unit::Ohm(0)};
+    ScalarParameter<unit::Ohm> resistanceOnAtHalfResetVoltage{"Resistance.OnAtHalfResetVoltage", "", unit::Ohm(0)};
     ScalarParameter<unit::Farad> capacitanceOn{"Capacitance.On", "", unit::Farad(0)};
     ScalarParameter<unit::Farad> capacitanceOff{"Capacitance.Off", "", unit::Farad(0)};
 
@@ -59,8 +60,8 @@ struct ResistiveCellParameters : MemoryCellParameters {
     bool setMode; // true = voltage mode, false = current mode
 
     ResistiveCellParameters(YamlInputFile& file) : MemoryCellParameters(file), tech(gTech) {
-        fillParameter(accessType, accessNmosGateWidth, voltageDropAccessDevice);
-        fillParameter(resistanceOn, resistanceOff, resistanceOnAtResetVoltage, resistanceOnAtSetVoltage, capacitanceOn, capacitanceOff);
+        fillParameter(accessNmosGateWidth, voltageDropAccessDevice, leakageCurrentAccessDevice);
+        fillParameter(resistanceOn, resistanceOff, resistanceOnAtResetVoltage, resistanceOnAtSetVoltage, resistanceOnAtHalfResetVoltage, capacitanceOn, capacitanceOff);
         fillParameter(readModeName, readVoltage, readCurrent, readPower);
         fillParameter(resetModeName, resetVoltage, resetCurrent, resetPulse, resetEnergy);
         fillParameter(setModeName, setVoltage, setCurrent, setPulse, setEnergy);
@@ -259,7 +260,7 @@ protected:
                 bitlineList[0] = {cellCapacitanceAdapter};
                 break;
             case BJT_access:
-                break; // TODO
+                break; // TODO no BJT access device model, so the cell adds nothing to its wordline and bitline loads
         }
     }
 
@@ -289,18 +290,25 @@ protected:
 // With voltage sensing, the bitline is precharged between the voltages of the on and off states
 
 struct ResistiveCellProperties : MemoryCellProperties {
-    ResistiveCellProperties(const ResistiveCellParameters& parameters, const ResistiveCellTopology& topology) {
+    ResistiveCellProperties(const ResistiveCellParameters& parameters, const ResistiveCellTopology& topology) : MemoryCellProperties(parameters) {
         using namespace mse::unit;
+        operations = {Operation::Read, Operation::Write, Operation::Set, Operation::Reset};
 
         sensingMethod = parameters.readMode ? SenseMethod::Voltage : SenseMethod::Current;
-        sensingVoltage = parameters.minSenseVoltage;
         if (parameters.readMode) {
             prechargeVoltage = std::min(gTech.vdd, (topology.voltageMemCellOff() + topology.voltageMemCellOn()) / 2.0);
         }
 
         sharedContact = (parameters.accessType == CMOS_access);
-        isMLC = false;
         columnLeak = false;
+
+        maxMuxResistance = Ohm(parameters.resistanceOn.value().value() * constant::irDropTolerance);
+
+        globalBitline.model = GlobalBitlineModel::Resistive;
+        globalBitline.readVoltage = parameters.readVoltage;
+        globalBitline.writeVoltage = Volt(std::max(std::fabs(parameters.resetVoltage.value().value()), std::fabs(parameters.setVoltage.value().value())));
+        globalBitline.resistanceOn = parameters.resistanceOn;
+        globalBitline.resistanceOff = parameters.resistanceOff;
     }
 };
 
@@ -474,6 +482,101 @@ inline ResistiveWriteEnergy accessDeviceWriteEnergy(
 
     return energy;
 }
+
+//==================================================
+// Base for resistive cell types, holding the cell's parameters, topology and properties
+// Reads and writes go through the access device models above
+// Cells with their own write models override timing and power
+
+template <typename ParametersType, typename TopologyType, typename PropertiesType>
+class ResistiveMemoryCell : public MemoryCell {
+protected:
+
+    ParametersType _parameters;
+    TopologyType _topology;
+    PropertiesType _properties;
+
+public:
+
+    ResistiveMemoryCell(const ParametersType& parameters) : _parameters(parameters), _topology(parameters), _properties(parameters, _topology) {}
+
+    const MemoryCellTopology& topology() const noexcept override { return _topology; }
+    const MemoryCellProperties& properties() const noexcept override { return _properties; }
+    const MemoryCellParameters& parameters() const noexcept override { return _parameters; }
+
+    CellTiming timing(const MemoryCellLatencyContext& context) const noexcept override {
+        ResistiveBitlineDelay bitlineDelay = resistiveBitlineDelay(_parameters, _topology, _properties, context);
+        ResistiveWriteLatency writeLatency = accessDeviceWriteLatency(_parameters, context);
+
+        CellTiming timing;
+
+        timing.bitline = bitlineDelay.bitline;
+        timing.bitlineOn = bitlineDelay.bitlineOn;
+        timing.bitlineOff = bitlineDelay.bitlineOff;
+        timing.latency[Operation::Read] = bitlineDelay.bitline + context.bitlineMuxReadLatency;
+        timing.latency[Operation::Write] = writeLatency.write;
+        timing.latency[Operation::Set] = writeLatency.set;
+        timing.latency[Operation::Reset] = writeLatency.reset;
+
+        return timing;
+    }
+
+    CellPower power(const MemoryCellEnergyContext& context) const noexcept override {
+        ResistiveWriteEnergy writeEnergy = accessDeviceWriteEnergy(_parameters, _topology, context);
+
+        CellPower power;
+
+        power.dynamicEnergy[Operation::Read] = resistiveReadDynamicEnergy(_parameters, _topology, _properties, context);
+        power.cellEnergy[Operation::Read] = resistiveCellReadEnergy(_parameters, context);
+        power.dynamicEnergy[Operation::Write] = writeEnergy.write;
+        power.cellEnergy[Operation::Set] = writeEnergy.set;
+        power.cellEnergy[Operation::Reset] = writeEnergy.reset;
+
+        return power;
+    }
+
+    std::optional<ArrayCurrents> arrayCurrents(long long rows, long long columns, int selectedColumns) const noexcept override {
+        using namespace mse::unit;
+
+        const int temperatureIndex = gInputParameter.temperature - 300;
+        const double resetCurrent = _parameters.resetCurrent.value().value();
+        const double setCurrent = _parameters.setCurrent.value().value();
+        const double leakageCurrent = _parameters.leakageCurrentAccessDevice.value().value();
+        const double resistanceOnAtResetVoltage = _parameters.resistanceOnAtResetVoltage.value().value();
+        const double resistanceOnAtHalfResetVoltage = _parameters.resistanceOnAtHalfResetVoltage.value().value();
+
+        ArrayCurrents currents;
+
+        if (_parameters.accessType == CMOS_access) {
+            // Bitline too long
+            if ((gTech.currentOnNmos[temperatureIndex] / gTech.currentOffNmos[temperatureIndex]).value() < rows / constant::bitlineLeakageTolerance) {
+                return std::nullopt;
+            }
+            currents.maxBitlineCurrent = Ampere(std::max(resetCurrent, setCurrent) + leakageCurrent * (rows - 1));
+
+            return currents;
+        }
+
+        // Write half select limits the array size
+        Ampere switchingCurrent(resetCurrent);
+        if (resetCurrent == 0) {
+            switchingCurrent = Ampere((std::fabs(_parameters.resetVoltage.value().value()) - _parameters.voltageDropAccessDevice.value().value())
+                    / resistanceOnAtResetVoltage);
+        }
+
+        if (_parameters.accessType == none_access) {
+            currents.maxWordlineCurrent = switchingCurrent * selectedColumns + switchingCurrent * resistanceOnAtResetVoltage
+                    / 2 / resistanceOnAtHalfResetVoltage * (columns - selectedColumns);
+            currents.maxBitlineCurrent = switchingCurrent + switchingCurrent * resistanceOnAtResetVoltage / 2
+                    / resistanceOnAtHalfResetVoltage * (rows - 1);
+        } else { // Diode or BJT
+            currents.maxWordlineCurrent = switchingCurrent * selectedColumns + Ampere(leakageCurrent) * (columns - selectedColumns);
+            currents.maxBitlineCurrent = switchingCurrent + Ampere(leakageCurrent) * (rows - 1);
+        }
+
+        return currents;
+    }
+};
 
 } // namespace mse::cell
 

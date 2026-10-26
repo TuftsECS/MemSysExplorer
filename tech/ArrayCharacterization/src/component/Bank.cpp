@@ -78,19 +78,7 @@ bool mse::component::Bank::meetsAspectRatio() const noexcept {
 
 void mse::component::Bank::report(Reporter& reporter) const noexcept {
     BasicComponent::report(reporter);
-
-    const BankTiming& timing = this->timing();
-    reporter.report(ReportGroup::Timing, "Set Latency", timing.setLatency);
-    reporter.report(ReportGroup::Timing, "Reset Latency", timing.resetLatency);
-    reporter.report(ReportGroup::Timing, "Refresh Latency", timing.refreshLatency);
-
-    const BankPower& power = this->power();
-    reporter.report(ReportGroup::Power, "Set Dynamic Energy", power.setDynamicEnergy);
-    reporter.report(ReportGroup::Power, "Reset Dynamic Energy", power.resetDynamicEnergy);
-    reporter.report(ReportGroup::Power, "Refresh Dynamic Energy", power.refreshDynamicEnergy);
-    reporter.report(ReportGroup::Power, "Cell Read Energy", power.cellReadEnergy);
-    reporter.report(ReportGroup::Power, "Cell Set Energy", power.cellSetEnergy);
-    reporter.report(ReportGroup::Power, "Cell Reset Energy", power.cellResetEnergy);
+    reportOperations(reporter, timing(), power());
 }
 
 void mse::component::Bank::reset() noexcept {
@@ -99,11 +87,13 @@ void mse::component::Bank::reset() noexcept {
 }
 
 bool mse::component::Bank::meetsRetention() const noexcept {
-    if (gCell.memCellType != eDRAM && gCell.memCellType != eDRAM3T && gCell.memCellType != eDRAM3T333) {
+    // Only refreshing cells with a retention time, given or found from the cell leakage, have to meet it
+    const std::optional<unit::Second>& retentionTime = cell::memoryCell().properties().retentionTime;
+    if (!retentionTime || !(retentionTime->value() > 0) || retentionTime->value() >= constant::invalidValue) {
         return true;
     }
 
-    return !(timing().refreshLatency.value() > gCell.retentionTime);
+    return !(timing().latency[cell::Operation::Refresh].value() > retentionTime->value());
 }
 
 mse::component::Bank::MuxInputs mse::component::Bank::muxInputsForWays(int waysPerRow) const noexcept {
@@ -113,8 +103,8 @@ mse::component::Bank::MuxInputs mse::component::Bank::muxInputsForWays(int waysP
     }
 
     const int waysPerRowLog = static_cast<int>(std::log2(static_cast<double>(waysPerRow)) + 0.1);
-    if (gCell.memCellType == DRAM || gCell.memCellType == eDRAM || gCell.memCellType == eDRAM3T || gCell.memCellType == eDRAM3T333) {
-        // DRAM cannot mux before the sense amp, so only the output mux levels take the ways
+    if (cell::memoryCell().properties().destructiveRead) {
+        // Destructive reads can't be muxed before the sense amp, so only the output mux levels take the ways
         const int extraLevel2Inputs = static_cast<int>(std::pow(2, waysPerRowLog / 2));
         const int extraLevel1Inputs = waysPerRow / extraLevel2Inputs;
         inputs.senseAmpLevel1 *= extraLevel1Inputs;

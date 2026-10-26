@@ -10,8 +10,10 @@
 
 namespace mse::cell {
 
-struct FefetParameters final : ResistiveCellParameters {
+struct FefetParameters final : ResistiveCellParameters, MultiLevelParameters {
     FefetParameters(YamlInputFile& file) : ResistiveCellParameters(file) {
+        fillParameter(levels, senseAmpFingers);
+
         // Without an access device, the cell resistance while switching is taken at the write voltage
         if (accessType == none_access) {
             fillWriteEnergy(resistanceOnAtResetVoltage, resistanceOnAtSetVoltage);
@@ -40,77 +42,33 @@ private:
 };
 
 struct FefetProperties final : ResistiveCellProperties {
-    FefetProperties(const FefetParameters& parameters, const FefetTopology& topology) : ResistiveCellProperties(parameters, topology) {}
+    FefetProperties(const FefetParameters& parameters, const FefetTopology& topology) : ResistiveCellProperties(parameters, topology) {
+        using namespace mse::unit;
+
+        senseAmpNeedsBitlineMux = true;
+
+        // TODO the sense amps only have measured values for single level cells and 4 or 8 levels, other levels use the general model
+        multiLevel = parameters.multiLevel();
+        if (!multiLevel) {
+            senseAmp.readLatency = 1.2e-10_s;
+            senseAmp.readEnergy = 7.3e-16_J;
+        } else if (multiLevel->levels == 4) {
+            senseAmp.readLatency = 4.5e-10_s;
+            senseAmp.readEnergy = 1.092e-14_J;
+        } else if (multiLevel->levels == 8) {
+            senseAmp.readLatency = 7.0e-10_s;
+            senseAmp.readEnergy = 3.823e-14_J;
+        }
+    }
 };
 
-class FefetCell final : public MemoryCell {
+class FefetCell final : public ResistiveMemoryCell<FefetParameters, FefetTopology, FefetProperties> {
 public:
-    struct Latency {
-        unit::Second bitline; // TODO remove later, just here for legacy compat
-        unit::Second bitlineOn; // TODO remove later, just here for legacy compat
-        unit::Second bitlineOff; // TODO remove later, just here for legacy compat
-        unit::Second read;
-        unit::Second write;
-        unit::Second set;
-        unit::Second reset;
-    };
-
-    struct Energy {
-        unit::Joule readDynamic;
-        unit::Joule writeDynamic;
-        unit::Joule cellRead;
-        unit::Joule cellSet;
-        unit::Joule cellReset;
-    };
-
     using Parameters = FefetParameters;
 
-private:
-
-    Parameters _parameters;
-    FefetTopology _topology;
-    FefetProperties _properties;
-
-public:
-
-    FefetCell(const Parameters& parameters) : _parameters(parameters), _topology(parameters), _properties(parameters, _topology) {}
-
-    const MemoryCellTopology& topology() const noexcept override { return _topology; }
-    const MemoryCellProperties& properties() const noexcept override { return _properties; }
-    const MemoryCellParameters& parameters() const noexcept override { return _parameters; }
+    using ResistiveMemoryCell::ResistiveMemoryCell;
 
     static constexpr std::string_view name = "FeFET";
-
-    Latency latency(MemoryCellLatencyContext context) const {
-        ResistiveBitlineDelay bitlineDelay = resistiveBitlineDelay(_parameters, _topology, _properties, context);
-        ResistiveWriteLatency writeLatency = accessDeviceWriteLatency(_parameters, context);
-
-        Latency latency;
-
-        latency.bitline = bitlineDelay.bitline;
-        latency.bitlineOn = bitlineDelay.bitlineOn;
-        latency.bitlineOff = bitlineDelay.bitlineOff;
-        latency.read = bitlineDelay.bitline + context.bitlineMuxReadLatency;
-        latency.write = writeLatency.write;
-        latency.set = writeLatency.set;
-        latency.reset = writeLatency.reset;
-
-        return latency;
-    }
-
-    Energy energy(MemoryCellEnergyContext context) const {
-        ResistiveWriteEnergy writeEnergy = accessDeviceWriteEnergy(_parameters, _topology, context);
-
-        Energy energy;
-
-        energy.readDynamic = resistiveReadDynamicEnergy(_parameters, _topology, _properties, context);
-        energy.cellRead = resistiveCellReadEnergy(_parameters, context);
-        energy.writeDynamic = writeEnergy.write;
-        energy.cellSet = writeEnergy.set;
-        energy.cellReset = writeEnergy.reset;
-
-        return energy;
-    }
 };
 
 } // namespace mse::cell

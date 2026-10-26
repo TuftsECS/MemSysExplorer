@@ -6,6 +6,7 @@
 #define MSE_COMPONENT_BASICVALUES_HPP
 
 #include "unit.hpp"
+#include "cell/Operation.hpp"
 
 namespace mse::component {
 
@@ -17,6 +18,18 @@ struct BasicTiming {
 struct BasicPower {
     unit::Joule dynamicReadEnergy;
     unit::Joule dynamicWriteEnergy;
+    unit::Watt leakage;
+};
+
+// Timing and power of the components on a cell's access path, with one value for each cell operation
+// Only the entries of the operations the cell supports are computed, the rest stay zero
+
+struct PathTiming {
+    cell::OperationValues<unit::Second> latency;
+};
+
+struct PathPower {
+    cell::OperationValues<unit::Joule> dynamicEnergy;
     unit::Watt leakage;
 };
 

@@ -6,6 +6,7 @@
 #include "component/PredecodeBlock.hpp"
 #include "component/Comparator.hpp"
 #include "component/BasicValues.hpp"
+#include "component/CellPath.hpp"
 #include "physics/Horowitz.hpp"
 #include "Dimensions.hpp"
 #include "typedef.hpp"
@@ -15,23 +16,11 @@
 
 namespace mse::component {
 
-struct MatTiming : RampedTiming {
+struct MatTiming : PathTiming {
     unit::Second predecoderLatency;
-    unit::Second setLatency;
-    unit::Second resetLatency;
-    unit::Second refreshLatency;
 };
 
-struct MatPower : BasicPower {
-    unit::Joule setDynamicEnergy;
-    unit::Joule resetDynamicEnergy;
-    unit::Joule refreshDynamicEnergy;
-    unit::Joule cellReadEnergy;
-    unit::Joule cellSetEnergy;
-    unit::Joule cellResetEnergy;
-};
-
-class Mat final : public RampedComponent<MatTiming, MatPower> {
+class Mat final : public RampedComponent<MatTiming, PathPower>, public CellPath {
 private:
 
     int _subarrayRows = 0;
@@ -77,9 +66,12 @@ public:
 
     void reset() noexcept override;
 
+    // The operations of the subarray's cell
+    cell::OperationSet operations() const noexcept override { return subarray.operations(); }
+
     Dimensions calculateDimensions() const noexcept override;
     MatTiming calculateTiming(physics::HorowitzRamp inputRamp) const noexcept override;
-    MatPower calculatePower() const noexcept override;
+    PathPower calculatePower() const noexcept override;
 };
 
 } // namespace mse::component

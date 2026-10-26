@@ -4,6 +4,7 @@
 // Also automatically reports these values in a report() override
 // When deriving from this type, more values may be appropriate to add to the timing and power values
 //   Derive custom timing and power structs from BasicTiming and BasicPower, then feed those types to the template arguments
+//   Components on a cell's access path use PathTiming and PathPower instead
 //   This will change the base function return types and set up the interface for the more custom types appropriately
 //   To add the extra values to reported output, override report() and simply call BasicComponent<..., ...>::report(reporter)
 //   Then all the base values are reported in the same style, and the custom ones can be added after
@@ -15,12 +16,12 @@
 #include "component/BasicValues.hpp"
 #include "Dimensions.hpp"
 
+#include <concepts>
 #include <optional>
 
 namespace mse::component {
 
-template <std::derived_from<BasicTiming> Timing = BasicTiming,
-          std::derived_from<BasicPower> Power = BasicPower>
+template <typename Timing = BasicTiming, typename Power = BasicPower>
 class BasicComponent : public Component {
 public:
 
@@ -39,14 +40,19 @@ public:
         reporter.report(ReportGroup::Dimensions, "Height", d.height);
         reporter.report(ReportGroup::Dimensions, "Area", d.area());
 
-        const Timing& t = timing();
-        reporter.report(ReportGroup::Timing, "Read Latency", t.readLatency);
-        reporter.report(ReportGroup::Timing, "Write Latency", t.writeLatency);
+        // Components on a cell access path report their operations themselves
+        if constexpr (std::derived_from<Timing, BasicTiming>) {
+            const Timing& t = timing();
+            reporter.report(ReportGroup::Timing, "Read Latency", t.readLatency);
+            reporter.report(ReportGroup::Timing, "Write Latency", t.writeLatency);
+        }
 
-        const Power& p = power();
-        reporter.report(ReportGroup::Power, "Dynamic Read Energy", p.dynamicReadEnergy);
-        reporter.report(ReportGroup::Power, "Dynamic Write Energy", p.dynamicWriteEnergy);
-        reporter.report(ReportGroup::Power, "Leakage", p.leakage);
+        if constexpr (std::derived_from<Power, BasicPower>) {
+            const Power& p = power();
+            reporter.report(ReportGroup::Power, "Dynamic Read Energy", p.dynamicReadEnergy);
+            reporter.report(ReportGroup::Power, "Dynamic Write Energy", p.dynamicWriteEnergy);
+            reporter.report(ReportGroup::Power, "Leakage", p.leakage);
+        }
     }
 
     //==================================================

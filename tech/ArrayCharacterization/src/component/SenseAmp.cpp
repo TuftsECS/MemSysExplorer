@@ -14,10 +14,6 @@ static std::optional<mse::unit::Number> mlcValue(int fingers, const std::array<m
     return values[fingers / 8 - 1];
 }
 
-static bool usesMlcModel(bool mlc) {
-    return mlc && (gCell.memCellType == MLCCTT || gCell.memCellType == MLCRRAM);
-}
-
 bool mse::component::SenseAmp::setup() noexcept {
     using namespace mse::unit;
 
@@ -38,11 +34,11 @@ mse::unit::Farad mse::component::SenseAmp::calculateLoadCapacitance() const noex
             + PmosTransistor(gTech, finFactor * senseAmpWidthIsolation, pitch).drainCapacitance()
             + NmosTransistor(gTech, finFactor * senseAmpWidthMux, pitch).drainCapacitance();
 
-    if (usesMlcModel(_mlc)) {
-        if (auto mlcCap = mlcValue(_fingers, {831E-18, 1.092E-15, 1.351E-15, 1.609E-15, 1.868E-15, 2.125E-15, 2.383E-15})) {
+    if (_model.fittedMultiLevel) {
+        if (auto mlcCap = mlcValue(_multiLevel->senseAmpFingers, {831E-18, 1.092E-15, 1.351E-15, 1.609E-15, 1.868E-15, 2.125E-15, 2.383E-15})) {
             capacitance = Farad(*mlcCap);
         }
-        capacitance *= _levels - 1.0;
+        capacitance *= _multiLevel->levels - 1.0;
     }
     return capacitance;
 }
@@ -61,14 +57,14 @@ mse::Dimensions mse::component::SenseAmp::calculateDimensions() const noexcept {
     const Dimensions enable = NmosTransistor(gTech, finFactor * senseAmpWidthEnable, pitch).dimensions();
 
     Dimensions dimensions;
-    if (usesMlcModel(_mlc)) {
-        if (auto mlcWidth = mlcValue(_fingers, {2.4E-6, 3.8E-6, 5.2E-6, 6.8E-6, 8.2E-6, 9.6E-6, 11E-6})) {
+    if (_model.fittedMultiLevel) {
+        if (auto mlcWidth = mlcValue(_multiLevel->senseAmpFingers, {2.4E-6, 3.8E-6, 5.2E-6, 6.8E-6, 8.2E-6, 9.6E-6, 11E-6})) {
             dimensions.width = Meter(*mlcWidth);
         } else {
             dimensions.width = std::max({p.height, isolation.height, n.height, enable.height});
         }
         dimensions.height = 1.4E-6_m;
-        dimensions.width *= _levels - 1.0;
+        dimensions.width *= _multiLevel->levels - 1.0;
     } else {
         dimensions.width = std::max({p.height, isolation.height, n.height, enable.height});
         dimensions.height = 2 * p.width + isolation.width + 2 * minimumGapBetweenSameDiffusions * gTech.featureSize
@@ -113,7 +109,7 @@ mse::component::BasicTiming mse::component::SenseAmp::calculateTiming() const no
         const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
         const Feature height = maxTransistorHeight;
         Siemens gm;
-        if (auto mlcGm = usesMlcModel(_mlc) ? mlcValue(_fingers, {240.3E-6, 340.5E-6, 385.9E-6, 408.7E-6, 421.7E-6, 430.0E-6, 435.8E-6}) : std::nullopt) {
+        if (auto mlcGm = _model.fittedMultiLevel ? mlcValue(_multiLevel->senseAmpFingers, {240.3E-6, 340.5E-6, 385.9E-6, 408.7E-6, 421.7E-6, 430.0E-6, 435.8E-6}) : std::nullopt) {
             gm = Siemens(*mlcGm);
         } else {
             gm = NmosTransistor(gTech, finFactor * senseAmpWidthN, height).transconductance() + PmosTransistor(gTech, finFactor * senseAmpWidthP, height).transconductance();
@@ -122,12 +118,8 @@ mse::component::BasicTiming mse::component::SenseAmp::calculateTiming() const no
         readLatency = tau * std::log(gTech.vdd / senseVoltage);
     }
 
-    if (gCell.memCellType == FeFET) {
-        readLatency = 1.2e-10_s;
-    } else if (gCell.memCellType == MLCFeFET && _levels == 4) {
-        readLatency = 4.5e-10_s;
-    } else if (gCell.memCellType == MLCFeFET && _levels == 8) {
-        readLatency = 7.0e-10_s;
+    if (_model.readLatency) {
+        readLatency = *_model.readLatency;
     }
 
     BasicTiming timing;
@@ -167,8 +159,8 @@ mse::component::BasicPower mse::component::SenseAmp::calculatePower() const noex
     } else {
         readEnergy = loadCapacitance() * gTech.vdd * gTech.vdd;
         Ampere idleCurrent;
-        if (_mlc) {
-            idleCurrent = 1.35E-11_A * (_levels - 1.0);
+        if (_multiLevel) {
+            idleCurrent = 1.35E-11_A * (_multiLevel->levels - 1.0);
         } else {
             const Number finFactor = gTech.featureSizeInNano <= 14 ? 2 : 1;
             idleCurrent = NmosTransistor(gTech, finFactor * senseAmpWidthEnable, maxTransistorHeight).leakageCurrent();
@@ -176,12 +168,8 @@ mse::component::BasicPower mse::component::SenseAmp::calculatePower() const noex
         leakage = idleCurrent * gTech.vdd;
     }
 
-    if (gCell.memCellType == FeFET) {
-        readEnergy = 7.3e-16_J;
-    } else if (gCell.memCellType == MLCFeFET && _levels == 4) {
-        readEnergy = 1.092e-14_J;
-    } else if (gCell.memCellType == MLCFeFET && _levels == 8) {
-        readEnergy = 3.823e-14_J;
+    if (_model.readEnergy) {
+        readEnergy = *_model.readEnergy;
     }
 
     BasicPower power;
