@@ -20,4 +20,4 @@ A framework for injecting faults into neural networks to evaluate their resilien
 **Directory:** `DreamRAM/`
 
 A stand-alone module for configuring, characterizing, and performing design space exploration for die-stacked DRAM.
-- **Documentation:** [DreamRAM/README.md](DreamRAM/README.md)
+- **Documentation:** [https://github.com/harvard-acc/DreamRAM](https://github.com/harvard-acc/DreamRAM)
