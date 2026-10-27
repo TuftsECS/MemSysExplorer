@@ -19,6 +19,7 @@
 #include <cmath>
 #include <functional>
 #include <optional>
+#include <ostream>
 #include <span>
 #include <vector>
 
@@ -153,6 +154,12 @@ struct MemoryCellProperties {
     bool crosspoint = false;
     // The fewest rows a subarray of these cells can have
     long long minimumRows = 0;
+    // NAND flash, where RAM chips access a page at a time, a reset erases a block and a set programs a page
+    bool flash = false;
+    // Set and reset switch the cell the same way, so a write reports the reset pulse and energy as its own
+    bool symmetricWrite = false;
+    // The operations whose energy includes the current through the cell itself
+    OperationSet cellEnergyOperations;
 
     // How long cells that refresh keep their data
     std::optional<unit::Second> retentionTime;
@@ -317,10 +324,10 @@ struct CellTiming {
     OperationValues<unit::Second> latency;
 
     // Bitline delays kept for output and external sensing
-    // Cells with separate read and write bitlines fill bitlineRead and bitlineWrite, the rest fill bitline
+    // Cells with separate read and write bitlines fill bitlineRead and bitlineWrite, the rest fill bitline, which stands in for both
     unit::Second bitline;
-    unit::Second bitlineRead;
-    unit::Second bitlineWrite;
+    std::optional<unit::Second> bitlineRead;
+    std::optional<unit::Second> bitlineWrite;
     unit::Second bitlineOn;
     unit::Second bitlineOff;
 };
@@ -382,6 +389,13 @@ struct MemoryCell {
     virtual unit::Meter bitlineOverhead([[maybe_unused]] long long rows) const noexcept {
         return unit::Meter();
     }
+
+    // The cell's own lines in the cell summary printed before the search
+    virtual void printSummary([[maybe_unused]] std::ostream& stream) const {}
+
+    // The cell's own values in the MemoryCell section of the result YAML
+    // TODO cacheResult only keeps the swing keys of the cache and RAM results apart, drop it once they match
+    virtual void writeSummary([[maybe_unused]] YAML::Node node, [[maybe_unused]] bool cacheResult) const {}
 };
 
 } // namespace mse::cell

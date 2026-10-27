@@ -138,6 +138,18 @@ inline const MemoryCell& memoryCell() noexcept {
     return *cell;
 }
 
+// The type name of the run's memory cell, which is its MemCellType in the cell file
+inline std::string_view memoryCellName() noexcept {
+    return std::visit(
+        [](const auto& value) -> std::string_view {
+            if constexpr (std::is_same_v<std::decay_t<decltype(value)>, std::monostate>) {
+                log::fatal("No memory cell has been created");
+            } else {
+                return std::decay_t<decltype(value)>::name;
+            }
+        }, runCell);
+}
+
 } // namespace mse::cell
 
 #endif

@@ -42,6 +42,7 @@
 #include "enumInfo.hpp"
 #include "unit.hpp"
 #include "input.hpp"
+#include "cell/types.hpp"
 
 #include <math.h>
 #include <type_traits>
@@ -71,7 +72,9 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         const auto number = std::type_identity<double>{};
 
         // Basic Cell Properties
-        fill(std::type_identity<MemCellType>{}, "MemCellType", memCellType);
+        // The run's cell is created from the type, which is read here only so strict access doesn't flag it
+        std::string type;
+        fill(std::type_identity<std::string>{}, "MemCellType", type);
         fill(std::type_identity<int>{}, "ProcessNode", processNode);
         fill(number, "Area", area);
         if (fill(number, "AspectRatio", aspectRatio)) {
@@ -157,74 +160,26 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         fill(std::type_identity<bool>{}, "ReadFloating", readFloating);
 
         // DRAM specific
-        const bool dramCell = memCellType == DRAM || memCellType == eDRAM || memCellType == eDRAM3T || memCellType == eDRAM3T333;
-        double capacitance = 0;
-        if (fill(std::type_identity<Farad>{}, "Storage.Capacitance", capacitance)) {
-            if (!dramCell) {
-                std::cout << "Warning: DRAM capacitance ignored (not DRAM)" << std::endl;
-            } else {
-                capDRAMCell = capacitance;
-            }
-        }
+        fill(std::type_identity<Farad>{}, "Storage.Capacitance", capDRAMCell);
         // The DRAM cells read their retention time themselves
         double retention = 0;
-        if (fill(std::type_identity<Second>{}, "Storage.RetentionTime", retention) && !dramCell) {
-            std::cout << "Warning: Retention time ignored (not DRAM)" << std::endl;
-        }
+        fill(std::type_identity<Second>{}, "Storage.RetentionTime", retention);
 
         // SRAM specific
-        if (fill(std::type_identity<Feature>{}, "Inverter.NmosWidth", width)) {
-            if (memCellType != SRAM) {
-                std::cout << "Warning: SRAM NMOS width ignored (not SRAM)" << std::endl;
-            } else {
-                widthSRAMCellNMOS = width;
-            }
-        }
-        if (fill(std::type_identity<Feature>{}, "Inverter.PmosWidth", width)) {
-            if (memCellType != SRAM) {
-                std::cout << "Warning: SRAM PMOS width ignored (not SRAM)" << std::endl;
-            } else {
-                widthSRAMCellPMOS = width;
-            }
-        }
+        fill(std::type_identity<Feature>{}, "Inverter.NmosWidth", widthSRAMCellNMOS);
+        fill(std::type_identity<Feature>{}, "Inverter.PmosWidth", widthSRAMCellPMOS);
 
         // Flash specific
-        const bool flashCell = memCellType == SLCNAND || memCellType == MLCNAND;
-        const auto fillFlash = [&fill, flashCell] <typename T> (std::type_identity<T> type, const std::string& key, double& field) {
-            double value = field;
-            if (fill(type, key, value)) {
-                if (!flashCell) {
-                    std::cout << "Warning: Flash parameter " << key << " ignored (not Flash)" << std::endl;
-                } else {
-                    field = value;
-                }
-            }
-        };
-        fillFlash(std::type_identity<Volt>{}, "Flash.EraseVoltage", flashEraseVoltage);
-        fillFlash(std::type_identity<Volt>{}, "Flash.ProgramVoltage", flashProgramVoltage);
-        fillFlash(std::type_identity<Volt>{}, "Flash.PassVoltage", flashPassVoltage);
-        fillFlash(std::type_identity<Second>{}, "Flash.EraseTime", flashEraseTime);
-        fillFlash(std::type_identity<Second>{}, "Flash.ProgramTime", flashProgramTime);
-        fillFlash(number, "Flash.GateCouplingRatio", gateCouplingRatio);
+        fill(std::type_identity<Volt>{}, "Flash.EraseVoltage", flashEraseVoltage);
+        fill(std::type_identity<Volt>{}, "Flash.ProgramVoltage", flashProgramVoltage);
+        fill(std::type_identity<Volt>{}, "Flash.PassVoltage", flashPassVoltage);
+        fill(std::type_identity<Second>{}, "Flash.EraseTime", flashEraseTime);
+        fill(std::type_identity<Second>{}, "Flash.ProgramTime", flashProgramTime);
+        fill(number, "Flash.GateCouplingRatio", gateCouplingRatio);
 
         // MLC specific
-        const bool mlcCell = memCellType == CTT || memCellType == FeFET || memCellType == memristor;
-        int fingers = nFingers;
-        if (fill(std::type_identity<int>{}, "MultiLevel.SenseAmpFingers", fingers)) {
-            if (!mlcCell) {
-                std::cout << "Warning: MultiLevel.SenseAmpFingers used only for CTT, FeFET and RRAM cells" << std::endl;
-            } else {
-                nFingers = fingers;
-            }
-        }
-        double levels = nLvl;
-        if (fill(number, "MultiLevel.Levels", levels)) {
-            if (!mlcCell) {
-                std::cout << "Warning: MultiLevel.Levels used only for CTT, FeFET and RRAM cells" << std::endl;
-            } else {
-                nLvl = levels;
-            }
-        }
+        fill(std::type_identity<int>{}, "MultiLevel.SenseAmpFingers", nFingers);
+        fill(number, "MultiLevel.Levels", nLvl);
 
         // Warns about keys no cell reads, like those of the older cell file layout
         file.verifyStrictAccess();
@@ -243,283 +198,18 @@ void MemCell::ApplyPVT() {
 }
 
 
-void MemCell::CellScaling(int _targetProcessNode) {
-	if ((processNode > 0) && (processNode != _targetProcessNode)) {
-		double scalingFactor = (double)processNode / _targetProcessNode;
-		if (memCellType == PCRAM) {
-			resistanceOn *= scalingFactor;
-			resistanceOff *= scalingFactor;
-			if (!setMode) {
-				setCurrent /= scalingFactor;
-			} else {
-				setVoltage *= 1;
-			}
-			if (!resetMode) {
-				resetCurrent /= scalingFactor;
-			} else {
-				resetVoltage *= 1;
-			}
-			if (accessType == diode_access) {
-				capacitanceOn /= scalingFactor; //TODO
-				capacitanceOff /= scalingFactor; //TODO
-			}
-		} else if (memCellType == MRAM){ //TODO: MRAM
-			resistanceOn *= scalingFactor * scalingFactor;
-			resistanceOff *= scalingFactor * scalingFactor;
-			if (!setMode) {
-				setCurrent /= scalingFactor;
-			} else {
-				setVoltage *= scalingFactor;
-			}
-			if (!resetMode) {
-				resetCurrent /= scalingFactor;
-			} else {
-				resetVoltage *= scalingFactor;
-			}
-			if (accessType == diode_access) {
-				capacitanceOn /= scalingFactor; //TODO
-				capacitanceOff /= scalingFactor; //TODO
-			}
-		} else if (memCellType == memristor) { //TODO: memristor
-
-		} else { //TODO: other RAMs
-
-		}
-		processNode = _targetProcessNode;
-	}
-}
-
-double MemCell::GetMemristance(double _relativeReadVoltage) { /* Get the LRS resistance of memristor at log-linera region of I-V curve */
-	if (memCellType == memristor || memCellType == FeFET) {
-		double x1, x2, x3;  // x1: read voltage, x2: half voltage, x3: applied voltage
-		if (readVoltage == 0) {
-			x1 = readCurrent * resistanceOnAtReadVoltage;
-		} else {
-			x1 = readVoltage;
-		}
-		x2 = readVoltage / 2;
-		x3 = _relativeReadVoltage * readVoltage;
-		double y1, y2 ,y3; // y1:log(read current), y2: log(leakage current at half read voltage
-		y1 = log2(x1/resistanceOnAtReadVoltage);
-		y2 = log2(x2/resistanceOnAtHalfReadVoltage);
-		y3 = (y2 - y1) / (x2 -x1) * x3 + (x2 * y1 - x1 * y2) / (x2 - x1);  //insertion
-		return x3 / pow(2, y3);
-	} else {  // not memristor, can't call the function
-		std::cout <<"Warning[MemCell] : Try to get memristance from a non-memristor memory cell" << std::endl;
-		return -1;
-	}
-}
-
-void MemCell::CalculateWriteEnergy() {
-	if (resetEnergy == 0) {
-                std::cout << " Warning: over-writing reset energy" << std::endl;
-		if (resetMode) {
-			if (memCellType == memristor || memCellType == FeFET)
-				if (accessType == none_access)
-					resetEnergy = fabs(resetVoltage) * (fabs(resetVoltage) - voltageDropAccessDevice) / resistanceOnAtResetVoltage * resetPulse;
-				else
-					resetEnergy = fabs(resetVoltage) * (fabs(resetVoltage) - voltageDropAccessDevice) / resistanceOn * resetPulse;
-			else if (memCellType == PCRAM)
-				resetEnergy = fabs(resetVoltage) * (fabs(resetVoltage) - voltageDropAccessDevice) / resistanceOn * resetPulse;	// PCM cells shows low resistance during most time of the switching
-			else if (memCellType == FBRAM)
-				resetEnergy = fabs(resetVoltage) * fabs(resetCurrent) * resetPulse;
-			else
-				resetEnergy = fabs(resetVoltage) * (fabs(resetVoltage) - voltageDropAccessDevice) / resistanceOn * resetPulse;
-		} else {
-			if (resetVoltage == 0){
-				resetEnergy = gTech.vdd.value() * fabs(resetCurrent) * resetPulse; // TODO consider charge pump
-			} else {
-				resetEnergy = fabs(resetVoltage) * fabs(resetCurrent) * resetPulse;
-			}
-			/* previous model seems to be problematic
-			if (memCellType == memristor)
-				if (accessType == none_access)
-					resetEnergy = resetCurrent * (resetCurrent * resistanceOffAtResetVoltage + voltageDropAccessDevice) * resetPulse;
-				else
-					resetEnergy = resetCurrent * (resetCurrent * resistanceOff + voltageDropAccessDevice) * resetPulse;
-			else if (memCellType == PCRAM)
-				resetEnergy = resetCurrent * (resetCurrent * resistanceOn + voltageDropAccessDevice) * resetPulse;		// PCM cells shows low resistance during most time of the switching
-			else if (memCellType == FBRAM)
-				resetEnergy = fabs(resetVoltage) * fabs(resetCurrent) * resetPulse;
-			else
-				resetEnergy = resetCurrent * (resetCurrent * resistanceOff + voltageDropAccessDevice) * resetPulse;
-		    */
-		}
-	}
-	if (setEnergy == 0) {
-                std::cout << " Warning: over-writing set energy" << std::endl;
-		if (setMode) {
-			if (memCellType == memristor || memCellType == FeFET)
-				if (accessType == none_access)
-					setEnergy = fabs(setVoltage) * (fabs(setVoltage) - voltageDropAccessDevice) / resistanceOnAtSetVoltage * setPulse;
-				else
-					setEnergy = fabs(setVoltage) * (fabs(setVoltage) - voltageDropAccessDevice) / resistanceOn * setPulse;
-			else if (memCellType == PCRAM)
-				setEnergy = fabs(setVoltage) * (fabs(setVoltage) - voltageDropAccessDevice) / resistanceOn * setPulse;			// PCM cells shows low resistance during most time of the switching
-			else if (memCellType == FBRAM)
-				setEnergy = fabs(setVoltage) * fabs(setCurrent) * setPulse;
-			else
-				setEnergy = fabs(setVoltage) * (fabs(setVoltage) - voltageDropAccessDevice) / resistanceOn * setPulse;
-		} else {
-			if (resetVoltage == 0){
-				setEnergy = gTech.vdd.value() * fabs(setCurrent) * setPulse; // TODO consider charge pump
-			} else {
-				setEnergy = fabs(setVoltage) * fabs(setCurrent) * setPulse;
-			}
-			/* previous model seems to be problematic
-			if (memCellType == memristor)
-				if (accessType == none_access)
-					setEnergy = setCurrent * (setCurrent * resistanceOffAtSetVoltage + voltageDropAccessDevice) * setPulse;
-				else
-					setEnergy = setCurrent * (setCurrent * resistanceOff + voltageDropAccessDevice) * setPulse;
-			else if (memCellType == PCRAM)
-				setEnergy = setCurrent * (setCurrent * resistanceOn + voltageDropAccessDevice) * setPulse;		// PCM cells shows low resistance during most time of the switching
-			else if (memCellType == FBRAM)
-				setEnergy = fabs(setVoltage) * fabs(setCurrent) * setPulse;
-			else
-				setEnergy = setCurrent * (setCurrent * resistanceOff + voltageDropAccessDevice) * setPulse;
-			*/
-		}
-	}
-}
-
-double MemCell::CalculateReadPower() { /* TODO consider charge pumped read voltage */
-	if (readPower == 0) {
-		if (gCell.readMode) {	/* voltage-sensing */
-			if (readVoltage == 0) { /* Current-in voltage sensing */
-				return gTech.vdd.value() * readCurrent;
-			}
-			if (readCurrent == 0) { /*Voltage-divider sensing */
-				double resInSerialForSenseAmp, maxBitlineCurrent;
-				resInSerialForSenseAmp = sqrt(resistanceOn * resistanceOff);
-				maxBitlineCurrent = (readVoltage - voltageDropAccessDevice) / (resistanceOn + resInSerialForSenseAmp);
-				return gTech.vdd.value() * maxBitlineCurrent;
-			}
-		} else { /* current-sensing */
-			double maxBitlineCurrent = (readVoltage - voltageDropAccessDevice) / resistanceOn;
-			return gTech.vdd.value() * maxBitlineCurrent;
-		}
-	} else {
-		return -1.0; /* should not call the function if read energy exists */
-	}
-	return -1.0;
-}
-
 void MemCell::PrintCell() {
-    using namespace mse::unit;
+    const mse::cell::MemoryCell& cell = mse::cell::memoryCell();
 
-    std::cout << "Memory Cell: " << typeName() << "\n";
+    std::cout << "Memory Cell: " << mse::cell::memoryCellName() << "\n";
 
 	std::cout << "Cell Area (F^2)    : " << area << " (" << heightInFeatureSize << "Fx" << widthInFeatureSize << "F)\n";
 	std::cout << "Cell Area (um^2)    : " << area / 1000000.0 * gTech.featureSizeInNano * gTech.featureSizeInNano << " (" << heightInFeatureSize * gTech.featureSizeInNano << "nm x" << widthInFeatureSize * gTech.featureSizeInNano << "nm y)\n";
 	std::cout << "Cell Aspect Ratio  : " << aspectRatio << "\n";
 
-	if (memCellType == PCRAM || memCellType == MRAM || memCellType == memristor || memCellType == FBRAM || memCellType == FeFET) {
-		if (resistanceOn < 1e3) {
-			std::cout << "Cell Turned-On Resistance : " << resistanceOn << "ohm\n";
-		} else if (resistanceOn < 1e6) {
-			std::cout << "Cell Turned-On Resistance : " << resistanceOn / 1e3 << "Kohm\n";
-		} else {
-			std::cout << "Cell Turned-On Resistance : " << resistanceOn / 1e6 << "Mohm\n";
-        }
-		if (resistanceOff < 1e3) {
-			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff << "ohm\n";
-		} else if (resistanceOff < 1e6) {
-			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e3 << "Kohm\n";
-		} else {
-			std::cout << "Cell Turned-Off Resistance: "<< resistanceOff / 1e6 << "Mohm\n";
-        }
-
-		if (readMode) {
-			std::cout << "Read Mode: Voltage-Sensing\n";
-			if (readCurrent > 0) {
-				std::cout << "  - Read Current: " << readCurrent * 1e6 << "uA\n";
-            }
-			if (readVoltage > 0) {
-				std::cout << "  - Read Voltage: " << readVoltage << "V\n";
-            }
-		} else {
-			std::cout << "Read Mode: Current-Sensing\n";
-			if (readCurrent > 0) {
-				std::cout << "  - Read Current: " << readCurrent * 1e6 << "uA\n";
-            }
-			if (readVoltage > 0) {
-				std::cout << "  - Read Voltage: " << readVoltage << "V\n";
-            }
-		}
-
-		if (resetMode) {
-			std::cout << "Reset Mode: Voltage\n";
-			std::cout << "  - Reset Voltage: " << resetVoltage << "V\n";
-		} else {
-			std::cout << "Reset Mode: Current\n";
-			std::cout << "  - Reset Current: " << resetCurrent * 1e6 << "uA\n";
-		}
-		std::cout << "  - Reset Pulse: " << Second(resetPulse) << "\n";
-
-		if (setMode) {
-			std::cout << "Set Mode: Voltage\n";
-			std::cout << "  - Set Voltage: " << setVoltage << "V\n";
-		} else {
-			std::cout << "Set Mode: Current\n";
-			std::cout << "  - Set Current: " << setCurrent * 1e6 << "uA\n";
-		}
-		std::cout << "  - Set Pulse: " << Second(setPulse) << "\n";
-
-        std::cout << "Access Type: " << accessType << "\n";
-	} else if (memCellType == SRAM) {
-		std::cout << "SRAM Cell Access Transistor Width: " << widthAccessCMOS << "F\n";
-		std::cout << "SRAM Cell NMOS Width: " << widthSRAMCellNMOS << "F\n";
-		std::cout << "SRAM Cell PMOS Width: " << widthSRAMCellPMOS << "F\n";
-		std::cout << "SRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
-		std::cout << "SRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
-		std::cout << "SRAM Cell VDD: " << gTech.vdd.value() << "V\n";
-		std::cout << "Temperature: " << gCell.temperature << "K\n";
-	} else if (memCellType == DRAM || memCellType == eDRAM) {
-		std::cout << "DRAM Cell Access Transistor Width: " << widthAccessCMOS << "F\n";
-		std::cout << "DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
-		std::cout << "DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
-		std::cout << "DRAM Cell VDD: " << gTech.vdd.value() << "V\n";
-		std::cout << "DRAM Cell WL_SWING: " << gTech.vpp.value() << "V\n";
-		std::cout << "Temperature: " << gCell.temperature << "K\n";
-	} else if (memCellType == eDRAM3T || memCellType == eDRAM3T333) {
-		std::cout << "3T DRAM Cell Write Access Transistor Width: " << widthAccessCMOS << "F\n";
-		std::cout << "3T DRAM Cell Read Access Transistor Width: " << widthAccessCMOSR << "F\n";
-		std::cout << "3T DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
-		std::cout << "3T DRAM Cell Write Access Roadmap: " << gTechW.deviceRoadmap << "\n";
-		std::cout << "3T DRAM Cell Read Access Roadmap: " << gTechR.deviceRoadmap << "\n";
-		std::cout << "3T DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
-		std::cout << "3T DRAM Cell Write Access Node: " << gTechW.featureSizeInNano << "nm\n";
-		std::cout << "3T DRAM Cell Read Access Node: " << gTechR.featureSizeInNano << "nm\n";
-		std::cout << "3T DRAM Cell VDD: " << gTech.vdd.value() << "V\n";
-		std::cout << "3T DRAM Cell WWL_SWING: " << gTechW.vpp.value() << "V\n";
-		std::cout << "Temperature: " << gCell.temperature << "K\n";
-	} else if (memCellType == SLCNAND) {
-		std::cout << "Pass Voltage       : " << flashPassVoltage << "V\n";
-		std::cout << "Programming Voltage: " << flashProgramVoltage << "V\n";
-		std::cout << "Erase Voltage      : " << flashEraseVoltage << "V\n";
-		std::cout << "Programming Time   : " << Second(flashProgramTime) << "\n";
-		std::cout << "Erase Time         : " << Second(flashEraseTime) << "\n";
-		std::cout << "Gate Coupling Ratio: " << gateCouplingRatio << "\n";
-	} 
-	if (isMultiLevel()) {
-			std::cout << "Number of Input Fingers: " << nFingers << "\n";
-			std::cout << "Number of Levels per Cell: " << nLvl << "\n";
-	}
-}
-
-bool MemCell::isMultiLevel() const {
-	return (memCellType == CTT || memCellType == FeFET || memCellType == memristor) && nLvl > 2;
-}
-
-std::string MemCell::typeName() const {
-	if (isMultiLevel()) {
-		switch (memCellType) {
-			case CTT: return "Multi-Level Cell CTT";
-			case FeFET: return "Multi-Level Cell FeFET";
-			default: return "Multi-Level Cell RRAM (Memristor)";
-		}
-	}
-
-	return enumToString(memCellType);
+    cell.printSummary(std::cout);
+    if (const std::optional<mse::cell::MultiLevel>& multiLevel = cell.properties().multiLevel) {
+        std::cout << "Number of Input Fingers: " << multiLevel->senseAmpFingers << "\n";
+        std::cout << "Number of Levels per Cell: " << multiLevel->levels << "\n";
+    }
 }

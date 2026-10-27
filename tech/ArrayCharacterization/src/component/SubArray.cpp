@@ -410,8 +410,8 @@ mse::component::SubArrayTiming mse::component::SubArray::calculateTiming(physics
 
     const cell::CellTiming cellTiming = memoryCell.timing(context);
     timing.bitlineLatency = cellTiming.bitline;
-    timing.bitlineReadLatency = cellTiming.bitlineRead;
-    timing.bitlineWriteLatency = cellTiming.bitlineWrite;
+    timing.bitlineReadLatency = cellTiming.bitlineRead.value_or(cellTiming.bitline);
+    timing.bitlineWriteLatency = cellTiming.bitlineWrite.value_or(cellTiming.bitline);
     timing.bitlineOnLatency = cellTiming.bitlineOn;
     timing.bitlineOffLatency = cellTiming.bitlineOff;
 

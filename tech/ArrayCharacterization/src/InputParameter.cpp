@@ -39,6 +39,7 @@
 #include "global.hpp"
 #include "typedef.hpp"
 #include "enumInfo.hpp"
+#include "cell/types.hpp"
 
 #include "yaml-cpp/yaml.h"
 
@@ -330,7 +331,7 @@ void InputParameter::PrintInputParameter() {
         }
         std::cout << "\n";
 	}
-	if (designTarget == RAM_chip && (gCell.memCellType == SLCNAND || gCell.memCellType == MLCNAND)) {
+	if (designTarget == RAM_chip && mse::cell::memoryCell().properties().flash) {
 		std::cout << "Page Size  : " << pageSize / 8 << "Bytes\n";
 		std::cout << "Block Size : " << flashBlockSize / 8 / 1024 << "KB\n";
 	}

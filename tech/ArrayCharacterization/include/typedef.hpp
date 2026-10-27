@@ -38,22 +38,6 @@
 #ifndef MSE_TYPEDEF_HPP
 #define MSE_TYPEDEF_HPP
 
-enum MemCellType {
-	SRAM,
-	DRAM,
-	eDRAM,
-	eDRAM3T,
-	eDRAM3T333,
-	MRAM,
-	PCRAM,
-	memristor,
-	FBRAM,
-	SLCNAND,
-	MLCNAND,
-	CTT,
-	FeFET
-};
-
 enum CellAccessType {
 	CMOS_access,
 	BJT_access,

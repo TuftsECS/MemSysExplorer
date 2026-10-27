@@ -54,6 +54,7 @@ struct SlcNandProperties final : MemoryCellProperties {
         sharedContact = true;
         columnLeak = false;
         senseAmpNeedsBitlineMux = true;
+        flash = true;
         // A subarray holds at least one block
         minimumRows = parameters.pageCount;
     }
@@ -229,6 +230,24 @@ public:
 
 
         return power;
+    }
+
+    void printSummary(std::ostream& stream) const override {
+        stream << "Pass Voltage       : " << _parameters.passVoltage.value().value() << "V\n";
+        stream << "Programming Voltage: " << _parameters.programVoltage.value().value() << "V\n";
+        stream << "Erase Voltage      : " << _parameters.eraseVoltage.value().value() << "V\n";
+        stream << "Programming Time   : " << _parameters.programTime.value() << "\n";
+        stream << "Erase Time         : " << _parameters.eraseTime.value() << "\n";
+        stream << "Gate Coupling Ratio: " << _parameters.gateCouplingRatio.value() << "\n";
+    }
+
+    void writeSummary(YAML::Node node, [[maybe_unused]] bool cacheResult) const override {
+        node["PassVoltage_V"] = _parameters.passVoltage.value().value();
+        node["ProgramVoltage_V"] = _parameters.programVoltage.value().value();
+        node["EraseVoltage_V"] = _parameters.eraseVoltage.value().value();
+        node["ProgramTime_s"] = _parameters.programTime.value().value() / 1e9;
+        node["EraseTime_s"] = _parameters.eraseTime.value().value() / 1e9;
+        node["GateCouplingRatio"] = _parameters.gateCouplingRatio.value();
     }
 };
 

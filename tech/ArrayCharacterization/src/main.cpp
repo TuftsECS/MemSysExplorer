@@ -117,10 +117,11 @@ int main(int argc, char* argv[])
 
 	gCell.ReadCellFromFile(gInputParameter.fileMemCell);
 
-	bool is_FeFET = false;
-	if (gCell.memCellType == FeFET){
-		is_FeFET = true; // flag for FeFET cell type, used to scale gate capacitance as appropriate
-	}
+	// FeFET cells change the technologies' gate capacitance, so the type is read before the cell can be created
+	mse::YamlInputFile cellYamlFile(gInputParameter.fileMemCell);
+	mse::ScalarParameter<std::string> cellName{"MemCellType"};
+	cellYamlFile.fillParameter(cellName);
+	const bool is_FeFET = cellName.value() == mse::cell::FefetCell::name;
 	gTech.Initialize(gInputParameter.processNode, gInputParameter.deviceRoadmap, is_FeFET);
 
 	gTechR.Initialize(gInputParameter.processNodeR, gInputParameter.deviceRoadmapR, is_FeFET);
@@ -295,12 +296,11 @@ int main(int argc, char* argv[])
 		outputFile.open(outputFileName.c_str(), std::ofstream::trunc);
 	}
 
+	mse::cell::MemoryCellFactory<>::create(cellYamlFile, "MemCellType", mse::cell::runCell);
+
 	gCell.PrintCell();
 
 	applyConstraint();
-
-	mse::YamlInputFile cellYamlFile(gInputParameter.fileMemCell);
-	mse::cell::MemoryCellFactory<>::create(cellYamlFile, "MemCellType", mse::cell::runCell);
 
 	int numRowMat, numColumnMat, numActiveMatPerRow, numActiveMatPerColumn;
 	int numRowSubarray, numColumnSubarray, numActiveSubarrayPerRow, numActiveSubarrayPerColumn;
@@ -473,7 +473,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* adjust block size is it is SLC NAND flash or DRAM memory chip */
-	if (gInputParameter.designTarget == RAM_chip && (gCell.memCellType == SLCNAND || gCell.memCellType == DRAM)) {
+	if (gInputParameter.designTarget == RAM_chip && mse::cell::memoryCell().properties().flash) {
 		blockSize = gInputParameter.pageSize;
 		associativity = 1;
 	}
@@ -736,19 +736,14 @@ void applyConstraint() {
 		exit(-1);
 	}
 	// TODO the DRAM model is unfinished and rejected here
-	if (gCell.memCellType == DRAM) {
+	if (std::holds_alternative<mse::cell::DramCell>(mse::cell::runCell)) {
 		std::cout << "[ERROR] DRAM model is still under development" << std::endl;
 		exit(-1);
 	}
 	// TODO the eDRAM model is unfinished but still runs
-	if (gCell.memCellType == eDRAM) {
+	if (std::holds_alternative<mse::cell::EdramCell>(mse::cell::runCell)) {
 		std::cout << "[Warning] Embedded DRAM model is still under development" << std::endl;
 		//exit(-1);
-	}
-	// TODO no MLC NAND model
-	if (gCell.memCellType == MLCNAND) {
-		std::cout << "[ERROR] MLC NAND flash model is still under development" << std::endl;
-		exit(-1);
 	}
 
 	if (gInputParameter.designTarget != cache && gInputParameter.associativity > 1) {

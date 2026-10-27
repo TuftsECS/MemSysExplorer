@@ -303,6 +303,7 @@ struct ResistiveCellProperties : MemoryCellProperties {
         columnLeak = false;
 
         maxMuxResistance = Ohm(parameters.resistanceOn.value().value() * constant::irDropTolerance);
+        cellEnergyOperations = {Operation::Read, Operation::Set, Operation::Reset};
 
         globalBitline.model = GlobalBitlineModel::Resistive;
         globalBitline.readVoltage = parameters.readVoltage;
@@ -575,6 +576,100 @@ public:
         }
 
         return currents;
+    }
+
+    void printSummary(std::ostream& stream) const override {
+        using namespace mse::unit;
+
+        const double resistanceOn = _parameters.resistanceOn.value().value();
+        const double resistanceOff = _parameters.resistanceOff.value().value();
+        const double readCurrent = _parameters.readCurrent.value().value();
+        const double readVoltage = _parameters.readVoltage.value().value();
+
+        if (resistanceOn < 1e3) {
+            stream << "Cell Turned-On Resistance : " << resistanceOn << "ohm\n";
+        } else if (resistanceOn < 1e6) {
+            stream << "Cell Turned-On Resistance : " << resistanceOn / 1e3 << "Kohm\n";
+        } else {
+            stream << "Cell Turned-On Resistance : " << resistanceOn / 1e6 << "Mohm\n";
+        }
+        if (resistanceOff < 1e3) {
+            stream << "Cell Turned-Off Resistance: " << resistanceOff << "ohm\n";
+        } else if (resistanceOff < 1e6) {
+            stream << "Cell Turned-Off Resistance: " << resistanceOff / 1e3 << "Kohm\n";
+        } else {
+            stream << "Cell Turned-Off Resistance: " << resistanceOff / 1e6 << "Mohm\n";
+        }
+
+        stream << (_parameters.readMode ? "Read Mode: Voltage-Sensing\n" : "Read Mode: Current-Sensing\n");
+        if (readCurrent > 0) {
+            stream << "  - Read Current: " << readCurrent * 1e6 << "uA\n";
+        }
+        if (readVoltage > 0) {
+            stream << "  - Read Voltage: " << readVoltage << "V\n";
+        }
+
+        if (_parameters.resetMode) {
+            stream << "Reset Mode: Voltage\n";
+            stream << "  - Reset Voltage: " << _parameters.resetVoltage.value().value() << "V\n";
+        } else {
+            stream << "Reset Mode: Current\n";
+            stream << "  - Reset Current: " << _parameters.resetCurrent.value().value() * 1e6 << "uA\n";
+        }
+        stream << "  - Reset Pulse: " << _parameters.resetPulse.value() << "\n";
+
+        if (_parameters.setMode) {
+            stream << "Set Mode: Voltage\n";
+            stream << "  - Set Voltage: " << _parameters.setVoltage.value().value() << "V\n";
+        } else {
+            stream << "Set Mode: Current\n";
+            stream << "  - Set Current: " << _parameters.setCurrent.value().value() * 1e6 << "uA\n";
+        }
+        stream << "  - Set Pulse: " << _parameters.setPulse.value() << "\n";
+
+        stream << "Access Type: " << _parameters.accessType.value() << "\n";
+    }
+
+    void writeSummary(YAML::Node node, [[maybe_unused]] bool cacheResult) const override {
+        const double resistanceOn = _parameters.resistanceOn.value().value();
+        const double resistanceOff = _parameters.resistanceOff.value().value();
+        const double readCurrent = _parameters.readCurrent.value().value();
+        const double readVoltage = _parameters.readVoltage.value().value();
+
+        if (resistanceOn < 1e3) {
+            node["R_on_Ohm"] = resistanceOn;
+        } else if (resistanceOn < 1e6) {
+            node["R_on_KOhm"] = resistanceOn / 1e3;
+        } else {
+            node["R_on_MOhm"] = resistanceOn / 1e6;
+        }
+        if (resistanceOff < 1e3) {
+            node["R_off_Ohm"] = resistanceOff;
+        } else if (resistanceOff < 1e6) {
+            node["R_off_KOhm"] = resistanceOff / 1e3;
+        } else {
+            node["R_off_MOhm"] = resistanceOff / 1e6;
+        }
+
+        node["ReadMode"] = _parameters.readMode ? "Voltage-Sensing" : "Current-Sensing";
+        if (readCurrent > 0) {
+            node["ReadCurrent_uA"] = readCurrent * 1e6;
+        }
+        if (readVoltage > 0) {
+            node["ReadVoltage_V"] = readVoltage;
+        }
+
+        node["ResetMode"] = _parameters.resetMode ? "Voltage" : "Current";
+        node["ResetVoltage_V"] = _parameters.resetVoltage.value().value();
+        node["ResetCurrent_uA"] = _parameters.resetCurrent.value().value() * 1e6;
+        node["ResetPulse_s"] = _parameters.resetPulse.value().value() / 1e9;
+
+        node["SetMode"] = _parameters.setMode ? "Voltage" : "Current";
+        node["SetVoltage_V"] = _parameters.setVoltage.value().value();
+        node["SetCurrent_uA"] = _parameters.setCurrent.value().value() * 1e6;
+        node["SetPulse_s"] = _parameters.setPulse.value().value() / 1e9;
+
+        node["AccessType"] = enumToString(_parameters.accessType.value());
     }
 };
 

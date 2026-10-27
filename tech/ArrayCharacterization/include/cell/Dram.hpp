@@ -172,6 +172,38 @@ public:
 
         return power;
     }
+
+    void printSummary(std::ostream& stream) const override {
+        // TODO the width is printed as given in the cell file, before the FinFET doubling
+        const double featureScale = (gTech.featureSizeInNano <= 14 ? 2 : 1);
+
+        stream << "DRAM Cell Access Transistor Width: " << _parameters.accessNmosGateWidth.value().value() / featureScale << "F\n";
+        stream << "DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
+        stream << "DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
+        stream << "DRAM Cell VDD: " << gTech.vdd.value() << "V\n";
+        stream << "DRAM Cell WL_SWING: " << gTech.vpp.value() << "V\n";
+        stream << "Temperature: " << double(gInputParameter.temperature) << "K\n";
+    }
+
+    void writeSummary(YAML::Node node, bool cacheResult) const override {
+        const double featureScale = (gTech.featureSizeInNano <= 14 ? 2 : 1);
+        // TODO roadmaps past LOP are written as ULP like the earlier output
+        const auto roadmapName = [](DeviceRoadmap roadmap) -> std::string {
+            switch (roadmap) {
+                case HP: return "HP";
+                case LSTP: return "LSTP";
+                case LOP: return "LOP";
+                default: return "ULP";
+            }
+        };
+
+        node["WidthAccessCMOS_F"] = _parameters.accessNmosGateWidth.value().value() / featureScale;
+        node["PeripheralRoadmap"] = roadmapName(gTech.deviceRoadmap);
+        node["PeripheralNode_nm"] = gTech.featureSizeInNano;
+        node["VDD_V"] = gTech.vdd.value();
+        node[cacheResult ? "WL_SWING" : "WWL_SWING"] = gTech.vpp.value();
+        node["Temperature_K"] = double(gInputParameter.temperature);
+    }
 };
 
 } // namespace mse::cell

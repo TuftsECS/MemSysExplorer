@@ -167,6 +167,43 @@ public:
 
         return power;
     }
+
+    void printSummary(std::ostream& stream) const override {
+        // TODO the widths are printed as given in the cell file, before the FinFET doubling
+        const double featureScale = (gTech.featureSizeInNano <= 14 ? 2 : 1);
+
+        stream << "SRAM Cell Access Transistor Width: " << _parameters.accessNmosGateWidth.value().value() / featureScale << "F\n";
+        stream << "SRAM Cell NMOS Width: " << _parameters.inverterNmosGateWidth.value().value() / featureScale << "F\n";
+        stream << "SRAM Cell PMOS Width: " << _parameters.inverterPmosGateWidth.value().value() / featureScale << "F\n";
+        stream << "SRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
+        stream << "SRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
+        stream << "SRAM Cell VDD: " << gTech.vdd.value() << "V\n";
+        stream << "Temperature: " << double(gInputParameter.temperature) << "K\n";
+    }
+
+    void writeSummary(YAML::Node node, bool cacheResult) const override {
+        const double featureScale = (gTech.featureSizeInNano <= 14 ? 2 : 1);
+        // TODO roadmaps past LOP are written as ULP like the earlier output
+        const auto roadmapName = [](DeviceRoadmap roadmap) -> std::string {
+            switch (roadmap) {
+                case HP: return "HP";
+                case LSTP: return "LSTP";
+                case LOP: return "LOP";
+                default: return "ULP";
+            }
+        };
+
+        node["WidthAccessCMOS_F"] = _parameters.accessNmosGateWidth.value().value() / featureScale;
+        node["WidthSRAMCellNMOS_F"] = _parameters.inverterNmosGateWidth.value().value() / featureScale;
+        node["WidthSRAMCellPMOS_F"] = _parameters.inverterPmosGateWidth.value().value() / featureScale;
+        node["PeripheralRoadmap"] = roadmapName(gTech.deviceRoadmap);
+        node["PeripheralNode_nm"] = gTech.featureSizeInNano;
+        node["VDD_V"] = gTech.vdd.value();
+        if (!cacheResult) {
+            node["WWL_SWING"] = gTech.vdd.value();
+        }
+        node["Temperature_K"] = double(gInputParameter.temperature);
+    }
 };
 
 } // namespace mse::cell

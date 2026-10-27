@@ -117,43 +117,6 @@ std::ostream& operator<<(std::ostream& stream, T v) {
 //==================================================
 
 template<>
-struct EnumMap<MemCellType> {
-    static inline const EnumFromYamlMap<MemCellType> fromYaml = {
-        {"SRAM", SRAM},
-        {"DRAM", DRAM},
-        {"eDRAM", eDRAM},
-        {"eDRAM3T", eDRAM3T},
-        {"eDRAM3T333", eDRAM3T333},
-        {"MRAM", MRAM},
-        {"PCRAM", PCRAM},
-        {"memristor", memristor},
-        {"FBRAM", FBRAM},
-        {"SLCNAND", SLCNAND},
-        {"MLCNAND", MLCNAND},
-        {"CTT", CTT},
-        {"FeFET", FeFET}
-    };
-
-    static inline const EnumToStringMap<MemCellType> toString = {
-        {SRAM, "SRAM"},
-        {DRAM, "DRAM"},
-        {eDRAM, "Embedded DRAM"},
-        {eDRAM3T, "3T Embedded DRAM"},
-        {eDRAM3T333, "333 Embedded DRAM"},
-        {MRAM, "MRAM (Magnetoresistive)"},
-        {PCRAM, "PCRAM (Phase-Change)"},
-        {memristor, "RRAM (Memristor)"},
-        {FBRAM, "FBRAM (Floating Body)"},
-        {SLCNAND, "Single-Level Cell NAND Flash"},
-        {MLCNAND, "Multi-Level Cell NAND Flash"},
-        {CTT, "Single-Level Cell CTT"},
-        {FeFET, "Single-Level Cell FeFET"}
-    };
-};
-
-//==================================================
-
-template<>
 struct EnumMap<CellAccessType> {
     static inline const EnumFromYamlMap<CellAccessType> fromYaml = {
         {"CMOS", CMOS_access},

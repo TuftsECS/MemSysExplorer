@@ -177,6 +177,44 @@ public:
 
         return power;
     }
+
+    void printSummary(std::ostream& stream) const override {
+        stream << "3T DRAM Cell Write Access Transistor Width: " << _parameters.accessWidth.value().value() << "F\n";
+        stream << "3T DRAM Cell Read Access Transistor Width: " << _parameters.readAccessWidth.value().value() << "F\n";
+        stream << "3T DRAM Cell Peripheral Roadmap: " << gTech.deviceRoadmap << "\n";
+        stream << "3T DRAM Cell Write Access Roadmap: " << gTechW.deviceRoadmap << "\n";
+        stream << "3T DRAM Cell Read Access Roadmap: " << gTechR.deviceRoadmap << "\n";
+        stream << "3T DRAM Cell Peripheral Node: " << gTech.featureSizeInNano << "nm\n";
+        stream << "3T DRAM Cell Write Access Node: " << gTechW.featureSizeInNano << "nm\n";
+        stream << "3T DRAM Cell Read Access Node: " << gTechR.featureSizeInNano << "nm\n";
+        stream << "3T DRAM Cell VDD: " << gTech.vdd.value() << "V\n";
+        stream << "3T DRAM Cell WWL_SWING: " << gTechW.vpp.value() << "V\n";
+        stream << "Temperature: " << double(gInputParameter.temperature) << "K\n";
+    }
+
+    void writeSummary(YAML::Node node, [[maybe_unused]] bool cacheResult) const override {
+        // TODO roadmaps past LOP are written as ULP like the earlier output
+        const auto roadmapName = [](DeviceRoadmap roadmap) -> std::string {
+            switch (roadmap) {
+                case HP: return "HP";
+                case LSTP: return "LSTP";
+                case LOP: return "LOP";
+                default: return "ULP";
+            }
+        };
+
+        node["WidthWriteAccessCMOS_F"] = _parameters.accessWidth.value().value();
+        node["WidthReadAccessCMOS_F"] = _parameters.readAccessWidth.value().value();
+        node["PeripheralRoadmap"] = roadmapName(gTech.deviceRoadmap);
+        node["WriteAccessRoadmap"] = roadmapName(gTechW.deviceRoadmap);
+        node["ReadAccessRoadmap"] = roadmapName(gTechR.deviceRoadmap);
+        node["PeripheralNode_nm"] = gTech.featureSizeInNano;
+        node["WriteAccessNode_nm"] = gTechW.featureSizeInNano;
+        node["ReadAccessNode_nm"] = gTechR.featureSizeInNano;
+        node["VDD_V"] = gTech.vdd.value();
+        node["WWL_SWING"] = gTechW.vpp.value();
+        node["Temperature_K"] = double(gInputParameter.temperature);
+    }
 };
 
 } // namespace mse::cell

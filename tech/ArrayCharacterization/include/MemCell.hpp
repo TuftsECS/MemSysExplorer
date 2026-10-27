@@ -51,16 +51,9 @@ public:
 	/* Functions */
 	void ReadCellFromFile(const std::string& inputFile);
     void ApplyPVT();
-	void CellScaling(int _targetProcessNode);
-	double GetMemristance(double _relativeReadVoltage);  /* Get the LRS resistance of memristor at log-linera region of I-V curve */
-	void CalculateWriteEnergy();
-	double CalculateReadPower();
 	void PrintCell();
-	bool isMultiLevel() const;	/* CTT, FeFET and RRAM cells storing more than one bit */
-	std::string typeName() const;	/* The cell type as printed, naming multi-level cells */
 
 	/* Properties */
-	MemCellType memCellType = PCRAM;	/* Memory cell type (like MRAM, PCRAM, etc.) */
 	int processNode = 0;        /* Cell original process technology node, Unit: nm*/
 	double area = 0;			/* Cell area, Unit: F^2 */
 	double aspectRatio = 0;		/* Cell aspect ratio, H/W */

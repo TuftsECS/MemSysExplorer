@@ -22,7 +22,9 @@ public:
 };
 
 struct MramProperties final : ResistiveCellProperties {
-    MramProperties(const MramParameters& parameters, const MramTopology& topology) : ResistiveCellProperties(parameters, topology) {}
+    MramProperties(const MramParameters& parameters, const MramTopology& topology) : ResistiveCellProperties(parameters, topology) {
+        symmetricWrite = true;
+    }
 };
 
 class MramCell final : public ResistiveMemoryCell<MramParameters, MramTopology, MramProperties> {
