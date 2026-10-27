@@ -104,9 +104,6 @@ public:
 	double resistanceOffAtHalfReadVoltage = 0; /* High resistance state when 1/2 read voltage is applied */
 	double resistanceOnAtHalfResetVoltage = 0; /* Low resistance state when 1/2 reset voltage is applied */
 
-        /*For multi-level cells SA*/
-        int nFingers = 8;
-        double nLvl = 2;
 	/* For NAND flash */
 	double flashEraseVoltage;		/* The erase voltage, Unit: V, highest W/E voltage in ITRS sheet */
 	double flashPassVoltage;		/* The voltage applied on the unselected wordline within the same block during programming, Unit: V */

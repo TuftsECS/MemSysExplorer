@@ -177,9 +177,11 @@ void MemCell::ReadCellFromFile(const std::string& inputFile)
         fill(std::type_identity<Second>{}, "Flash.ProgramTime", flashProgramTime);
         fill(number, "Flash.GateCouplingRatio", gateCouplingRatio);
 
-        // MLC specific
-        fill(std::type_identity<int>{}, "MultiLevel.SenseAmpFingers", nFingers);
-        fill(number, "MultiLevel.Levels", nLvl);
+        // The multi-level cells read their levels and sense amp fingers themselves
+        int fingers = 0;
+        fill(std::type_identity<int>{}, "MultiLevel.SenseAmpFingers", fingers);
+        double levels = 0;
+        fill(number, "MultiLevel.Levels", levels);
 
         // Warns about keys no cell reads, like those of the older cell file layout
         file.verifyStrictAccess();

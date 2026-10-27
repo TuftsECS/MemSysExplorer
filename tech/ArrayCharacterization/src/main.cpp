@@ -446,12 +446,6 @@ int main(int argc, char* argv[])
 	capacity = (long long)gInputParameter.capacity * 8;
 	blockSize = gInputParameter.wordWidth;
 	associativity = gInputParameter.associativity;
-        //if (cell->memCellType == MLCCTT || cell->memCellType == MLCFeFET || cell->memCellType == MLCRRAM) {
-        //    std::cout << capacity << std::endl;
-        //    capacity = (int)(pow(2.0, ceil(log2(capacity/log2(cell->nLvl)))));
-        //    blockSize = (int)(ceil(blockSize/log2(cell->nLvl)));    
-        //    std::cout << capacity << std::endl;
-        //}
 
 	if (gInputParameter.designTarget == cache) {
 		switch (gInputParameter.cacheAccessMode) {
