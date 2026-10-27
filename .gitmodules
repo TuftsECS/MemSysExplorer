@@ -1,0 +1,3 @@
+[submodule "tech/DreamRAM"]
+	path = tech/DreamRAM
+	url = https://github.com/harvard-acc/DreamRAM.git
