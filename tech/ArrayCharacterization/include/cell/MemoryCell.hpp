@@ -394,8 +394,7 @@ struct MemoryCell {
     virtual void printSummary([[maybe_unused]] std::ostream& stream) const {}
 
     // The cell's own values in the MemoryCell section of the result YAML
-    // TODO cacheResult only keeps the swing keys of the cache and RAM results apart, drop it once they match
-    virtual void writeSummary([[maybe_unused]] YAML::Node node, [[maybe_unused]] bool cacheResult) const {}
+    virtual void writeSummary([[maybe_unused]] YAML::Node node) const {}
 };
 
 } // namespace mse::cell

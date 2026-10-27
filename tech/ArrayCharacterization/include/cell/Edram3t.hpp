@@ -192,22 +192,12 @@ public:
         stream << "Temperature: " << double(gInputParameter.temperature) << "K\n";
     }
 
-    void writeSummary(YAML::Node node, [[maybe_unused]] bool cacheResult) const override {
-        // TODO roadmaps past LOP are written as ULP like the earlier output
-        const auto roadmapName = [](DeviceRoadmap roadmap) -> std::string {
-            switch (roadmap) {
-                case HP: return "HP";
-                case LSTP: return "LSTP";
-                case LOP: return "LOP";
-                default: return "ULP";
-            }
-        };
-
+    void writeSummary(YAML::Node node) const override {
         node["WidthWriteAccessCMOS_F"] = _parameters.accessWidth.value().value();
         node["WidthReadAccessCMOS_F"] = _parameters.readAccessWidth.value().value();
-        node["PeripheralRoadmap"] = roadmapName(gTech.deviceRoadmap);
-        node["WriteAccessRoadmap"] = roadmapName(gTechW.deviceRoadmap);
-        node["ReadAccessRoadmap"] = roadmapName(gTechR.deviceRoadmap);
+        node["PeripheralRoadmap"] = enumToString(gTech.deviceRoadmap);
+        node["WriteAccessRoadmap"] = enumToString(gTechW.deviceRoadmap);
+        node["ReadAccessRoadmap"] = enumToString(gTechR.deviceRoadmap);
         node["PeripheralNode_nm"] = gTech.featureSizeInNano;
         node["WriteAccessNode_nm"] = gTechW.featureSizeInNano;
         node["ReadAccessNode_nm"] = gTechR.featureSizeInNano;

@@ -630,7 +630,7 @@ public:
         stream << "Access Type: " << _parameters.accessType.value() << "\n";
     }
 
-    void writeSummary(YAML::Node node, [[maybe_unused]] bool cacheResult) const override {
+    void writeSummary(YAML::Node node) const override {
         const double resistanceOn = _parameters.resistanceOn.value().value();
         const double resistanceOff = _parameters.resistanceOff.value().value();
         const double readCurrent = _parameters.readCurrent.value().value();

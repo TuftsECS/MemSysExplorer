@@ -241,7 +241,7 @@ public:
         stream << "Gate Coupling Ratio: " << _parameters.gateCouplingRatio.value() << "\n";
     }
 
-    void writeSummary(YAML::Node node, [[maybe_unused]] bool cacheResult) const override {
+    void writeSummary(YAML::Node node) const override {
         node["PassVoltage_V"] = _parameters.passVoltage.value().value();
         node["ProgramVoltage_V"] = _parameters.programVoltage.value().value();
         node["EraseVoltage_V"] = _parameters.eraseVoltage.value().value();

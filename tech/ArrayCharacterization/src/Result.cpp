@@ -719,7 +719,7 @@ YAML::Node Result::toYamlNode() {
 		result["MemoryCell"]["AspectRatio"]  = gCell.aspectRatio;
 
 		// Values of the cell type
-		mse::cell::memoryCell().writeSummary(result["MemoryCell"], false);
+		mse::cell::memoryCell().writeSummary(result["MemoryCell"]);
 
 		// Multi-level cells
 		if (properties.multiLevel) {
@@ -976,7 +976,7 @@ YAML::Node Result::toYamlNodeAsCache(Result& tagResult, CacheAccessMode cacheAcc
 	result["MemoryCell"]["AspectRatio"]  = gCell.aspectRatio;
 
 	// Values of the cell type
-	mse::cell::memoryCell().writeSummary(result["MemoryCell"], true);
+	mse::cell::memoryCell().writeSummary(result["MemoryCell"]);
 
 	// Multi-level cells
 	if (properties.multiLevel) {
