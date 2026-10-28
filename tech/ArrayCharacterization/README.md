@@ -33,6 +33,15 @@ Memory array characterization in MemSysExplorer is performed using an extended v
         - The 10 nm node is calibrated to IRDS 2016 as in [Neurosim](https://github.com/neurosim/DNN_NeuroSim_V1.4)
         - Silicon Technology nodes below 10 nm are calibrated to IRDS 2021 as in [Neurosim](https://github.com/neurosim/DNN_NeuroSim_V1.4)
         - Examples of beyond silicon transistor technologies for eDRAM such as indium-gallium-zinc-oxide transistors with gate length 45nm and carbon nanotube field effect transistors with gate length 22nm are calibrated to experimental data as in [333-eDRAM](https://ieeexplore.ieee.org/document/11132950)
+- **Component Hierarchy**
+    - Memory arrays are modeled as a tree of components that each calculate their own dimensions, timing and power
+    - The full component tree is printed with the results
+- **Custom Memory Cells**
+    - Memory cells are defined as C++ classes that read their own parameters and model their own operations
+    - New cells can be added with minimal changes to the rest of the program (see [Adding a Custom Cell](#adding-a-custom-cell))
+- **YAML Inputs and Outputs**
+    - Configuration and cell files are written in YAML, and physical values are given with units and SI prefixes (e.g., `500 aF`, `10 mV`)
+    - Results are also written to a YAML file
 - **Bit Cell Configurations**
     - Each configuration references a sample cell calibrated to physical layouts from literature and specifications from industry. For SRAM and eDRAM, the following references were used:
         1. Barth, John, et al. "A 500 MHz random cycle, 1.5 ns latency, SOI embedded DRAM macro featuring a three-transistor micro sense amplifier." IEEE Journal of Solid-State Circuits 43.1 (2008): 86-95.
@@ -46,11 +55,11 @@ Memory array characterization in MemSysExplorer is performed using an extended v
 
 
 ## Compilation
-**MemSysExplorer** is programmed in GNU C++. It can be compiled on both Unix-like OSes and Microsoft Windows. Under Linux, the tool can be built using `make`. 
+**MemSysExplorer** is written in C++23. It can be compiled on both Unix-like OSes and Microsoft Windows. A Makefile is provided for automatic building with the `make` tool.
 ```
 make
 ```
-Running `make` will automatically set the required compiler flags.
+Running `make` will automatically set the required compiler flags. A separate target `openmp` can be built to enable OpenMP multithreading.
 
 
 ## Running Simulations
@@ -59,6 +68,17 @@ Example configuration files are provided in the sample_configs folder. Each conf
 ```
 ./msxac sample_configs/<chosen_config>.cfg
 ```
+
+## Adding a Custom Cell
+Memory cells are defined in `include/cell`. Each cell is a class derived from `mse::cell::MemoryCell` with
+- a `Parameters` type that reads the cell parameters from the cell file
+- a static `name` that is compared with `MemCellType` in the cell file
+- `properties()` to describe how the cell is accessed, such as whether it needs refresh or is stacked over the peripherals
+- `topology()` to describe the devices connected to each wordline and bitline for capacitance and leakage
+- `timing()` and `power()` to give the latency and energy of each cell operation
+
+`Sram6t.hpp` and `Edram3t.hpp` can be used as examples. New cells are added to the program by including the header in `include/cell/types.hpp` and adding the class to `MemoryCellList`. The cell types used by the rest of the program are built from this list at compile time, so a cell file using the new `MemCellType` can be run without any other changes.
+
 ## Example for 333-eDRAM
 In addition to the configuration existing configuration parameters in NVSIM, MemSysExplorer adds the following additional parameters for 3T-eDRAMs.
 
@@ -108,7 +128,7 @@ For memories that use monolithic 3D integration (e.g., 333-eDRAM), where the mem
 
 ## Authors
 
-David Kong, Zihan Zhang and Madi Gudin
+David Kong, Zihan Zhang, Madi Gudin, and Connor Bremner
 
 ## Contributing
 
