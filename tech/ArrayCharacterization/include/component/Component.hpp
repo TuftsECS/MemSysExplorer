@@ -41,7 +41,7 @@ public:
 
     // For generalized access and function application to all of a component's subcomponents
     // Without needing knowledge of how many or which subcomponents exist, visit(subcomponent) will be applied to all subcomponents
-    using SubcomponentVisitor = std::move_only_function<void(Component&) const noexcept>;
+    using SubcomponentVisitor = std::function<void(Component&)>;
     virtual void forEachSubcomponent(const SubcomponentVisitor& visit) noexcept { (void)visit; }
 
     // Checks the component's inputs and builds its subcomponents with build() in dependency order, returning if the component is valid
