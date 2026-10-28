@@ -1,0 +1,38 @@
+MemoryCellInputFile: sample_cells/sample_SRAM8T_cell.yaml
+
+ProcessNode: 32
+DeviceRoadmap: LOP
+
+DesignTarget: cache
+
+CacheAccessMode: Normal
+Associativity: 8  # For cache only
+
+OptimizationTarget: WriteEDP
+
+OutputFilePrefix: test
+EnablePruning: Yes
+
+Capacity:
+  Value: 128
+  Unit: KB
+WordWidth: 128  # bits
+
+LocalWire:
+  Type: LocalAggressive
+  RepeaterType: RepeatedNone
+  UseLowSwing: No
+
+GlobalWire:
+  Type: GlobalAggressive
+  RepeaterType: RepeatedNone
+  UseLowSwing: No
+
+Routing: H-tree
+
+InternalSensing: true
+
+Temperature: 370  # Kelvin
+RetentionTime: 40  # microseconds
+
+BufferDesignOptimization: latency
