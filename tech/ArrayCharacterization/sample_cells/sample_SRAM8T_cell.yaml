@@ -1,0 +1,17 @@
+# 8T SRAM cell
+
+MemCellType: SRAM8T
+Area: 180
+AspectRatio: 1.25
+
+Inverter:
+  NmosWidth: 2.31
+  PmosWidth: 3.08
+
+Access:
+  Type: CMOS
+  Width: 2.77
+  # STEP 2. Uncomment the width of the read access transistor
+  #ReadWidth: 3.54
+
+MinSenseVoltage: 80 mV

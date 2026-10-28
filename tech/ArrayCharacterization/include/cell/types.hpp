@@ -15,6 +15,8 @@
 
 // Include custom cells here to use them for the MemoryCellList
 #include "cell/Sram6t.hpp"
+// STEP 1. Uncomment the 8T include below, and Sram8tCell in MemoryCellList
+//#include "cell/Sram8t.hpp"
 #include "cell/Dram.hpp"
 #include "cell/Edram.hpp"
 #include "cell/Edram3t.hpp"
@@ -52,6 +54,8 @@ struct CellList {};
 
 using MemoryCellList = CellList<
     Sram6tCell,
+    // STEP 1. Uncomment Sram8tCell to add the 8T cell to the list
+    //Sram8tCell,
     DramCell,
     EdramCell,
     Edram3tCell,
