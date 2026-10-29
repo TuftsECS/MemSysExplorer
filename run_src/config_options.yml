@@ -1,0 +1,93 @@
+# system
+system.sys_config_path:
+  type: path
+  path-must-exist: true
+
+system.DesignTarget:
+  type: select
+  values:
+    - cache
+    - RAM
+    - CAM
+  required: true
+
+system.WordWidth:
+  type: int
+  required: true
+
+system.OptimizationTarget:
+  type: select
+  values:
+    - ReadLatency
+    - WriteLatency
+    - ReadDynamicEnergy
+    - WriteDynamicEnergy
+    - ReadEDP
+    - WriteEDP
+    - LeakagePower
+    - Area
+    - Full
+  required: true
+
+# apps
+apps.run:
+  type: select
+  values:
+    - new
+    - existing
+  required: true
+
+apps.profiler:
+  type: select
+  values:
+    - dynamorio
+    - perf
+    - sniper
+  required: true
+
+apps.executable:
+  type: path
+  path-must-exist: true
+
+apps.level:
+  type: select
+  values:
+    - l1
+    - l2
+    - l3
+
+apps.arch:
+  type: select
+  values:
+    - intel
+    - amd
+
+apps.config: {}
+
+apps.patternconfig_path:
+  type: path
+
+apps.multithread:
+  type: bool
+
+# tech
+tech.run:
+  type: select
+  values:
+    - new
+    - existing
+  required: true
+
+tech.array_characterization_config:
+  type: path
+  path-must-exist: true
+
+tech.array_characterization_result_path:
+  type: path
+
+# technically required, can be from results
+tech.Associativity:
+  type: int
+
+tech.MemoryCellInputFile:
+  type: path

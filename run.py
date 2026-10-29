@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import tempfile
@@ -9,167 +11,7 @@ import pandas as pd
 from run_src.utils import *
 from run_src.interfaces import *
 from run_src.model import evaluate
-
-def check_inputs(config):
-
-    # Checking if sys, apps and tech configs are present
-    required = set(['system', 'apps', 'tech'])
-    if not required.issubset(config):
-        print(f"Provide required top-level config fields: {required}")
-        sys.exit(1)
-
-    # Displying information from config file
-    sys_cfg = config['system']
-    print("\nSys config:")
-    print(sys_cfg)
-
-    apps_cfg = config['apps']
-    print("\nApps config:")
-    print(apps_cfg)
-
-    tech_cfg = config['tech']
-    print("\nTech config:")
-    print(tech_cfg)
-
-    # check required arguments for system config
-    if sys_cfg is None:
-        print("\nSystem config is empty.")
-        sys.exit(1)
-
-    if 'sys_config_path' in sys_cfg:
-        if not os.path.exists(sys_cfg['sys_config_path']):
-            print(f"System config path {sys_cfg['sys_config_path']} is not real.")
-            sys.exit(1)
-        with open(sys_cfg['sys_config_path'], 'r') as f:
-            sys_cfg = yaml.load(f, Loader=yaml.FullLoader)
-        print("Loaded system config from path: {sys_cfg}")
-
-    required = set(['DesignTarget', 'Capacity', 'WordWidth', 'OptimizationTarget'])
-
-    if not required.issubset(sys_cfg):
-        print(f"Provide required system inputs: {required}")
-        sys.exit(1)
-
-    # check required arguments for applications interface
-    if apps_cfg is None:
-        print("\nApplications config is empty.")
-        sys.exit(1)
-
-    if 'run' not in apps_cfg or 'profiler' not in apps_cfg:
-        print("\nEvery apps config must specify 'run' and 'profiler' fields.")
-        sys.exit(1)
-    if apps_cfg['run'] == "new":
-        if apps_cfg['profiler'] == "dynamorio":
-            required = set(["executable"])
-        elif apps_cfg['profiler'] == "sniper":
-            required = set(["level", "executable", "config"])
-        else:
-            required = set(["level", "executable"])
-    else:
-        required = set(["patternconfig_path"])
-        if apps_cfg['profiler'] == "sniper":
-            required.add("multithread")
-    if not required.issubset(apps_cfg):
-        print(f"Provide required apps inputs: {required}")
-        sys.exit(1)
-
-    # required arguments for array characterization
-    if tech_cfg is None:
-        print("\nTech config is empty.")
-        sys.exit(1)
-
-    if 'run' not in tech_cfg:
-        print("Every tech config must specify 'run' field.")
-        sys.exit(1)
-    if tech_cfg['run'] == "new":
-        required = set(['array_characterization_config'])
-    else:
-        required = set(['array_characterization_result_path'])
-    if not required.issubset(tech_cfg):
-        print("Choosing default tech config:")
-        tech_cfg['array_characterization_config'] = choosing_tech_yaml(sys_cfg)
-
-    if 'array_characterization_config' in tech_cfg:
-        config_path = tech_cfg['array_characterization_config']
-        if os.path.isfile(config_path):
-            if not os.path.exists(config_path):
-                print(f"Tech config path {config_path} is not real.")
-                sys.exit(1)
-            with open(config_path, 'r') as f:
-                premade_tech_cfg = yaml.load(f, Loader=yaml.FullLoader)
-                premade_tech_cfg.update(tech_cfg)
-                tech_cfg = premade_tech_cfg
-            print("Loaded tech config from path: ", config_path)
-        elif os.path.isdir(config_path):
-            # Validate directory exists, individual files validated during run
-            print(f"Using tech config directory: {config_path}")
-        else:
-            print(f"Tech config path {config_path} is not real.")
-            sys.exit(1)
-
-        if os.path.isfile(config_path):
-            required = set(['Associativity', 'MemoryCellInputFile'])
-            if not required.issubset(tech_cfg):
-                print(f"Provide required tech inputs for new ArrayCharacterization run: {required}")
-                sys.exit(1)
-
-    # logic checks
-    if apps_cfg['profiler'] == "dynamorio" and sys_cfg['DesignTarget'] == "cache":
-        print("Choose Sniper or Perf as a profiler for cache modeling.")
-        sys.exit(1)
-
-    # Check if data in existing tech results matches sys config requirements
-    if tech_cfg['run'] == "existing":
-        result_path = tech_cfg['array_characterization_result_path']
-        if os.path.isdir(result_path):
-            result_files = [
-                os.path.join(result_path, f) for f in os.listdir(result_path)
-                if f.endswith('.yaml') or f.endswith('.yml')
-            ]
-        else:
-            result_files = [result_path]
-
-        # Build expected sets from sys_cfg
-        capacity_list = sys_cfg.get('Capacity', [])
-        if not isinstance(capacity_list, list):
-            capacity_list = [capacity_list]
-        expected_capacities = {f"{cap['Value']}{cap['Unit']}" for cap in capacity_list}
-
-        opt_targets = sys_cfg.get('OptimizationTarget', [])
-        if not isinstance(opt_targets, list):
-            opt_targets = [opt_targets]
-        expected_opt_targets = set(opt_targets)
-
-        for path in result_files:
-            with open(path, 'r') as f:
-                tech_result = yaml.load(f, Loader=yaml.FullLoader)
-
-            # OptimizationTarget check - works for both cache and RAM
-            if 'OptimizationTarget' in sys_cfg:
-                if 'CacheDesign' in tech_result:
-                    opt_in_result = tech_result['CacheDesign'].get('OptimizationTarget')
-                else:
-                    opt_in_result = tech_result.get('OptimizationTarget')
-                if opt_in_result and opt_in_result not in expected_opt_targets:
-                    print(f"Warning: OptimizationTarget mismatch in {path}. "
-                          f"Result has {opt_in_result} but sys config expects one of {expected_opt_targets}")
-                    sys.exit(1)
-
-            # Capacity check
-            if 'Capacity' in tech_result:
-                cap = tech_result['Capacity']
-                result_cap_label = f"{cap.get('Value', 'N/A')}{cap.get('Unit', '')}"
-                if result_cap_label not in expected_capacities:
-                    print(f"Warning: Capacity mismatch in {path}. "
-                          f"Result has {result_cap_label} but sys config expects one of {expected_capacities}")
-                    sys.exit(1)
-            else:
-                print(f"Warning: No Capacity field found in {path}. "
-                      f"Was this result generated with an older version?")
-
-    #TODO: add word width vs. read/write size logic checks
-
-    return sys_cfg, apps_cfg, tech_cfg
+from run_src.config import Config
 
 
 def main():
@@ -178,15 +20,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', '-c', type=str, required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
 
-    if config is None:
-        print("Error loading config file or config is empty.")
+    # load the config
+    config = Config(args.config)
+
+    success, diagnostics = config.check()
+    for diagnostic in diagnostics:
+        print(diagnostic)
+    if not success:
         sys.exit(1)
 
-    # input logic checks
-    sys_cfg, apps_cfg, tech_cfg = check_inputs(config)
+    sys_cfg = config.get("system")
+    apps_cfg = config.get("apps")
+    tech_cfg = config.get("tech")
 
     # Making Directory For Run Outputs
     config_name = os.path.splitext(os.path.basename(args.config))[0]
