@@ -68,7 +68,7 @@ debug: clean $(TARGET)
 
 openmp: CXXFLAGS += $(OMPFLAGS)
 openmp: LDFLAGS += $(OMPLIBS)
-openmp: clean $(TARGET)
+openmp: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CXX) $(LDFLAGS) $(OBJS) -o $@

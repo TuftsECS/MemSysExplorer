@@ -519,7 +519,10 @@ int main(int argc, char* argv[])
 						for (int i = 0; i < (int)full_exploration; i++)
 							bestDataResultsTask[i].compareAndUpdate(tempResult);
 						if (gInputParameter.optimizationTarget == full_exploration && !gInputParameter.isPruningEnabled) {
-							OUTPUT_TO_FILE;
+							#pragma omp critical(fullExplorationOutputFile)
+							{
+								OUTPUT_TO_FILE;
+							}
 						}
 					}
 				}
