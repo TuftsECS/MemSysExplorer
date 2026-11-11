@@ -183,7 +183,7 @@ class PerfProfilers(FrontendInterface):
 
         try:
             result = subprocess.run(
-                ["perf", "stat", "-e", event_string, "--", "true"],
+                ["perf", "stat", "-e", event_string, "--hybrid-merge", "--", "true"],
                 capture_output=True,
                 text=True
             )
@@ -250,7 +250,8 @@ class PerfProfilers(FrontendInterface):
             "perf", "stat",
             "-r", str(self.repeat),
             "-e", event_string,
-            "-o", "/dev/stdout"
+            "-o", "/dev/stdout",
+            "--hybrid-merge"
         ] + executable_with_args
 
         return perf_command, report
