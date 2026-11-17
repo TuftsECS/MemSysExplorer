@@ -183,7 +183,7 @@ class PerfProfilers(FrontendInterface):
 
         try:
             result = subprocess.run(
-                ["perf", "stat", "-e", event_string, "--hybrid-merge", "--", "true"],
+                ["perf", "stat", "-e", event_string] + ["--hybrid-merge"] if self.arch == "intel" else [] + ["--", "true"],
                 capture_output=True,
                 text=True
             )
@@ -250,9 +250,8 @@ class PerfProfilers(FrontendInterface):
             "perf", "stat",
             "-r", str(self.repeat),
             "-e", event_string,
-            "-o", "/dev/stdout",
-            "--hybrid-merge"
-        ] + executable_with_args
+            "-o", "/dev/stdout"
+        ] + ["--hybrid-merge"] if self.arch == "intel" else [] + executable_with_args
 
         return perf_command, report
 
