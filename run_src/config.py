@@ -1,4 +1,5 @@
 import os
+import re
 import yaml
 from colorama import Fore, Style
 
@@ -120,6 +121,73 @@ def load_tech_config(config, ctx):
             config.c["tech"] = merge(yaml.load(file.read(), Loader=yaml.FullLoader), config.c["tech"], ctx, "tech")
 
 
+def check_type(ctx, option, value, type, extra_props=None):
+    """
+    Checks that the given value has the type specified by the provided type
+    string.
+
+    Valid types strings are "string", "bool", "int", "float", "path", "select"
+    or "list[T]" where T is a valid type string.
+    """
+
+    # basic types
+    match type:
+        case "string":
+            if not isinstance(value, str):
+                ctx.error(option, "expected string")
+                return False
+        case "bool":
+            if not isinstance(value, bool):
+                ctx.error(option, "expected boolean")
+                return False
+        case "int":
+            if not isinstance(value, int):
+                ctx.error(option, "expected integer")
+                return False
+        case "float":
+            if not isinstance(value, float) and not isinstance(value, int):
+                ctx.error(option, "expected float")
+                return False
+        case "path":
+            if not isinstance(value, str):
+                ctx.error(option, "expected path")
+                return False
+            elif get_deep(extra_props, "path-must-exist", bool):
+                if not os.path.exists(value):
+                    ctx.error(option, "path must exist")
+                    return False
+        case "select":
+            values = get_deep(extra_props, "values", [])
+            if value not in values:
+                ctx.error(option, f"expected one of: {', '.join(values)}")
+                return False
+        case "list":
+            # unannotated list
+            if not isinstance(value, list):
+                ctx.error(option, "expected list")
+                return False
+
+    # lists
+    match = re.match(r"list\[(.*)]", type)
+    if match:
+        subtype = match.group(1)
+
+        # Lists also accept a single element of the subtype
+        fake_ctx = Context()
+        if check_type(fake_ctx, option, value, subtype, extra_props):
+            return True
+
+        # check that it's actually a list
+        if not isinstance(value, list):
+            ctx.error(option, f"expected list of {subtype}")
+            return False
+
+        for i, element in enumerate(value):
+            if not check_type(ctx, f"{option}[{i}]", element, subtype):
+                return False
+
+    return True
+
 @check_func
 def check_basics(config, ctx):
     success = True
@@ -130,50 +198,18 @@ def check_basics(config, ctx):
 
     for option, props in options.items():
         value = config.get(option)
+        type = get_deep(props, "type", "string")
 
         # If the option is unset, continue. Throw an error if it was required.
         if value is None:
             if get_deep(props, "required", False):
-                ctx.error(option, "option is required")
+                ctx.error(option, f"option is required ({type})")
                 success = False
             continue
 
         # Check the type of the option.
-        type = get_deep(props, "type", "string")
-        match type:
-            case "string":
-                if not isinstance(value, str):
-                    ctx.error(option, "expected string")
-                    success = False
-            case "bool":
-                if not isinstance(value, bool):
-                    ctx.error(option, "expected boolean")
-                    success = False
-            case "int":
-                if not isinstance(value, int):
-                    ctx.error(option, "expected integer")
-                    success = False
-            case "float":
-                if not isinstance(value, float) and not isinstance(value, int):
-                    ctx.error(option, "expected float")
-                    success = False
-            case "path":
-                if not isinstance(value, str):
-                    ctx.error(option, "expected path")
-                    success = False
-                elif get_deep(props, "path-must-exist", bool):
-                    if not os.path.exists(value):
-                        ctx.error(option, "path must exist")
-                        success = False
-            case "select":
-                values = get_deep(props, "values", [])
-                if value not in values:
-                    ctx.error(option, f"expected one of: {', '.join(values)}")
-                    success = False
-            case "list":
-                if not isinstance(value, list):
-                    ctx.error(options, "expected list")
-                    success = False
+        if not check_type(ctx, option, value, type, props):
+            success = False
 
     return success
 
