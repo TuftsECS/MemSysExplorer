@@ -55,6 +55,7 @@ apps.level:
     - l1
     - l2
     - l3
+    - dram
 
 apps.arch:
   type: select
